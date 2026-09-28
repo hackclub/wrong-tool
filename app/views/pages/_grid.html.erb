@@ -1,20 +1,33 @@
-<div class="sheet-viewport">
+<div class="sheet-viewport" data-sheet-tabs-target="viewport"
+     data-controller="endless-rows" data-action="scroll->endless-rows#fill resize@window->endless-rows#fill">
   <div class="sheet">
     <div class="sheet__column-headers">
       <span class="sheet__corner"></span>
       <% ("A".."Z").each do |letter| %>
-        <span class="sheet__column-header"><%= letter %></span>
+        <span class="sheet__column-header" data-cell-selection-target="columnHeader"><%= letter %></span>
       <% end %>
     </div>
 
     <div class="sheet__body">
-      <div class="sheet__row-headers">
-        <% 1.upto(40) do |number| %>
-          <span class="sheet__row-header"><%= number %></span>
+      <div class="sheet__row-headers" data-endless-rows-target="headers">
+        <% 1.upto(50) do |number| %>
+          <%= render "pages/row_header", number: %>
         <% end %>
       </div>
+      <template data-endless-rows-target="template"><%= render "pages/row_header" %></template>
 
-      <div class="sheet__cells" tabindex="0"></div>
+      <div class="sheet__cells" tabindex="0"
+           data-cell-selection-target="grid"
+           data-action="click->cell-selection#click keydown->snake-game#steer keydown->cell-selection#move">
+        <% section_names.each_with_index do |name, index| %>
+          <%= tag.section id: name.parameterize, class: "sheet__section", aria: { label: name },
+                hidden: !index.zero?, data: { sheet_tabs_target: "section" } do %>
+            <%= render "pages/sections/#{name.parameterize.underscore}" %>
+          <% end %>
+        <% end %>
+
+        <div class="sheet__selection" data-cell-selection-target="selection" hidden></div>
+      </div>
     </div>
   </div>
 </div>

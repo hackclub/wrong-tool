@@ -2,8 +2,10 @@
   <button type="button" class="sheet-tabs__round-button" aria-label="Add sheet"><%= inline_svg_tag "icons/add.svg", class: "icon", aria_hidden: true %></button>
   <button type="button" class="sheet-tabs__round-button sheet-tabs__round-button--menu" aria-label="All sheets"><%= inline_svg_tag "icons/sheet_tabs/menu.svg", class: "icon", aria_hidden: true %></button>
 
-  <% [ "Hero", "How it works", "Ideas", "Rules", "Reward", "Gallery", "FAQ" ].each_with_index do |name, index| %>
-    <%= link_to "##{name.parameterize}", class: "sheet-tab", aria: { current: ("page" if index.zero?) } do %>
+  <% section_names.each_with_index do |name, index| %>
+    <%= link_to "##{name.parameterize}", class: "sheet-tab",
+          aria: { current: ("page" if index.zero?) },
+          data: { sheet_tabs_target: "tab", action: "sheet-tabs#select" } do %>
       <%= name %><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
   <% end %>

@@ -6,5 +6,6 @@
  *   foundation/  fonts, design tokens, element defaults
  *   components/  small reusable pieces (icon, ...)
  *   sheet/       the spreadsheet chrome: app bar, toolbar, formula bar, grid, tabs
+ *   sections/    what each sheet tab shows: which cells go where
  */
-@layer reset, tokens, base, components, sheet;
+@layer reset, tokens, base, components, sheet, sections;

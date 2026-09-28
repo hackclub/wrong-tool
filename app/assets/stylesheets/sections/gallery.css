@@ -1,0 +1,21 @@
+@layer sections {
+  .gallery__title  { grid-column: B / span 6; grid-row: 2 / span 2; }
+  .gallery__intro  { grid-column: B / span 6; grid-row: 4; }
+  .gallery__grid   { grid-row: 5; }
+
+  /* Four screenshots a row: 4 rows of image, a caption row, then a spacer row. */
+  .gallery__item {
+    grid-row: span 6;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+
+    &:nth-child(4n + 1) { grid-column: B / span 2; }
+    &:nth-child(4n + 2) { grid-column: E / span 2; }
+    &:nth-child(4n + 3) { grid-column: H / span 2; }
+    &:nth-child(4n)     { grid-column: J / span 2; }
+  }
+
+  .gallery__image    { grid-column: 1 / -1; grid-row: span 4; }
+  .gallery__caption  { grid-column: 1 / -1; }
+}

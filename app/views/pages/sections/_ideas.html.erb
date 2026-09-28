@@ -1,0 +1,26 @@
+<% short = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." %>
+<% medium = "Sed do eiusmod tempor incididunt ut labore." %>
+<% ideas = {
+     "Mild" => [ [ "GOOGLE SHEETS", "Lorem ipsum", short ], [ "FIGMA", "Dolor sit", medium ], [ "GOOGLE FORMS", "Amet elit", short ], [ "EXCEL", "Sed tempor", medium ] ],
+     "Spicy" => [ [ "CSS", "Magna aliqua", medium ], [ "PDF", "Ut enim", short ], [ "SSH", "Minim veniam", medium ], [ "EMAIL", "Quis nostrud", short ] ],
+     "Unhinged" => [ [ "FONTS", "Duis aute", short ], [ "SHADERS", "Irure dolor", medium ], [ "DNS", "Velit esse", short ], [ "GIT", "Cillum fugiat", medium ] ]
+   } %>
+
+<h2 class="cell cell--heading ideas__title">Example ideas</h2>
+<p class="cell cell--kicker ideas__intro"><%= medium %></p>
+
+<div class="sheet__rows ideas__list">
+  <button type="button" class="cell cell--table-header ideas__heat" data-formula='=FILTER(ideas, heat="All")'>Heat ▾ All</button>
+  <span class="cell cell--table-header ideas__tool">Tool</span>
+  <span class="cell cell--table-header ideas__game">Game</span>
+  <span class="cell cell--table-header ideas__how">How it works</span>
+
+  <% ideas.each do |heat, tier| %>
+    <% tier.each do |tool, game, how| %>
+      <span class="cell cell--heat-<%= heat.downcase %> ideas__heat"><%= heat %></span>
+      <span class="cell cell--formula ideas__tool"><%= tool %></span>
+      <span class="cell cell--label ideas__game"><%= game %></span>
+      <span class="cell ideas__how"><%= how %></span>
+    <% end %>
+  <% end %>
+</div>

@@ -1,0 +1,26 @@
+<% title = "Lorem ipsum dolor sit amet, consectetur." %>
+
+<p class="cell cell--kicker hero__kicker">Lorem ipsum · dolor sit · amet</p>
+<%= tag.h2 title, class: "cell cell--title hero__title", data: { formula: %(="#{title}") } %>
+<p class="cell cell--subtitle hero__subtitle">Sed do eiusmod tempor incididunt ut labore.</p>
+<a href="#" class="cell cell--cta hero__cta" data-formula="=BUILD(anyway)" data-cell-selection-target="initial">Build anyway →</a>
+<span class="cell cell--error hero__cancel" data-formula="=CANCEL()" aria-describedby="cancel-note">#N/A</span>
+<p class="cell cell--note hero__cancel-note" id="cancel-note" hidden>Note on D11: "Cancel" is not a valid function in this sheet.</p>
+
+<span class="cell cell--table-header hero__hours-heading">Hours</span>
+<span class="cell cell--table-header hero__reward-heading">Reward</span>
+<span class="cell cell--number hero__hours"><%= hours_per_reward %></span>
+<span class="cell hero__reward" data-formula="=SHIP(handheld)">1 × <%= reward_name %></span>
+<span class="cell cell--formula hero__reward-formula">=SHIP(handheld) every <%= hours_per_reward %> hrs</span>
+<span class="cell cell--formula hero__hint">Click a cell · arrow keys move · tabs below are the nav</span>
+
+<button type="button" class="cell cell--play hero__play" data-formula="=PLAY(snake)"
+        data-snake-game-target="play" data-action="snake-game#start">▶ Play snake</button>
+<span class="cell cell--formula hero__score" data-formula="=COUNTA(apples_eaten) → 0" data-snake-game-target="score">SCORE 0</span>
+
+<%# 5 × 8 board, drawn by the snake-game controller. %>
+<div class="snake-board hero__board">
+  <% 40.times do %>
+    <span class="snake-board__cell" data-snake-game-target="cell"></span>
+  <% end %>
+</div>

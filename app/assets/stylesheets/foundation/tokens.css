@@ -3,6 +3,20 @@
     /* Brand */
     --red: #ec3750;
     --green: #1e7b45;
+    --green-bright: #3fbf73;
+    --green-tint: #e6f0e9;
+    --green-header: #f1f5f2;
+
+    /* Cell states */
+    --green-50: #e6f4ea;
+    --red-700: #c62828;
+    --red-50: #fdecee;
+    --amber-800: #8a5200;
+    --amber-50: #fff1d6;
+    --pink-ship: #fff0f2;
+    --yellow-input: #fffbe0;
+    --yellow-note: #fff8c4;
+    --yellow-note-border: #d6c75a;
 
     /* Chrome neutrals */
     --grey-900: #1f1f1f;
@@ -38,6 +52,13 @@
     --text-secondary: var(--grey-700);
     --text-placeholder: var(--grey-500);
     --icon-color: var(--grey-700);
+    --text-kicker: #555;
+    --text-formula: #6b6b6b;
+
+    --placeholder-stripe: #ececec;
+    --placeholder-stripe-alt: #f6f6f6;
+    --placeholder-border: #d0d0d0;
+    --placeholder-text: #666;
 
     --border-grid: var(--grey-200);
     --border-header: var(--grey-400);
@@ -45,6 +66,10 @@
 
     --hover-chrome: var(--grey-250);
     --hover-toolbar: var(--grey-300);
+
+    --selection: var(--blue-600);
+    --selection-header-bg: var(--blue-100);
+    --selection-header-fg: var(--blue-700);
 
     /* Type: Roboto for app chrome, Arial for text "typed into cells", Plex Mono for formulas */
     --font-chrome: "Roboto", Arial, sans-serif;
@@ -55,7 +80,6 @@
     --cell-width: 100px;
     --cell-height: 30px;
     --column-count: 26;
-    --row-count: 40;
     --row-header-width: 46px;
     --column-header-height: 22px;
   }

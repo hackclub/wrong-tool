@@ -20,6 +20,11 @@ export default class extends Controller {
     this.#select(initial ? this.#boxOf(initial) : { column: 1, row: 1 })
   }
 
+  // Re-reads the selected cell, for when its contents change underneath the selection.
+  refresh() {
+    if (this.box) this.#select(this.box)
+  }
+
   click(event) {
     const { left, top } = this.gridTarget.getBoundingClientRect()
     const { width, height } = this.#cellSize
@@ -30,12 +35,13 @@ export default class extends Controller {
     const cell = this.#cellAt(position)
 
     this.#select(cell ? this.#boxOf(cell) : position)
-    this.gridTarget.focus({ preventScroll: true })
+    // Let input cells keep focus so they can be typed into.
+    if (!event.target.matches("input")) this.gridTarget.focus({ preventScroll: true })
   }
 
   move(event) {
     const move = MOVES[event.key]
-    if (!move) return
+    if (!move || event.target.matches("input")) return
 
     // Step off the edge of the selected box, so merged cells are crossed in one move.
     const { column, row, width, height } = this.box
@@ -56,7 +62,11 @@ export default class extends Controller {
     this.#highlightHeaders(box)
     this.#showNote(cell)
     this.nameBoxTarget.textContent = `${COLUMNS[box.column]}${box.row + 1}`
-    this.formulaTarget.textContent = cell ? cell.dataset.formula ?? cell.textContent.trim() : ""
+    this.formulaTarget.textContent = cell ? this.#formulaOf(cell) : ""
+  }
+
+  #formulaOf(cell) {
+    return cell.dataset.formula ?? cell.querySelector("input")?.value ?? cell.textContent.trim()
   }
 
   #drawSelection({ column, row, width, height }) {
@@ -82,9 +92,9 @@ export default class extends Controller {
     this.#section.querySelectorAll(".cell--note").forEach(note => note.hidden = note.id !== noteId)
   }
 
-  // The topmost cell covering a position, if any.
+  // The topmost cell covering a position, if any. Anything with a formula counts as a cell.
   #cellAt({ column, row }) {
-    const cells = [ ...this.#section.querySelectorAll(".cell:not(.cell--note)") ]
+    const cells = [ ...this.#section.querySelectorAll(".cell:not(.cell--note), [data-formula]") ]
     return cells.reverse().find(cell => {
       const box = this.#boxOf(cell)
       return column >= box.column && column < box.column + box.width &&

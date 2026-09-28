@@ -1,0 +1,24 @@
+<% hours = 12 %>
+<% rewards = hours / hours_per_reward %>
+
+<h2 class="cell cell--heading reward__title">Reward</h2>
+<p class="cell reward__blurb">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+
+<span class="cell cell--table-header reward__hours-heading">Hours logged</span>
+<span class="cell cell--table-header reward__count-heading">Handhelds</span>
+<span class="cell cell--table-header reward__next-heading">Hours to next</span>
+
+<label class="cell cell--input reward__hours">
+  <input type="number" min="0" max="999" value="<%= hours %>" aria-label="Hours logged">
+</label>
+<span class="cell cell--number reward__count" data-formula="=FLOOR(B7/<%= hours_per_reward %>)"><%= rewards %></span>
+<span class="cell cell--number reward__next" data-formula="=<%= hours_per_reward %>-MOD(B7,<%= hours_per_reward %>)"><%= hours_per_reward - hours % hours_per_reward %></span>
+
+<span class="cell cell--formula reward__hours-hint">↑ type your hours</span>
+<span class="cell cell--formula reward__count-hint">=FLOOR(B7/<%= hours_per_reward %>)</span>
+<span class="cell cell--formula reward__next-hint">=<%= hours_per_reward %>-MOD(B7,<%= hours_per_reward %>)</span>
+
+<span class="cell cell--label reward__label">Reward</span>
+<span class="cell cell--ship reward__total" data-formula="=SHIP(handheld)"><%= rewards.positive? ? "#{reward_name} × #{rewards}" : "#NOT_YET (keep building)" %></span>
+
+<span class="cell cell--image reward__image" data-formula='=IMAGE("handheld.png")'>product shot: <%= reward_name %></span>

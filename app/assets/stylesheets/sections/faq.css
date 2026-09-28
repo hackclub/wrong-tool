@@ -1,0 +1,11 @@
+@layer sections {
+  .faq__title     { grid-column: B / span 4; grid-row: 2 / span 2; }
+  .faq__list      { grid-row: 4; }
+  .faq__question  { grid-column: B / span 3; }
+  .faq__answer    { grid-column: E / span 8; }
+
+  .faq__question--item,
+  .faq__answer--item {
+    grid-row: span 2;
+  }
+}

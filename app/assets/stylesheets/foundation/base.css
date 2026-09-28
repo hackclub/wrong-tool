@@ -9,6 +9,10 @@
     margin: 0;
   }
 
+  [hidden] {
+    display: none !important;
+  }
+
   button {
     font: inherit;
     color: inherit;

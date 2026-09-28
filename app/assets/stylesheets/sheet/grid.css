@@ -50,7 +50,7 @@
     flex: none;
     inline-size: var(--row-header-width);
     display: grid;
-    grid-template-rows: repeat(var(--row-count), var(--cell-height));
+    grid-auto-rows: var(--cell-height);
     border-inline-end: 1px solid var(--border-header);
     background: var(--surface-header);
     color: var(--text-secondary);
@@ -63,11 +63,30 @@
     border-block-end: 1px solid var(--border-header);
   }
 
+  .sheet__row-header--selected,
+  .sheet__column-header--selected {
+    background: var(--selection-header-bg);
+    color: var(--selection-header-fg);
+    font-weight: 700;
+  }
+
+  /* The cell grid. Column lines are named after their letters, so a cell at B2
+     spanning four columns is `grid-column: B / span 4; grid-row: 2`. Rows are
+     implicit: the grid stretches to the height of the row headers beside it. */
   .sheet__cells {
     position: relative;
     flex: none;
-    inline-size: calc(var(--column-count) * var(--cell-width));
-    block-size: calc(var(--row-count) * var(--cell-height));
+    display: grid;
+    grid-template-columns:
+      [A] var(--cell-width) [B] var(--cell-width) [C] var(--cell-width) [D] var(--cell-width)
+      [E] var(--cell-width) [F] var(--cell-width) [G] var(--cell-width) [H] var(--cell-width)
+      [I] var(--cell-width) [J] var(--cell-width) [K] var(--cell-width) [L] var(--cell-width)
+      [M] var(--cell-width) [N] var(--cell-width) [O] var(--cell-width) [P] var(--cell-width)
+      [Q] var(--cell-width) [R] var(--cell-width) [S] var(--cell-width) [T] var(--cell-width)
+      [U] var(--cell-width) [V] var(--cell-width) [W] var(--cell-width) [X] var(--cell-width)
+      [Y] var(--cell-width) [Z] var(--cell-width);
+    grid-auto-rows: var(--cell-height);
+    align-content: start;
     outline: none;
     user-select: none;
     background-image:
@@ -75,5 +94,50 @@
       linear-gradient(90deg, var(--border-grid) 1px, transparent 1px);
     background-size: var(--cell-width) var(--cell-height);
     background-position: 0 -1px, -1px 0;
+  }
+
+  /* One section per sheet tab, sharing the grid's lines. Content lives in the first 40 rows. */
+  .sheet__section {
+    grid-column: 1 / -1;
+    grid-row: 1 / span 40;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+
+  /* A run of table rows that fills in row by row: its cells only pick their
+     columns (by letter, since the lines carry through), never their rows. */
+  .sheet__rows {
+    grid-column: 1 / -1;
+    align-self: start;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-auto-rows: var(--cell-height);
+  }
+
+  /* Placed by the cell-selection controller through --column, --row, --width and
+     --height. It overhangs the cell by a pixel so it covers the gridlines around it. */
+  .sheet__selection {
+    position: relative;
+    z-index: 4;
+    grid-column: var(--column) / span var(--width);
+    grid-row: var(--row) / span var(--height);
+    margin: -1px 0 0 -1px;
+    border: 2px solid var(--selection);
+    pointer-events: none;
+    scroll-margin: var(--column-header-height) 0 0 var(--row-header-width);
+
+    /* Fill handle */
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline-end: -5px;
+      inset-block-end: -5px;
+      inline-size: 8px;
+      block-size: 8px;
+      border: 1px solid var(--white);
+      border-radius: 50%;
+      background: var(--selection);
+    }
   }
 }

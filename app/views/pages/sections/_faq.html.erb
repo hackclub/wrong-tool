@@ -1,0 +1,14 @@
+<% answer = "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat." %>
+<% questions = [ "Lorem ipsum dolor?", "Sit amet consectetur?", "Adipiscing elit sed?", "Do eiusmod tempor?", "Incididunt ut labore?", "Et dolore magna?" ] %>
+
+<h2 class="cell cell--heading faq__title">FAQ</h2>
+
+<div class="sheet__rows faq__list">
+  <span class="cell cell--table-header faq__question">Question</span>
+  <span class="cell cell--table-header faq__answer">Answer</span>
+
+  <% questions.each do |question| %>
+    <span class="cell cell--label cell--wrap faq__question faq__question--item"><%= question %></span>
+    <span class="cell cell--body faq__answer faq__answer--item"><%= answer %></span>
+  <% end %>
+</div>

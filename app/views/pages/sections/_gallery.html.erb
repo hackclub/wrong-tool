@@ -1,0 +1,13 @@
+<% files = [ "lorem.xlsx", "ipsum.eml", "dolor.pdf", "sit.css", "amet (ssh)", "elit.fig", "sed.glsl", "tempor.xls" ] %>
+
+<h2 class="cell cell--heading gallery__title">Gallery</h2>
+<p class="cell cell--kicker gallery__intro">Sed do eiusmod tempor incididunt ut labore.</p>
+
+<div class="sheet__rows gallery__grid">
+  <% files.each do |file| %>
+    <figure class="gallery__item">
+      <span class="cell cell--image gallery__image" data-formula='=IMAGE("<%= file %>.png")'>screenshot</span>
+      <figcaption class="cell cell--label gallery__caption"><%= file %></figcaption>
+    </figure>
+  <% end %>
+</div>

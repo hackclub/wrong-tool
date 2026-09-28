@@ -1,4 +1,9 @@
-<div class="spreadsheet">
+<div class="spreadsheet"
+     data-controller="sheet-tabs cell-selection snake-game"
+     data-action="popstate@window->sheet-tabs#restore
+                  sheet-tabs:change->cell-selection#reset
+                  sheet-tabs:change->snake-game#pause
+                  snake-game:draw->cell-selection#refresh">
   <%= render "pages/app_bar" %>
   <%= render "pages/toolbar" %>
   <%= render "pages/formula_bar" %>

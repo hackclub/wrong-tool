@@ -1,0 +1,9 @@
+@layer sections {
+  .ideas__title  { grid-column: B / span 8; grid-row: 2 / span 2; }
+  .ideas__intro  { grid-column: B / span 6; grid-row: 4; }
+  .ideas__list   { grid-row: 5; }
+  .ideas__heat   { grid-column: B; }
+  .ideas__tool   { grid-column: C; }
+  .ideas__game   { grid-column: D / span 2; }
+  .ideas__how    { grid-column: F / span 7; }
+}

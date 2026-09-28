@@ -1,0 +1,27 @@
+<% steps = [
+     [ "Lorem ipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit." ],
+     [ "Dolor sit amet", "Sed do eiusmod tempor incididunt ut labore." ],
+     [ "Consectetur", "Lorem ipsum dolor sit amet, consectetur adipiscing elit." ],
+     [ "Adipiscing elit", "Sed do eiusmod tempor incididunt ut labore." ]
+   ] %>
+<% done = [ true, false, false, false ] %>
+<% progress = done.count(true) * 4 %>
+
+<h2 class="cell cell--heading how-it-works__title">How it works</h2>
+
+<div class="sheet__rows how-it-works__steps">
+  <span class="cell cell--table-header how-it-works__done">Done</span>
+  <span class="cell cell--table-header how-it-works__step">Step</span>
+  <span class="cell cell--table-header how-it-works__detail">What you do</span>
+
+  <% steps.each_with_index do |(name, detail), index| %>
+    <%= tag.button done[index] ? "☑" : "☐", type: "button", role: "checkbox",
+          class: "cell cell--check how-it-works__done",
+          aria: { checked: done[index], label: name }, data: { formula: done[index].to_s.upcase } %>
+    <span class="cell cell--label how-it-works__step"><%= index + 1 %>. <%= name %></span>
+    <span class="cell how-it-works__detail"><%= detail %></span>
+  <% end %>
+</div>
+
+<span class="cell cell--label how-it-works__progress-label">Progress</span>
+<span class="cell cell--bar how-it-works__progress" data-formula="=SPARKLINE(COUNTIF(B6:B9,TRUE)/4)"><%= "█" * progress %><%= "░" * (16 - progress) %>  <%= progress * 100 / 16 %>%</span>

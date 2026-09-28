@@ -1,0 +1,207 @@
+/* Content typed into the grid. Cells stop 1px short on the right and bottom so
+   the gridlines behind them stay visible. Modifiers are the reusable cell styles. */
+@layer sheet {
+  .cell {
+    min-inline-size: 0;
+    display: flex;
+    align-items: center;
+    margin: 0 1px 1px 0;
+    padding-inline: 6px;
+    overflow: hidden;
+    background: var(--surface-grid);
+    font-size: 14px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: cell;
+
+    &:is(a, button) {
+      cursor: pointer;
+    }
+  }
+
+  /* Text */
+
+  .cell--title {
+    font-size: 60px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -1.5px;
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .cell--heading {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .cell--subtitle {
+    font-size: 20px;
+  }
+
+  .cell--kicker {
+    font-size: 13px;
+    color: var(--text-kicker);
+  }
+
+  .cell--label {
+    font-weight: 700;
+  }
+
+  .cell--wrap {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .cell--body {
+    white-space: normal;
+    line-height: 1.35;
+    font-size: 13.5px;
+  }
+
+  .cell--table-header {
+    background: var(--green-header);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Values */
+
+  .cell--number {
+    justify-content: flex-end;
+    font: 15px var(--font-mono);
+  }
+
+  .cell--formula {
+    font: 12.5px var(--font-mono);
+    color: var(--text-formula);
+  }
+
+  .cell--error {
+    font-family: var(--font-mono);
+    color: var(--red-700);
+  }
+
+  .cell--true,
+  .cell--false {
+    justify-content: center;
+    font: 700 13px var(--font-mono);
+  }
+
+  .cell--true {
+    background: var(--green-50);
+    color: var(--green);
+  }
+
+  .cell--false {
+    background: var(--red-50);
+    color: var(--red-700);
+  }
+
+  .cell--check {
+    justify-content: center;
+    font-size: 19px;
+    color: var(--green);
+  }
+
+  .cell--bar {
+    font: 14px var(--font-mono);
+    color: var(--green);
+    white-space: pre;
+  }
+
+  .cell--input {
+    padding: 0;
+    background: var(--yellow-input);
+
+    input {
+      inline-size: 100%;
+      block-size: 100%;
+      padding-inline: 8px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      font: 15px var(--font-mono);
+      text-align: end;
+
+      &::-webkit-inner-spin-button {
+        opacity: 1;
+      }
+    }
+  }
+
+  /* Idea heat, from harmless to reckless */
+
+  .cell--heat-mild,
+  .cell--heat-spicy,
+  .cell--heat-unhinged {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .cell--heat-mild {
+    background: var(--green-50);
+    color: var(--green);
+  }
+
+  .cell--heat-spicy {
+    background: var(--amber-50);
+    color: var(--amber-800);
+  }
+
+  .cell--heat-unhinged {
+    background: var(--red-50);
+    color: var(--red-700);
+  }
+
+  /* Calls to action */
+
+  .cell--cta {
+    background: var(--green-tint);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+
+    &,
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  .cell--play {
+    background: var(--green);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .cell--ship {
+    background: var(--pink-ship);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* Placeholders and asides */
+
+  .cell--image {
+    justify-content: center;
+    border: 1px solid var(--placeholder-border);
+    background: repeating-linear-gradient(135deg, var(--placeholder-stripe) 0 8px, var(--placeholder-stripe-alt) 8px 16px);
+    font: 12px var(--font-mono);
+    color: var(--placeholder-text);
+  }
+
+  /* A yellow note pinned next to a cell (shown while that cell is selected). */
+  .cell--note {
+    z-index: 3;
+    align-items: flex-start;
+    padding: 7px 10px;
+    border: 1px solid var(--yellow-note-border);
+    background: var(--yellow-note);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 15%);
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: normal;
+  }
+}

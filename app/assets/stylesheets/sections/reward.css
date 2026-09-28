@@ -1,0 +1,16 @@
+@layer sections {
+  .reward__title          { grid-column: B / span 6; grid-row: 2 / span 2; }
+  .reward__blurb          { grid-column: B / span 6; grid-row: 4; }
+  .reward__hours-heading  { grid-column: B / span 2; grid-row: 6; }
+  .reward__count-heading  { grid-column: D / span 2; grid-row: 6; }
+  .reward__next-heading   { grid-column: F / span 2; grid-row: 6; }
+  .reward__hours          { grid-column: B / span 2; grid-row: 7; }
+  .reward__count          { grid-column: D / span 2; grid-row: 7; }
+  .reward__next           { grid-column: F / span 2; grid-row: 7; }
+  .reward__hours-hint     { grid-column: B / span 2; grid-row: 8; }
+  .reward__count-hint     { grid-column: D / span 2; grid-row: 8; }
+  .reward__next-hint      { grid-column: F / span 2; grid-row: 8; }
+  .reward__label          { grid-column: B / span 2; grid-row: 10; }
+  .reward__total          { grid-column: D / span 4; grid-row: 10; }
+  .reward__image          { grid-column: I / span 4; grid-row: 2 / span 10; }
+}

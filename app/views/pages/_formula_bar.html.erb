@@ -1,6 +1,9 @@
 <div class="formula-bar">
-  <span class="formula-bar__name-box">A1<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
+  <span class="formula-bar__name-box">
+    <span data-cell-selection-target="nameBox">A1</span>
+    <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+  </span>
   <span class="formula-bar__divider"></span>
   <span class="formula-bar__fx">fx</span>
-  <output class="formula-bar__content"></output>
+  <output class="formula-bar__content" data-cell-selection-target="formula"></output>
 </div>
