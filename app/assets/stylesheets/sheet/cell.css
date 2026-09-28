@@ -186,10 +186,22 @@
 
   .cell--image {
     justify-content: center;
+    text-align: center;
+    white-space: normal;
     border: 1px solid var(--placeholder-border);
     background: repeating-linear-gradient(135deg, var(--placeholder-stripe) 0 8px, var(--placeholder-stripe-alt) 8px 16px);
     font: 12px var(--font-mono);
+    line-height: 1.35;
     color: var(--placeholder-text);
+  }
+
+  /* An <img> cell. Replaced elements only stretch to their grid area when asked to. */
+  .cell--photo {
+    align-self: stretch;
+    justify-self: stretch;
+    min-block-size: 0;
+    padding: 0;
+    object-fit: contain;
   }
 
   /* A yellow note pinned next to a cell (shown while that cell is selected). */

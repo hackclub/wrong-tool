@@ -14,9 +14,10 @@ class EndlessRowsTest < ApplicationSystemTestCase
 
   test "the selection can move past the rows the page started with" do
     visit root_path
-    find(".sheet__cells").send_keys(*[ :down ] * 60)
+    # Column A is always empty, so merged cells can't change the count.
+    find(".sheet__cells").send_keys(:left, *[ :down ] * 60)
 
-    assert_selector "[data-cell-selection-target=nameBox]", exact_text: "B71"
+    assert_selector "[data-cell-selection-target=nameBox]", exact_text: "A71"
   end
 
   private

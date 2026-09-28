@@ -12,5 +12,17 @@
   .reward__next-hint      { grid-column: F / span 2; grid-row: 8; }
   .reward__label          { grid-column: B / span 2; grid-row: 10; }
   .reward__total          { grid-column: D / span 4; grid-row: 10; }
-  .reward__image          { grid-column: I / span 4; grid-row: 2 / span 10; }
+  .reward__handheld--rg35xx { grid-column: I / span 2; }
+  .reward__handheld--miyoo  { grid-column: K / span 2; }
+
+  /* 7 rows of photo (about square), then a caption row. */
+  .reward__handheld {
+    grid-row: 2 / span 8;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+
+  .reward__photo    { grid-column: 1 / -1; grid-row: span 7; }
+  .reward__caption  { grid-column: 1 / -1; }
 }

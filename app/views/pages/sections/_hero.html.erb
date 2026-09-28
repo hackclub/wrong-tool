@@ -7,11 +7,15 @@
 <span class="cell cell--error hero__cancel" data-formula="=CANCEL()" aria-describedby="cancel-note">#N/A</span>
 <p class="cell cell--note hero__cancel-note" id="cancel-note" hidden>Note on D11: "Cancel" is not a valid function in this sheet.</p>
 
-<span class="cell cell--table-header hero__hours-heading">Hours</span>
-<span class="cell cell--table-header hero__reward-heading">Reward</span>
-<span class="cell cell--number hero__hours"><%= hours_per_reward %></span>
-<span class="cell hero__reward" data-formula="=SHIP(handheld)">1 × <%= reward_name %></span>
-<span class="cell cell--formula hero__reward-formula">=SHIP(handheld) every <%= hours_per_reward %> hrs</span>
+<span class="cell cell--table-header hero__pick-heading"
+      data-formula='=CHOOSE(handheld, "RG35XX Pro", "Miyoo Mini Plus")'>Every <%= hours_per_reward %> hrs, pick one</span>
+<%= image_tag "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal",
+      class: "cell cell--photo hero__photo hero__handheld--rg35xx", data: { formula: %(=IMAGE("rg35xx-pro.webp")) } %>
+<%= image_tag "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back",
+      class: "cell cell--photo hero__photo hero__handheld--miyoo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
+<span class="cell cell--label hero__handheld--rg35xx hero__caption" data-formula='=SHIP(handheld, "RG35XX Pro")'>ANBERNIC RG35XX Pro</span>
+<span class="cell cell--label hero__handheld--miyoo hero__caption" data-formula='=SHIP(handheld, "Miyoo Mini Plus")'>Miyoo Mini Plus</span>
+
 <span class="cell cell--formula hero__hint">Click a cell · arrow keys move · tabs below are the nav</span>
 
 <button type="button" class="cell cell--play hero__play" data-formula="=PLAY(snake)"

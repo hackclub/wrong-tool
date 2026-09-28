@@ -21,4 +21,14 @@
 <span class="cell cell--label reward__label">Reward</span>
 <span class="cell cell--ship reward__total" data-formula="=SHIP(handheld)"><%= rewards.positive? ? "#{reward_name} × #{rewards}" : "#NOT_YET (keep building)" %></span>
 
-<span class="cell cell--image reward__image" data-formula='=IMAGE("handheld.png")'>product shot: <%= reward_name %></span>
+<figure class="reward__handheld reward__handheld--rg35xx">
+  <%= image_tag "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal",
+        class: "cell cell--photo reward__photo", data: { formula: %(=IMAGE("rg35xx-pro.webp")) } %>
+  <figcaption class="cell cell--label reward__caption">ANBERNIC RG35XX Pro</figcaption>
+</figure>
+
+<figure class="reward__handheld reward__handheld--miyoo">
+  <%= image_tag "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back",
+        class: "cell cell--photo reward__photo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
+  <figcaption class="cell cell--label reward__caption">Miyoo Mini Plus</figcaption>
+</figure>

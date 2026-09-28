@@ -1,19 +1,19 @@
 @layer sections {
-  .hero__kicker          { grid-column: B / span 4;  grid-row: 2; }
-  .hero__title           { grid-column: B / span 10; grid-row: 3 / span 5; }
-  .hero__subtitle        { grid-column: B / span 6;  grid-row: 9; }
-  .hero__cta             { grid-column: B / span 2;  grid-row: 11; }
-  .hero__cancel          { grid-column: D;           grid-row: 11; }
-  .hero__cancel-note     { grid-column: E / span 3;  grid-row: 11 / span 2; }
-  .hero__hours-heading   { grid-column: B;           grid-row: 14; }
-  .hero__reward-heading  { grid-column: C / span 2;  grid-row: 14; }
-  .hero__hours           { grid-column: B;           grid-row: 15; }
-  .hero__reward          { grid-column: C / span 2;  grid-row: 15; }
-  .hero__reward-formula  { grid-column: B / span 3;  grid-row: 16; }
-  .hero__hint            { grid-column: B / span 5;  grid-row: 18; }
-  .hero__play            { grid-column: H / span 3;  grid-row: 10; }
-  .hero__score           { grid-column: K / span 2;  grid-row: 10; }
-  .hero__board           { grid-column: H / span 5;  grid-row: 11 / span 8; }
+  .hero__kicker           { grid-column: B / span 4;  grid-row: 2; }
+  .hero__title            { grid-column: B / span 10; grid-row: 3 / span 5; }
+  .hero__subtitle         { grid-column: B / span 6;  grid-row: 9; }
+  .hero__cta              { grid-column: B / span 2;  grid-row: 11; }
+  .hero__cancel           { grid-column: D;           grid-row: 11; }
+  .hero__cancel-note      { grid-column: E / span 3;  grid-row: 11 / span 2; }
+  .hero__pick-heading     { grid-column: B / span 4;  grid-row: 13; }
+  .hero__handheld--rg35xx { grid-column: B / span 2; }
+  .hero__handheld--miyoo  { grid-column: D / span 2; }
+  .hero__photo            { grid-row: 14 / span 3; }
+  .hero__caption          { grid-row: 17; }
+  .hero__hint             { grid-column: B / span 5;  grid-row: 18; }
+  .hero__play             { grid-column: H / span 3;  grid-row: 10; }
+  .hero__score            { grid-column: K / span 2;  grid-row: 10; }
+  .hero__board            { grid-column: H / span 5;  grid-row: 11 / span 8; }
 
   /* The board's inset outline is painted under its cells, like the frame in the design. */
   .snake-board {
