@@ -1,0 +1,41 @@
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    block-size: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--font-cell);
+    color: var(--text-primary);
+    background: var(--surface-grid);
+  }
+
+  a {
+    color: var(--green);
+
+    &:hover {
+      color: var(--red);
+    }
+  }
+}

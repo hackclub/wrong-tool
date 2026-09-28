@@ -1,0 +1,79 @@
+/* Sticky column/row headers around a fixed 26 × 40 grid of 100 × 30 cells. */
+@layer sheet {
+  .sheet-viewport {
+    flex: 1;
+    min-block-size: 0;
+    overflow: auto;
+  }
+
+  .sheet {
+    inline-size: calc(var(--row-header-width) + var(--column-count) * var(--cell-width));
+  }
+
+  .sheet__column-headers {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 6;
+    display: grid;
+    grid-template-columns: var(--row-header-width) repeat(var(--column-count), var(--cell-width));
+    block-size: var(--column-header-height);
+    background: var(--surface-header);
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+
+  /* The frozen corner gets the thick "freeze pane" borders. */
+  .sheet__corner {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 7;
+    background: var(--surface-header);
+    border-inline-end: 4px solid var(--border-header);
+    border-block-end: 4px solid var(--border-header);
+  }
+
+  .sheet__column-header {
+    display: grid;
+    place-items: center;
+    border-inline-end: 1px solid var(--border-header);
+    border-block-end: 1px solid var(--border-header);
+  }
+
+  .sheet__body {
+    display: flex;
+  }
+
+  .sheet__row-headers {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 5;
+    flex: none;
+    inline-size: var(--row-header-width);
+    display: grid;
+    grid-template-rows: repeat(var(--row-count), var(--cell-height));
+    border-inline-end: 1px solid var(--border-header);
+    background: var(--surface-header);
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .sheet__row-header {
+    line-height: var(--cell-height);
+    border-block-end: 1px solid var(--border-header);
+  }
+
+  .sheet__cells {
+    position: relative;
+    flex: none;
+    inline-size: calc(var(--column-count) * var(--cell-width));
+    block-size: calc(var(--row-count) * var(--cell-height));
+    outline: none;
+    user-select: none;
+    background-image:
+      linear-gradient(var(--border-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-grid) 1px, transparent 1px);
+    background-size: var(--cell-width) var(--cell-height);
+    background-position: 0 -1px, -1px 0;
+  }
+}

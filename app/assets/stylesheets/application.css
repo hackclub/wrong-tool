@@ -1,10 +1,10 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
+ * Every stylesheet in app/assets is linked individually (stylesheet_link_tag :app),
+ * sorted by path. This file sorts first, so it fixes the cascade order up front and
+ * each file wraps itself in one of these layers. Load order then never matters.
  *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
+ *   foundation/  fonts, design tokens, element defaults
+ *   components/  small reusable pieces (icon, ...)
+ *   sheet/       the spreadsheet chrome: app bar, toolbar, formula bar, grid, tabs
  */
+@layer reset, tokens, base, components, sheet;

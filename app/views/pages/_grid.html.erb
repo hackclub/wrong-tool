@@ -1,0 +1,20 @@
+<div class="sheet-viewport">
+  <div class="sheet">
+    <div class="sheet__column-headers">
+      <span class="sheet__corner"></span>
+      <% ("A".."Z").each do |letter| %>
+        <span class="sheet__column-header"><%= letter %></span>
+      <% end %>
+    </div>
+
+    <div class="sheet__body">
+      <div class="sheet__row-headers">
+        <% 1.upto(40) do |number| %>
+          <span class="sheet__row-header"><%= number %></span>
+        <% end %>
+      </div>
+
+      <div class="sheet__cells" tabindex="0"></div>
+    </div>
+  </div>
+</div>

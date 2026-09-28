@@ -1,0 +1,76 @@
+@layer sheet {
+  .sheet-tabs {
+    block-size: 40px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 12px 0 60px;
+    border-block-start: 1px solid var(--border-header);
+    background: var(--surface-chrome);
+    font-family: var(--font-chrome);
+    overflow-x: auto;
+  }
+
+  .sheet-tabs__round-button {
+    --icon-size: 22px;
+
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 50%;
+    color: var(--icon-color);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .sheet-tabs__round-button--menu {
+    margin-inline-end: 12px;
+  }
+
+  .sheet-tab {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    block-size: 100%;
+    padding: 0 8px 0 16px;
+    font: 500 14px var(--font-chrome);
+    text-decoration: none;
+
+    &,
+    &:hover {
+      color: var(--text-secondary);
+    }
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+
+    &[aria-current="page"] {
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+  }
+
+  .sheet-tabs__status {
+    --icon-size: 18px;
+
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    block-size: 28px;
+    margin-inline-start: auto;
+    padding: 0 4px 0 10px;
+    border: 1px solid var(--border-header);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}

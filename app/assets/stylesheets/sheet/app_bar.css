@@ -1,0 +1,162 @@
+@layer sheet {
+  .app-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px 2px;
+    background: var(--surface-chrome);
+    font-family: var(--font-chrome);
+    white-space: nowrap;
+  }
+
+  .app-bar__logo {
+    flex: none;
+    inline-size: 30px;
+    block-size: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    background: var(--red);
+    color: var(--white);
+    font: 700 12px/1 var(--font-mono);
+  }
+
+  .app-bar__document {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .app-bar__title-row {
+    --icon-size: 18px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--icon-color);
+  }
+
+  .app-bar__title {
+    padding-inline: 6px;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  .app-bar__status-icon + .app-bar__status-icon {
+    margin-inline-start: 8px;
+  }
+
+  .menu-bar {
+    display: flex;
+    font-size: 14px;
+  }
+
+  .menu-bar__item {
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: default;
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .app-bar__actions {
+    margin-inline-start: auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .app-bar__round-button,
+  .app-bar__meet-button {
+    --icon-size: 24px;
+
+    block-size: 40px;
+    color: var(--icon-color);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .app-bar__round-button {
+    inline-size: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+  }
+
+  .app-bar__meet-button {
+    display: flex;
+    align-items: center;
+    padding: 0 4px 0 8px;
+    border-radius: 20px;
+
+    .icon:last-child {
+      --icon-size: 20px;
+    }
+  }
+
+  /* Pill buttons on the right: the split "Build anyway" CTA and the tonal link. */
+  .app-bar__build-button,
+  .app-bar__real-sheet-button {
+    flex: none;
+    display: flex;
+    align-items: center;
+    block-size: 40px;
+    margin-inline-start: 8px;
+    border-radius: 20px;
+    font: 500 14px var(--font-chrome);
+    text-decoration: none;
+  }
+
+  .app-bar__build-button {
+    overflow: hidden;
+    background: var(--sky-200);
+
+    &,
+    &:hover {
+      color: var(--navy-900);
+    }
+
+    &:hover {
+      background: var(--sky-250);
+    }
+  }
+
+  .app-bar__build-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    block-size: 100%;
+    padding: 0 14px 0 12px;
+  }
+
+  .app-bar__build-caret {
+    display: flex;
+    align-items: center;
+    block-size: 100%;
+    padding: 0 8px 0 6px;
+    border-inline-start: 1px solid var(--surface-chrome);
+  }
+
+  .app-bar__real-sheet-button {
+    padding-inline: 20px;
+    background: var(--blue-100);
+
+    &,
+    &:hover {
+      color: var(--blue-700);
+    }
+
+    &:hover {
+      background: var(--blue-150);
+    }
+  }
+}

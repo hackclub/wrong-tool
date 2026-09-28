@@ -1,0 +1,6 @@
+<%# locals: (name:, dropdown: false, class: nil) %>
+<%= tag.button type: "button", aria: { label: name.humanize },
+      class: [ "toolbar__button", { "toolbar__button--dropdown": dropdown }, local_assigns[:class] ] do %>
+  <%= inline_svg_tag "icons/toolbar/#{name}.svg", class: "icon", aria_hidden: true %>
+  <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true if dropdown %>
+<% end %>

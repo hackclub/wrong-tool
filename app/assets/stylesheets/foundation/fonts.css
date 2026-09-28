@@ -1,0 +1,28 @@
+/* Latin subsets, self-hosted. Arial (cell text) comes from the system. */
+@font-face {
+  font-family: "Roboto";
+  font-weight: 400;
+  font-display: swap;
+  src: url("/roboto-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Roboto";
+  font-weight: 500;
+  font-display: swap;
+  src: url("/roboto-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 400;
+  font-display: swap;
+  src: url("/plex-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 700;
+  font-display: swap;
+  src: url("/plex-mono-700.woff2") format("woff2");
+}

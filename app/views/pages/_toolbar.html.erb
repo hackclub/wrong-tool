@@ -1,0 +1,56 @@
+<div class="toolbar-shelf">
+  <div class="toolbar" role="toolbar" aria-label="Formatting">
+    <div class="toolbar__tools">
+      <span class="toolbar__search"><%= inline_svg_tag "icons/toolbar/search.svg", class: "icon", aria_hidden: true %>Menus</span>
+
+      <% %w[undo redo print format-paint].each do |name| %>
+        <%= render "pages/toolbar_button", name: name %>
+      <% end %>
+      <button type="button" class="toolbar__button toolbar__button--text">100%<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></button>
+
+      <span class="toolbar__divider"></span>
+
+      <% %w[attach-money percent decimal-decrease decimal-increase].each do |name| %>
+        <%= render "pages/toolbar_button", name: name %>
+      <% end %>
+      <button type="button" class="toolbar__button toolbar__button--number">123</button>
+
+      <span class="toolbar__divider"></span>
+
+      <button type="button" class="toolbar__button toolbar__button--font">Arial<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></button>
+
+      <span class="toolbar__divider"></span>
+
+      <%= render "pages/toolbar_button", name: "remove" %>
+      <span class="toolbar__font-size">10</span>
+      <button type="button" class="toolbar__button" aria-label="Add"><%= inline_svg_tag "icons/add.svg", class: "icon", aria_hidden: true %></button>
+
+      <span class="toolbar__divider"></span>
+
+      <% %w[format-bold format-italic strikethrough-s format-color-text].each do |name| %>
+        <%= render "pages/toolbar_button", name: name %>
+      <% end %>
+
+      <span class="toolbar__divider"></span>
+
+      <% %w[format-color-fill border-all].each do |name| %>
+        <%= render "pages/toolbar_button", name: name %>
+      <% end %>
+      <%= render "pages/toolbar_button", name: "cell-merge", dropdown: true %>
+
+      <span class="toolbar__divider"></span>
+
+      <% %w[format-align-left vertical-align-bottom wrap-text text-rotation-none].each do |name| %>
+        <%= render "pages/toolbar_button", name: name, dropdown: true %>
+      <% end %>
+
+      <span class="toolbar__divider"></span>
+
+      <% %w[link add-comment insert-chart filter-alt functions].each do |name| %>
+        <%= render "pages/toolbar_button", name: name %>
+      <% end %>
+    </div>
+
+    <%= render "pages/toolbar_button", name: "keyboard-arrow-up", class: "toolbar__collapse" %>
+  </div>
+</div>

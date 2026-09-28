@@ -1,0 +1,45 @@
+@layer sheet {
+  .formula-bar {
+    block-size: 26px;
+    display: flex;
+    align-items: center;
+    border-block-end: 1px solid var(--border-header);
+    background: var(--surface-grid);
+    font-size: 13px;
+  }
+
+  .formula-bar__name-box {
+    --icon-size: 18px;
+
+    flex: none;
+    inline-size: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px 0 14px;
+
+    .icon {
+      color: var(--icon-color);
+    }
+  }
+
+  .formula-bar__divider {
+    flex: none;
+    inline-size: 1px;
+    block-size: 16px;
+    background: var(--border-header);
+  }
+
+  .formula-bar__fx {
+    flex: none;
+    padding: 0 12px 0 16px;
+    font: italic 15px Georgia, serif;
+    color: var(--text-placeholder);
+  }
+
+  .formula-bar__content {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

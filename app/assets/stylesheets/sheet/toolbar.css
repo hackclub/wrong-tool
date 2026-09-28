@@ -1,0 +1,107 @@
+@layer sheet {
+  .toolbar-shelf {
+    padding: 6px 16px 8px;
+    background: var(--surface-chrome);
+  }
+
+  .toolbar {
+    block-size: 40px;
+    display: flex;
+    align-items: center;
+    padding-inline: 6px;
+    border-radius: 24px;
+    background: var(--surface-toolbar);
+    color: var(--text-secondary);
+    font: 14px var(--font-chrome);
+    white-space: nowrap;
+  }
+
+  .toolbar__tools {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .toolbar__search {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    inline-size: 118px;
+    block-size: 30px;
+    padding-inline: 10px;
+    margin-inline-end: 6px;
+    border-radius: 15px;
+    background: var(--surface-chrome);
+  }
+
+  .toolbar__button {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--hover-toolbar);
+    }
+  }
+
+  /* Label followed by a caret: zoom level and font family. */
+  .toolbar__button--text,
+  .toolbar__button--font {
+    display: flex;
+    align-items: center;
+    inline-size: auto;
+    padding-inline-start: 6px;
+  }
+
+  .toolbar__button--font {
+    inline-size: 96px;
+    justify-content: space-between;
+  }
+
+  .toolbar__button--number {
+    inline-size: 34px;
+    font-size: 13px;
+  }
+
+  /* Icon followed by a smaller caret. */
+  .toolbar__button--dropdown {
+    display: flex;
+    align-items: center;
+    inline-size: auto;
+    padding-inline-start: 4px;
+
+    .icon + .icon {
+      --icon-size: 18px;
+    }
+  }
+
+  .toolbar__divider {
+    flex: none;
+    inline-size: 1px;
+    block-size: 20px;
+    margin-inline: 6px;
+    background: var(--border-header);
+  }
+
+  .toolbar__font-size {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 24px;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    color: var(--text-primary);
+  }
+
+  .toolbar__collapse {
+    margin-inline-start: 6px;
+  }
+}
