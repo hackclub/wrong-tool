@@ -116,6 +116,12 @@
     display: grid;
     grid-template-columns: subgrid;
     grid-auto-rows: var(--cell-height);
+    /* It spans the full width, so let clicks through to whatever sits beside it. */
+    pointer-events: none;
+
+    > * {
+      pointer-events: auto;
+    }
   }
 
   /* Placed by the cell-selection controller through --column, --row, --width and

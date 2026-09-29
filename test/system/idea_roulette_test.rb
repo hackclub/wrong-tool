@@ -9,10 +9,10 @@ class IdeaRouletteTest < ApplicationSystemTestCase
   end
 
   test "a spin settles both reels, then logs the idea" do
-    click_on "Spin ↻"
+    click_on "Spin", exact: true
     assert_button "spinning…"
 
-    assert_button "Spin ↻", wait: 3
+    assert_button "Spin", exact: true, wait: 3
     genre = find(".ideas__reel--genre").text
     platform = find(".ideas__reel--platform").text
     assert_selector ".ideas__result", exact_text: "make a #{genre} in #{platform}."
@@ -22,8 +22,8 @@ class IdeaRouletteTest < ApplicationSystemTestCase
 
   test "keeps the last six spins, newest numbered highest" do
     7.times do
-      click_on "Spin ↻"
-      assert_button "Spin ↻", wait: 3
+      click_on "Spin", exact: true
+      assert_button "Spin", exact: true, wait: 3
     end
 
     assert_selector ".ideas__log-entry", count: 6

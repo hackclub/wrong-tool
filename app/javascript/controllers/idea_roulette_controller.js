@@ -46,7 +46,7 @@ export default class extends Controller {
     this.#show(this.platformTarget, platform, false)
 
     const idea = `make a ${genre} in ${platform}`
-    this.buttonTarget.textContent = "Spin ↻"
+    this.buttonTarget.textContent = "Spin"
     this.resultTarget.textContent = `${idea}.`
     this.log = [ idea, ...this.log ].slice(0, this.logEntryTargets.length)
     this.#drawLog()

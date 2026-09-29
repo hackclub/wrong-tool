@@ -35,7 +35,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   test "sheets re-lay their tables into columns A to D" do
     click_on "How it works"
     all(".how-it-works__detail--item").first.click
-    assert_selection "B6", formula: "Pick one tool that isn't a game engine: google sheets, figma, slides, forms, css, your inbox. The whole game gets built inside it."
+    assert_selection "B6", formula: "Choose something that isn't a game engine, like google sheets, figma or email."
 
     click_on "Ideas"
     find(".ideas__reel--platform").click
