@@ -24,9 +24,6 @@ class PhoneLayoutTest < ApplicationSystemTestCase
 
     find(".hero__name").click
     assert_selection "A2", formula: '=YSWS("wrong tool")'
-
-    find(".hero__pick-one").click
-    assert_selection "A19", formula: "=CHOOSE(1, 2)"
   end
 
   test "every other sheet starts on A1 and sits in columns A to D" do
@@ -60,7 +57,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "the footer follows each sheet's content" do
-    { "Hero" => "A24", "Ideas" => "A19", "Reward" => "A19", "FAQ" => "A41" }.each do |name, address|
+    { "Hero" => "A22", "Ideas" => "A19", "Reward" => "A19", "FAQ" => "A41" }.each do |name, address|
       click_on name
       find(".sheet__section:not([hidden]) .sheet-footer__text").click
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: address

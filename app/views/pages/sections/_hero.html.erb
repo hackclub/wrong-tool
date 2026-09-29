@@ -36,7 +36,7 @@
         <span class="hero__marquee-run">
           <% ticker.each do |item| %>
             <span class="hero__marquee-item"><%= item %></span>
-            <%= inline_svg_tag "icons/sports-esports.svg", class: "icon", aria_hidden: true %>
+            <span class="hero__marquee-separator">·</span>
           <% end %>
         </span>
       <% end %>
@@ -45,14 +45,10 @@
 
   <%= image_tag "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal",
         class: "cell cell--photo hero__photo hero__handheld--rg35xx", data: { formula: %(=IMAGE("rg35xx-pro.webp")) } %>
-  <span class="cell hero__or" data-formula='=OR("RG35XX Pro", "Miyoo Mini Plus")'></span>
+  <span class="cell cell--formula hero__or" data-formula='=OR("RG35XX Pro", "Miyoo Mini Plus")'>or</span>
   <%= image_tag "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back",
         class: "cell cell--photo hero__photo hero__handheld--miyoo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
 
   <span class="cell cell--label hero__caption hero__handheld--rg35xx" data-formula='=SHIP(handheld, "RG35XX Pro")'>ANBERNIC RG35XX Pro</span>
-  <span class="cell cell--formula hero__pick-one" data-formula="=CHOOSE(1, 2)"><span><span class="hero__pick-one-formula">=CHOOSE(1, 2) · </span>pick one</span></span>
   <span class="cell cell--label hero__caption hero__handheld--miyoo" data-formula='=SHIP(handheld, "Miyoo Mini Plus")'>Miyoo Mini Plus</span>
 </div>
-
-<%# Phones only: the desktop hint is gone, but touch needs explaining. %>
-<span class="cell cell--formula hero__hint">tap a cell · swipe to pan · tabs are the nav</span>

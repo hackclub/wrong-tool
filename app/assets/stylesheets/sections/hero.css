@@ -14,7 +14,6 @@
   .hero__handheld--miyoo  { grid-column: E / span 2; }
   .hero__photo            { grid-row: 14 / span 4; }
   .hero__caption          { grid-row: 18; }
-  .hero__pick-one         { grid-column: D;           grid-row: 18; }
 
   .hero__kicker {
     font-size: 12px;
@@ -175,17 +174,14 @@
         }
       }
     }
-
-    &[data-prize-picker-pick-value="miyoo"] .hero__or::before {
-      content: "→";
-    }
   }
 
   /* Two identical runs side by side; sliding one run's width loops seamlessly. */
   .hero__marquee {
     padding: 0;
-    background: var(--red);
-    color: var(--white);
+    background: var(--surface-header);
+    box-shadow: inset 0 0 0 1px var(--border-grid);
+    color: var(--text-secondary);
   }
 
   .hero__marquee-track {
@@ -201,33 +197,22 @@
   }
 
   .hero__marquee-run {
-    --icon-size: 18px;
-
     flex: none;
     display: flex;
     align-items: center;
-
-    .icon {
-      opacity: 0.85;
-    }
   }
 
   .hero__marquee-item {
     padding-inline: 16px;
   }
 
-  .hero__or {
-    justify-content: center;
-    font: 600 28px var(--font-mono);
-    color: var(--red);
-
-    &::before {
-      content: "←";
-    }
+  .hero__marquee-separator {
+    color: var(--text-placeholder);
   }
 
-  .hero__pick-one {
+  .hero__or {
     justify-content: center;
+    font-size: 13px;
   }
 
   @keyframes hero-bob {
@@ -241,16 +226,10 @@
 }
 
 /* Phones: the hero re-laid into columns A–D. The screwdriver art and the "or"
-   arrow need more columns than a phone has, so they drop out; a touch hint and a
-   formula prefix on "pick one" come in instead. */
+   need more columns than a phone has, so they drop out. */
 @layer sections {
-  .hero__hint,
-  .hero__pick-one-formula {
-    display: none;
-  }
-
   @media (width <= 600px) {
-    .sheet__section--hero { --footer-row: 24; }
+    .sheet__section--hero { --footer-row: 22; }
 
     .hero__kicker           { grid-column: A / span 3;  grid-row: 1; }
     .hero__name             { grid-column: A / span 4;  grid-row: 2 / span 2; }
@@ -258,22 +237,18 @@
     .hero__subtitle         { grid-column: A / span 4;  grid-row: 6 / span 3; }
     .hero__cta              { grid-column: A / span 4;  grid-row: 9 / span 2; }
     .hero__dates            { grid-column: A / span 4;  grid-row: 11; }
-    .hero__marquee          { grid-column: A / span 5;  grid-row: 12; }
+    .hero__marquee          { grid-column: A / span 5;  grid-row: 13; }
     .hero__handheld--rg35xx { grid-column: A / span 2; }
     .hero__handheld--miyoo  { grid-column: C / span 2; }
-    .hero__photo            { grid-row: 13 / span 5; }
-    .hero__caption          { grid-row: 18; }
-    .hero__pick-one         { grid-column: A / span 4;  grid-row: 19; }
-    .hero__hint             { grid-column: A / span 4;  grid-row: 21; }
+    .hero__photo            { grid-row: 14 / span 5; }
+    .hero__caption          { grid-row: 19; }
 
     .hero__art,
     .hero__or {
       display: none;
     }
 
-    .hero__kicker,
-    .hero__pick-one,
-    .hero__hint {
+    .hero__kicker {
       font-size: 11px;
     }
 
@@ -301,18 +276,6 @@
     .hero__marquee-track,
     .hero__caption {
       font-size: 12.5px;
-    }
-
-    .hero__pick-one {
-      justify-content: flex-start;
-    }
-
-    .hero__pick-one-formula {
-      display: inline;
-    }
-
-    .hero__hint {
-      display: flex;
     }
   }
 }
