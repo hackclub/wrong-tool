@@ -1,4 +1,6 @@
 @layer sections {
+  .sheet__section--gallery { --footer-row: 18; }
+
   .gallery__title  { grid-column: B / span 6; grid-row: 2 / span 2; }
   .gallery__intro  { grid-column: B / span 6; grid-row: 4; }
   .gallery__grid   { grid-row: 5; }

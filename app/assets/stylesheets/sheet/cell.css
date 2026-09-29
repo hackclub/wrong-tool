@@ -78,11 +78,6 @@
     color: var(--text-formula);
   }
 
-  .cell--error {
-    font-family: var(--font-mono);
-    color: var(--red-700);
-  }
-
   .cell--true,
   .cell--false {
     justify-content: center;
@@ -155,25 +150,31 @@
     color: var(--red-700);
   }
 
+  .cell--link {
+    color: var(--green);
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--red);
+    }
+  }
+
   /* Calls to action */
 
   .cell--cta {
-    background: var(--green-tint);
+    z-index: 2;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--green);
+    box-shadow: 0 3px 0 var(--green-dark);
     font-size: 15px;
     font-weight: 700;
     text-decoration: none;
 
     &,
     &:hover {
-      color: var(--text-primary);
+      color: var(--white);
     }
-  }
-
-  .cell--play {
-    background: var(--green);
-    color: var(--white);
-    font-size: 13px;
-    font-weight: 700;
   }
 
   .cell--ship {
@@ -182,7 +183,7 @@
     font-weight: 700;
   }
 
-  /* Placeholders and asides */
+  /* Images and placeholders */
 
   .cell--image {
     justify-content: center;
@@ -202,18 +203,5 @@
     min-block-size: 0;
     padding: 0;
     object-fit: contain;
-  }
-
-  /* A yellow note pinned next to a cell (shown while that cell is selected). */
-  .cell--note {
-    z-index: 3;
-    align-items: flex-start;
-    padding: 7px 10px;
-    border: 1px solid var(--yellow-note-border);
-    background: var(--yellow-note);
-    box-shadow: 0 2px 6px rgb(0 0 0 / 15%);
-    font-size: 12px;
-    line-height: 1.45;
-    white-space: normal;
   }
 }

@@ -20,11 +20,6 @@ export default class extends Controller {
     this.#select(initial ? this.#boxOf(initial) : { column: 1, row: 1 })
   }
 
-  // Re-reads the selected cell, for when its contents change underneath the selection.
-  refresh() {
-    if (this.box) this.#select(this.box)
-  }
-
   click(event) {
     const { left, top } = this.gridTarget.getBoundingClientRect()
     const { width, height } = this.#cellSize
@@ -32,9 +27,8 @@ export default class extends Controller {
       column: Math.floor((event.clientX - left) / width),
       row: Math.floor((event.clientY - top) / height)
     }
-    const cell = this.#cellAt(position)
 
-    this.#select(cell ? this.#boxOf(cell) : position)
+    this.#select(position)
     // Let input cells keep focus so they can be typed into.
     if (!event.target.matches("input")) this.gridTarget.focus({ preventScroll: true })
   }
@@ -60,7 +54,6 @@ export default class extends Controller {
     this.box = box
     this.#drawSelection(box)
     this.#highlightHeaders(box)
-    this.#showNote(cell)
     this.nameBoxTarget.textContent = `${COLUMNS[box.column]}${box.row + 1}`
     this.formulaTarget.textContent = cell ? this.#formulaOf(cell) : ""
   }
@@ -86,15 +79,9 @@ export default class extends Controller {
     })
   }
 
-  // A cell can point at a hidden note with aria-describedby; it shows while the cell is selected.
-  #showNote(cell) {
-    const noteId = cell?.getAttribute("aria-describedby")
-    this.#section.querySelectorAll(".cell--note").forEach(note => note.hidden = note.id !== noteId)
-  }
-
-  // The topmost cell covering a position, if any. Anything with a formula counts as a cell.
+  // The topmost cell covering a position, if any.
   #cellAt({ column, row }) {
-    const cells = [ ...this.#section.querySelectorAll(".cell:not(.cell--note), [data-formula]") ]
+    const cells = [ ...this.#section.querySelectorAll(".cell") ]
     return cells.reverse().find(cell => {
       const box = this.#boxOf(cell)
       return column >= box.column && column < box.column + box.width &&

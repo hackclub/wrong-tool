@@ -3,8 +3,7 @@
     /* Brand */
     --red: #ec3750;
     --green: #1e7b45;
-    --green-bright: #3fbf73;
-    --green-tint: #e6f0e9;
+    --green-dark: #145a32;
     --green-header: #f1f5f2;
 
     /* Cell states */
@@ -15,8 +14,6 @@
     --amber-50: #fff1d6;
     --pink-ship: #fff0f2;
     --yellow-input: #fffbe0;
-    --yellow-note: #fff8c4;
-    --yellow-note-border: #d6c75a;
 
     /* Chrome neutrals */
     --grey-900: #1f1f1f;

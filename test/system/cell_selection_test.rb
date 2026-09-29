@@ -4,7 +4,7 @@ class CellSelectionTest < ApplicationSystemTestCase
   setup { visit root_path }
 
   test "starts on the hero's call to action" do
-    assert_selection "B11", formula: "=BUILD(anyway)"
+    assert_selection "B11", formula: "=START(building)"
     assert_selector ".sheet__column-header--selected", count: 2
     assert_selector ".sheet__row-header--selected", count: 1, text: "11"
   end
@@ -12,33 +12,29 @@ class CellSelectionTest < ApplicationSystemTestCase
   test "clicking a merged cell selects all of it" do
     find(".hero__title").click
 
-    assert_selection "B3", formula: '="Lorem ipsum dolor sit amet, consectetur."'
-    assert_selector ".sheet__column-header--selected", count: 10
-    assert_selector ".sheet__row-header--selected", count: 5
+    assert_selection "B6", formula: %(="make a game in something that isn't a game engine.")
+    assert_selector ".sheet__column-header--selected", count: 7
+    assert_selector ".sheet__row-header--selected", count: 2
   end
 
   test "clicking an empty cell selects just that cell" do
-    click_cell column: 5, row: 19 # F20
+    click_cell column: 0, row: 24 # A25; column A is always empty
 
-    assert_selection "F20", formula: ""
+    assert_selection "A25", formula: ""
   end
 
   test "arrow keys step off the edge of merged cells" do
     find(".sheet__cells").send_keys(:right) # from B11, which spans B:C
-    assert_selection "D11", formula: "=CANCEL()"
+    assert_selection "D11", formula: ""
 
-    find(".sheet__cells").send_keys(:up, :up) # D9 is inside the subtitle at B9:G9
-    assert_selection "B9", formula: "Sed do eiusmod tempor incididunt ut labore."
+    find(".sheet__cells").send_keys(:up) # D10 is inside the subtitle at B9:G10
+    assert_selection "B9", formula: "build a game in google sheets, or figma, or your inbox. after 10 hours of that, we'll send you a handheld."
   end
 
-  test "the #N/A cell shows its note only while selected" do
-    assert_no_selector ".hero__cancel-note"
+  test "the art under the program name is a cell of its own" do
+    click_cell column: 6, row: 3 # G4, beside the name
 
-    find(".hero__cancel").click
-    assert_selector ".hero__cancel-note", text: '"Cancel" is not a valid function'
-
-    find(".sheet__cells").send_keys(:down)
-    assert_no_selector ".hero__cancel-note"
+    assert_selection "B2", formula: %(=IMAGE("screwdriver_driving_a_nail.png"))
   end
 
   test "switching tabs resets the selection" do

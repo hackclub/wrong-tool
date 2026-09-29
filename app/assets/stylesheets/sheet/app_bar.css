@@ -11,14 +11,8 @@
 
   .app-bar__logo {
     flex: none;
-    inline-size: 30px;
-    block-size: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 4px;
-    background: var(--red);
-    color: var(--white);
-    font: 700 12px/1 var(--font-mono);
+    inline-size: 36px;
+    block-size: 36px;
   }
 
   .app-bar__document {
@@ -40,7 +34,6 @@
   .app-bar__title {
     padding-inline: 6px;
     font-size: 18px;
-    font-weight: 400;
     color: var(--text-primary);
   }
 

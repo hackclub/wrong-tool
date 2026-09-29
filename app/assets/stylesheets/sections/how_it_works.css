@@ -1,4 +1,6 @@
 @layer sections {
+  .sheet__section--how-it-works { --footer-row: 14; }
+
   .how-it-works__title           { grid-column: B / span 8; grid-row: 2 / span 2; }
   .how-it-works__steps           { grid-row: 5; }
   .how-it-works__done            { grid-column: B; }

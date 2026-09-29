@@ -11,4 +11,17 @@ module PagesHelper
   def hours_per_reward
     10
   end
+
+  def organizer_url
+    "https://cskartikey.dev/"
+  end
+
+  def footer_links
+    {
+      "slack" => "https://hackclub.com/slack/",
+      "clubs" => "https://hackclub.com/clubs/",
+      "privacy" => "https://hackclub.com/privacy-and-terms",
+      "fulfillment" => "https://forms.hackclub.com/bounty"
+    }
+  end
 end

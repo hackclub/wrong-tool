@@ -1,43 +1,236 @@
 @layer sections {
-  .hero__kicker           { grid-column: B / span 4;  grid-row: 2; }
-  .hero__title            { grid-column: B / span 10; grid-row: 3 / span 5; }
-  .hero__subtitle         { grid-column: B / span 6;  grid-row: 9; }
+  .sheet__section--hero { --footer-row: 21; }
+
+  .hero__art              { grid-column: B / span 7;  grid-row: 2 / span 4; }
+  .hero__kicker           { grid-column: B / span 2;  grid-row: 2; }
+  .hero__name             { grid-column: B / span 5;  grid-row: 3 / span 3; }
+  .hero__title            { grid-column: B / span 7;  grid-row: 6 / span 2; }
+  .hero__subtitle         { grid-column: B / span 6;  grid-row: 9 / span 2; }
   .hero__cta              { grid-column: B / span 2;  grid-row: 11; }
-  .hero__cancel           { grid-column: D;           grid-row: 11; }
-  .hero__cancel-note      { grid-column: E / span 3;  grid-row: 11 / span 2; }
-  .hero__pick-heading     { grid-column: B / span 4;  grid-row: 13; }
+  .hero__marquee          { grid-column: B / span 5;  grid-row: 13; }
   .hero__handheld--rg35xx { grid-column: B / span 2; }
-  .hero__handheld--miyoo  { grid-column: D / span 2; }
-  .hero__photo            { grid-row: 14 / span 3; }
-  .hero__caption          { grid-row: 17; }
-  .hero__hint             { grid-column: B / span 5;  grid-row: 18; }
-  .hero__play             { grid-column: H / span 3;  grid-row: 10; }
-  .hero__score            { grid-column: K / span 2;  grid-row: 10; }
-  .hero__board            { grid-column: H / span 5;  grid-row: 11 / span 8; }
+  .hero__or               { grid-column: D;           grid-row: 14 / span 4; }
+  .hero__handheld--miyoo  { grid-column: E / span 2; }
+  .hero__photo            { grid-row: 14 / span 4; }
+  .hero__caption          { grid-row: 18; }
+  .hero__pick-one         { grid-column: D;           grid-row: 18; }
 
-  /* The board's inset outline is painted under its cells, like the frame in the design. */
-  .snake-board {
-    display: grid;
-    grid-template-columns: repeat(5, var(--cell-width));
-    grid-template-rows: repeat(8, var(--cell-height));
-    margin: 0 1px 1px 0;
-    box-shadow: inset 0 0 0 1px var(--green);
+  .hero__kicker {
+    font-size: 12px;
+    text-decoration: none;
   }
 
-  .snake-board__cell {
-    margin: 0 1px 1px 0;
-    cursor: cell;
+  /* The program name overhangs its cells and lets the art underneath show through. */
+  .hero__name {
+    position: relative;
+    overflow: visible;
+    background: transparent;
+    font-size: 84px;
+    line-height: 1;
+    letter-spacing: -3.5px;
+    color: var(--red);
+    white-space: nowrap;
   }
 
-  .snake-board__cell--body {
-    background: var(--green);
+  .hero__title {
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
   }
 
-  .snake-board__cell--head {
-    background: var(--green-bright);
+  .hero__subtitle {
+    font-size: 19px;
   }
 
-  .snake-board__cell--food {
+  /* A screwdriver driving a nail into a plank, laid out from the cell's top-left corner. */
+  .hero__art {
+    --wood: #e8c894;
+    --wood-grain: #ddb97f;
+    --wood-edge: #c49a5e;
+    --steel: #80868b;
+    --steel-light: #b0b6bd;
+    --handle-stripe: #d42d45;
+
+    position: relative;
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    pointer-events: none;
+
+    > * {
+      position: absolute;
+    }
+  }
+
+  .hero__art-plank {
+    inset-inline-start: -6px;
+    inset-block-start: 104px;
+    inline-size: 540px;
+    block-size: 14px;
+    border-radius: 2px;
+    background: repeating-linear-gradient(90deg, var(--wood) 0 46px, var(--wood-grain) 46px 48px);
+    box-shadow: inset 0 2px 0 var(--wood-edge);
+  }
+
+  .hero__art-nail {
+    inset-inline-start: 448px;
+    inset-block-start: 100px;
+    inline-size: 5px;
+    block-size: 10px;
+    background: var(--grey-500);
+    transform: rotate(-8deg);
+    transform-origin: bottom center;
+  }
+
+  .hero__art-nail-head {
+    inset-inline-start: 440px;
+    inset-block-start: 97px;
+    inline-size: 21px;
+    block-size: 5px;
+    border-radius: 2px;
+    background: var(--steel);
+  }
+
+  /* Tip first on the left, handle on the right, tilted up and away from the nail. */
+  .hero__art-screwdriver {
+    inset-inline-start: 462px;
+    inset-block-start: 73px;
+    inline-size: 132px;
+    block-size: 22px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    transform: rotate(-38deg);
+    transform-origin: left center;
+
+    > * {
+      flex: none;
+    }
+  }
+
+  .hero__art-handle {
+    inline-size: 56px;
+    block-size: 22px;
+    border-radius: 5px 11px 11px 5px;
+    background: repeating-linear-gradient(90deg, var(--red) 0 9px, var(--handle-stripe) 9px 11px);
+  }
+
+  .hero__art-ferrule {
+    inline-size: 8px;
+    block-size: 14px;
+    background: var(--steel);
+  }
+
+  .hero__art-shaft {
+    inline-size: 60px;
+    block-size: 5px;
+    background: var(--steel-light);
+  }
+
+  .hero__art-tip {
+    inline-size: 8px;
+    block-size: 9px;
+    border-radius: 2px 0 0 2px;
+    background: var(--steel);
+  }
+
+  .hero__art-exclamation {
+    inset-inline-start: 412px;
+    inset-block-start: 60px;
+    font: 700 22px/1 var(--font-mono);
+    color: var(--red);
+    transform: rotate(-12deg);
+  }
+
+  /* The prize: a scrolling marquee over two handhelds that take turns being picked.
+     The prize-picker controller flips data-prize-picker-pick-value. */
+  .hero__prize {
+    display: contents;
+
+    &[data-prize-picker-pick-value="rg35xx"] .hero__handheld--rg35xx,
+    &[data-prize-picker-pick-value="miyoo"] .hero__handheld--miyoo {
+      &.hero__photo {
+        z-index: 2;
+        border: 3px solid var(--selection);
+        box-shadow: 0 6px 0 -2px var(--blue-150);
+        translate: 0 -4px;
+
+        @media (prefers-reduced-motion: no-preference) {
+          animation: hero-bob 640ms step-end infinite;
+        }
+      }
+
+      &.hero__caption {
+        background: var(--green-50);
+        color: var(--green);
+
+        &::before {
+          content: "▶\00a0";
+        }
+      }
+    }
+
+    &[data-prize-picker-pick-value="miyoo"] .hero__or::before {
+      content: "→";
+    }
+  }
+
+  /* Two identical runs side by side; sliding one run's width loops seamlessly. */
+  .hero__marquee {
+    padding: 0;
     background: var(--red);
+    color: var(--white);
+  }
+
+  .hero__marquee-track {
+    flex: none;
+    display: flex;
+    font: 600 14px var(--font-mono);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: hero-marquee 22s linear infinite;
+    }
+  }
+
+  .hero__marquee-run {
+    --icon-size: 18px;
+
+    flex: none;
+    display: flex;
+    align-items: center;
+
+    .icon {
+      opacity: 0.85;
+    }
+  }
+
+  .hero__marquee-item {
+    padding-inline: 16px;
+  }
+
+  .hero__or {
+    justify-content: center;
+    font: 600 28px var(--font-mono);
+    color: var(--red);
+
+    &::before {
+      content: "←";
+    }
+  }
+
+  .hero__pick-one {
+    justify-content: center;
+  }
+
+  @keyframes hero-bob {
+    0% { translate: 0 -4px; }
+    50%, 100% { translate: 0 0; }
+  }
+
+  @keyframes hero-marquee {
+    to { translate: -50% 0; }
   }
 }

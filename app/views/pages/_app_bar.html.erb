@@ -1,9 +1,9 @@
 <header class="app-bar">
-  <span class="app-bar__logo">WT</span>
+  <%= image_tag "brand/wrong-tool.svg", alt: "", class: "app-bar__logo" %>
 
   <div class="app-bar__document">
     <div class="app-bar__title-row">
-      <h1 class="app-bar__title">wrong tool</h1>
+      <span class="app-bar__title">wrong tool</span>
       <% %w[star drive-file-move cloud-done].each do |name| %>
         <%= inline_svg_tag "icons/header/#{name}.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
       <% end %>
@@ -29,7 +29,7 @@
     </button>
 
     <a href="#" class="app-bar__build-button">
-      <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %>Build anyway</span>
+      <span class="app-bar__build-label"><%= inline_svg_tag "icons/sports-esports.svg", class: "icon", aria_hidden: true %>Start building</span>
       <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
     </a>
 

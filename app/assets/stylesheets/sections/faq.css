@@ -1,4 +1,6 @@
 @layer sections {
+  .sheet__section--faq { --footer-row: 19; }
+
   .faq__title     { grid-column: B / span 4; grid-row: 2 / span 2; }
   .faq__list      { grid-row: 4; }
   .faq__question  { grid-column: B / span 3; }

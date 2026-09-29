@@ -1,30 +1,51 @@
-<% title = "Lorem ipsum dolor sit amet, consectetur." %>
+<% title = "make a game in something that isn't a game engine." %>
+<% ticker = [ "free handheld", "build #{hours_per_reward} hours, we mail you one", "anbernic rg35xx pro", "or miyoo mini plus" ] %>
 
-<p class="cell cell--kicker hero__kicker">Lorem ipsum · dolor sit · amet</p>
+<%# Drawn in CSS, under the program name: a screwdriver driving a nail. %>
+<div class="cell hero__art" role="img" aria-label="A screwdriver driving a nail into a plank"
+     data-formula='=IMAGE("screwdriver_driving_a_nail.png")'>
+  <span class="hero__art-plank"></span>
+  <span class="hero__art-nail"></span>
+  <span class="hero__art-nail-head"></span>
+  <span class="hero__art-screwdriver">
+    <span class="hero__art-handle"></span>
+    <span class="hero__art-ferrule"></span>
+    <span class="hero__art-shaft"></span>
+    <span class="hero__art-tip"></span>
+  </span>
+  <span class="hero__art-exclamation">?!</span>
+</div>
+
+<%= link_to "run by @cskartikey", organizer_url, target: "_blank", rel: "noopener",
+      class: "cell cell--formula hero__kicker", data: { formula: %(=HYPERLINK("#{organizer_url}", "run by @cskartikey")) } %>
+<h1 class="cell cell--title hero__name" data-formula='=YSWS("wrong tool")'>wrong tool</h1>
 <%= tag.h2 title, class: "cell cell--title hero__title", data: { formula: %(="#{title}") } %>
-<p class="cell cell--subtitle hero__subtitle">Sed do eiusmod tempor incididunt ut labore.</p>
-<a href="#" class="cell cell--cta hero__cta" data-formula="=BUILD(anyway)" data-cell-selection-target="initial">Build anyway →</a>
-<span class="cell cell--error hero__cancel" data-formula="=CANCEL()" aria-describedby="cancel-note">#N/A</span>
-<p class="cell cell--note hero__cancel-note" id="cancel-note" hidden>Note on D11: "Cancel" is not a valid function in this sheet.</p>
+<p class="cell cell--subtitle cell--wrap hero__subtitle">build a game in google sheets, or figma, or your inbox. after <%= hours_per_reward %> hours of that, we'll send you a handheld.</p>
+<a href="#" class="cell cell--cta hero__cta" data-formula="=START(building)" data-cell-selection-target="initial">Start building →</a>
 
-<span class="cell cell--table-header hero__pick-heading"
-      data-formula='=CHOOSE(handheld, "RG35XX Pro", "Miyoo Mini Plus")'>Every <%= hours_per_reward %> hrs, pick one</span>
-<%= image_tag "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal",
-      class: "cell cell--photo hero__photo hero__handheld--rg35xx", data: { formula: %(=IMAGE("rg35xx-pro.webp")) } %>
-<%= image_tag "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back",
-      class: "cell cell--photo hero__photo hero__handheld--miyoo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
-<span class="cell cell--label hero__handheld--rg35xx hero__caption" data-formula='=SHIP(handheld, "RG35XX Pro")'>ANBERNIC RG35XX Pro</span>
-<span class="cell cell--label hero__handheld--miyoo hero__caption" data-formula='=SHIP(handheld, "Miyoo Mini Plus")'>Miyoo Mini Plus</span>
+<%# The prize marquee scrolls and the two handhelds take turns being picked. %>
+<div class="hero__prize" data-controller="prize-picker" data-prize-picker-pick-value="rg35xx">
+  <div class="cell hero__marquee" role="marquee" aria-label="<%= ticker.join(" · ") %>"
+       data-formula="=SHIP(handheld) every <%= hours_per_reward %> hrs">
+    <span class="hero__marquee-track" aria-hidden="true">
+      <% 2.times do %>
+        <span class="hero__marquee-run">
+          <% ticker.each do |item| %>
+            <span class="hero__marquee-item"><%= item %></span>
+            <%= inline_svg_tag "icons/sports-esports.svg", class: "icon", aria_hidden: true %>
+          <% end %>
+        </span>
+      <% end %>
+    </span>
+  </div>
 
-<span class="cell cell--formula hero__hint">Click a cell · arrow keys move · tabs below are the nav</span>
+  <%= image_tag "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal",
+        class: "cell cell--photo hero__photo hero__handheld--rg35xx", data: { formula: %(=IMAGE("rg35xx-pro.webp")) } %>
+  <span class="cell hero__or" data-formula='=OR("RG35XX Pro", "Miyoo Mini Plus")'></span>
+  <%= image_tag "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back",
+        class: "cell cell--photo hero__photo hero__handheld--miyoo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
 
-<button type="button" class="cell cell--play hero__play" data-formula="=PLAY(snake)"
-        data-snake-game-target="play" data-action="snake-game#start">▶ Play snake</button>
-<span class="cell cell--formula hero__score" data-formula="=COUNTA(apples_eaten) → 0" data-snake-game-target="score">SCORE 0</span>
-
-<%# 5 × 8 board, drawn by the snake-game controller. %>
-<div class="snake-board hero__board">
-  <% 40.times do %>
-    <span class="snake-board__cell" data-snake-game-target="cell"></span>
-  <% end %>
+  <span class="cell cell--label hero__caption hero__handheld--rg35xx" data-formula='=SHIP(handheld, "RG35XX Pro")'>ANBERNIC RG35XX Pro</span>
+  <span class="cell cell--formula hero__pick-one" data-formula="=CHOOSE(1, 2)">pick one</span>
+  <span class="cell cell--label hero__caption hero__handheld--miyoo" data-formula='=SHIP(handheld, "Miyoo Mini Plus")'>Miyoo Mini Plus</span>
 </div>

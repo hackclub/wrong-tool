@@ -35,14 +35,34 @@ class SectionsTest < ApplicationSystemTestCase
 
   test "the hero offers both handhelds" do
     visit root_path
-    find(".hero__pick-heading").click
-    assert_selection "B13", formula: '=CHOOSE(handheld, "RG35XX Pro", "Miyoo Mini Plus")'
+    find(".hero__marquee").click
+    assert_selection "B13", formula: "=SHIP(handheld) every 10 hrs"
 
     find(".hero__photo.hero__handheld--miyoo").click
-    assert_selection "D14", formula: '=IMAGE("miyoo-mini-plus.webp")'
+    assert_selection "E14", formula: '=IMAGE("miyoo-mini-plus.webp")'
+
+    find(".hero__or").click
+    assert_selection "D14", formula: '=OR("RG35XX Pro", "Miyoo Mini Plus")'
 
     find(".hero__caption.hero__handheld--rg35xx").click
-    assert_selection "B17", formula: '=SHIP(handheld, "RG35XX Pro")'
+    assert_selection "B18", formula: '=SHIP(handheld, "RG35XX Pro")'
+  end
+
+  test "every sheet ends with the footer, two rows below its content" do
+    { "hero" => "B21", "faq" => "B19", "reward" => "B13" }.each do |section, address|
+      visit "/##{section}"
+      find("##{section} .sheet-footer__text").click
+      assert_selection address, formula: '=HYPERLINK("https://cskartikey.dev/", "@cskartikey")'
+    end
+
+    find("#reward .sheet-footer__links a", text: "slack").click
+    assert_selection "B15", formula: '=HYPERLINK("https://hackclub.com/slack/", "slack")'
+  end
+
+  test "the hero leads with the program name" do
+    visit root_path
+    find(".hero__name").click
+    assert_selection "B3", formula: '=YSWS("wrong tool")'
   end
 
   private

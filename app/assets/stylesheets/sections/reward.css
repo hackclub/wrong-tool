@@ -1,4 +1,6 @@
 @layer sections {
+  .sheet__section--reward { --footer-row: 13; }
+
   .reward__title          { grid-column: B / span 6; grid-row: 2 / span 2; }
   .reward__blurb          { grid-column: B / span 6; grid-row: 4; }
   .reward__hours-heading  { grid-column: B / span 2; grid-row: 6; }
