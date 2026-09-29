@@ -28,7 +28,7 @@ class CellSelectionTest < ApplicationSystemTestCase
     assert_selection "D11", formula: ""
 
     find(".sheet__cells").send_keys(:up) # D10 is inside the subtitle at B9:G10
-    assert_selection "B9", formula: "build a game in google sheets, or figma, or your inbox. after 10 hours of that, we'll send you a handheld."
+    assert_selection "B9", formula: "build it in google sheets, figma, email, or whatever else you like. log 10 hours and we'll send you a handheld."
   end
 
   test "the art under the program name is a cell of its own" do
