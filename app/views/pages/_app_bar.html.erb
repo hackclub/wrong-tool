@@ -1,22 +1,32 @@
 <%# The document's name (renamable), the star and the menu bar. Menu items send menu-bar:command to the
-    sheet, like the toolbar's buttons; undo and redo follow the sheet editor (sheet-editor:format). %>
-<header class="app-bar" data-controller="document-title menu-bar"
-        data-action="menu-bar:rename->document-title#rename sheet-editor:format@window->menu-bar#reflect
+    sheet, like the toolbar's buttons; undo and redo follow the sheet editor (sheet-editor:format).
+    During onboarding the name is the file your answers add up to, and Start building gives way to Log in. %>
+<% onboarding = local_assigns.fetch(:onboarding, false) %>
+<header class="app-bar" data-controller="<%= "document-title " unless onboarding %>menu-bar"
+        data-action="<%= "menu-bar:rename->document-title#rename " unless onboarding %>sheet-editor:format@window->menu-bar#reflect
                      mousedown@window->menu-bar#dismiss keydown@window->menu-bar#shortcut resize@window->menu-bar#close">
   <%= image_tag "brand/wrong-tool.svg", alt: "", class: "app-bar__logo" %>
 
   <div class="app-bar__document">
     <div class="app-bar__title-row">
-      <input class="app-bar__title" value="wrong tool" size="10" aria-label="Rename" autocomplete="off" spellcheck="false"
-             data-document-title-target="input" data-default="wrong tool"
-             data-action="focus->document-title#begin keydown->document-title#key blur->document-title#commit">
-      <button type="button" class="app-bar__status-icon app-bar__star" aria-label="Star" aria-pressed="false"
-              data-document-title-target="star" data-action="document-title#star">
-        <%= inline_svg_tag "icons/header/star.svg", class: "icon app-bar__star-outline", aria_hidden: true %>
-        <svg class="icon app-bar__star-filled" viewBox="0 -960 960 960" aria-hidden="true"><path d="m233-80 65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Z"/></svg>
-      </button>
-      <% %w[drive-file-move cloud-done].each do |name| %>
-        <%= inline_svg_tag "icons/header/#{name}.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
+      <% if onboarding %>
+        <span class="app-bar__title app-bar__title--file" data-onboarding-target="fileName">untitled_wrong_game</span>
+        <%= inline_svg_tag "icons/header/star.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
+        <%= inline_svg_tag "icons/header/drive-file-move.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
+        <%= inline_svg_tag "icons/onboarding/cloud-off.svg", class: "icon app-bar__status-icon onboarding__unsaved-only", aria_hidden: true %>
+        <%= inline_svg_tag "icons/header/cloud-done.svg", class: "icon app-bar__status-icon onboarding__saved-only", aria_hidden: true %>
+      <% else %>
+        <input class="app-bar__title" value="wrong tool" size="10" aria-label="Rename" autocomplete="off" spellcheck="false"
+               data-document-title-target="input" data-default="wrong tool"
+               data-action="focus->document-title#begin keydown->document-title#key blur->document-title#commit">
+        <button type="button" class="app-bar__status-icon app-bar__star" aria-label="Star" aria-pressed="false"
+                data-document-title-target="star" data-action="document-title#star">
+          <%= inline_svg_tag "icons/header/star.svg", class: "icon app-bar__star-outline", aria_hidden: true %>
+          <svg class="icon app-bar__star-filled" viewBox="0 -960 960 960" aria-hidden="true"><path d="m233-80 65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Z"/></svg>
+        </button>
+        <% %w[drive-file-move cloud-done].each do |name| %>
+          <%= inline_svg_tag "icons/header/#{name}.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
+        <% end %>
       <% end %>
     </div>
 
@@ -44,10 +54,17 @@
       <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     </button>
 
-    <a href="#" class="app-bar__build-button">
-      <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>
-      <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
-    </a>
+    <% if onboarding %>
+      <span class="app-bar__progress" data-onboarding-target="progress">Step 1 of 4</span>
+      <a href="#" class="app-bar__login-button">
+        <%= inline_svg_tag "icons/onboarding/login.svg", class: "icon", aria_hidden: true %>Log in
+      </a>
+    <% else %>
+      <%= link_to onboarding_path, class: "app-bar__build-button" do %>
+        <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>
+        <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
+      <% end %>
+    <% end %>
   </div>
 
   <%# Help > Keyboard shortcuts (Ctrl+/) %>

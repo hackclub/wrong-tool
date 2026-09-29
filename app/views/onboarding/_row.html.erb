@@ -1,0 +1,27 @@
+<%# One question, one row. data-state is active (open), done (folded into a filled cell that reopens it) or
+    locked (not reached yet). Steps are answered by tapping; there are no Next buttons. %>
+<%= tag.section class: "onboarding-row", aria: { labelledby: "onboarding-question-#{number}" },
+      data: { onboarding_target: "row", state: number == 1 ? "active" : "locked" } do %>
+  <span class="onboarding-row__header"><%= number %></span>
+
+  <button type="button" class="onboarding-row__summary" disabled
+          data-onboarding-target="summary" data-action="onboarding#open" data-onboarding-step-param="<%= number %>">
+    <span class="onboarding-row__label">
+      <span class="onboarding-row__cell">A<%= number %></span>
+      <span class="onboarding-row__name"><%= step[:label] %></span>
+    </span>
+    <span class="onboarding-row__answer">
+      <span class="onboarding-row__value" data-onboarding-target="value"></span>
+      <span class="onboarding-row__change"><%= inline_svg_tag "icons/onboarding/edit.svg", class: "icon", aria_hidden: true %>Change</span>
+    </span>
+  </button>
+
+  <div class="onboarding-row__question">
+    <h2 class="onboarding-row__title" id="onboarding-question-<%= number %>" tabindex="-1"><%= step[:question] %></h2>
+    <p class="onboarding-row__help"><%= step[:help] %></p>
+  </div>
+
+  <div class="onboarding-row__stage">
+    <%= render "onboarding/steps/#{%w[tool idea prize save][number - 1]}" %>
+  </div>
+<% end %>

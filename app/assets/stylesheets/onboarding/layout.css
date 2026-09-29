@@ -1,0 +1,507 @@
+/* The onboarding sheet: a wide column A holding the four questions, one row each, over a grid that keeps
+   going to the right. The open row fills the height; answered and locked rows are 56px cells. */
+@layer sections {
+  .onboarding {
+    --onboarding-column-a: 240px;
+    --onboarding-row: 56px;
+    --orange-50: #fff1d6;
+    --orange-800: #8a5200;
+    --red-50: #fdecee;
+    --red-800: #c62828;
+    --red-hover: #d42f46;
+    --field-fill: #fffbe0;
+    --card-shadow: 0 1px 2px rgb(60 64 67 / 30%), 0 1px 3px 1px rgb(60 64 67 / 15%);
+    --card-shadow-raised: 0 1px 3px rgb(60 64 67 / 30%), 0 4px 8px 3px rgb(60 64 67 / 15%);
+    --gridlines:
+      linear-gradient(#eee 1px, transparent 1px) -1px -1px / var(--cell-width) var(--cell-height),
+      linear-gradient(90deg, #eee 1px, transparent 1px) -1px -1px / var(--cell-width) var(--cell-height) var(--surface-grid);
+  }
+
+  /* Only the saved or the unsaved icon shows: cloud off/done, the locked/unlocked project tab. */
+  .onboarding:not([data-saved]) .onboarding__saved-only,
+  .onboarding[data-saved] .onboarding__unsaved-only {
+    display: none;
+  }
+
+  .onboarding__sheet {
+    flex: 1;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-grid);
+  }
+
+  .onboarding__column-headers {
+    flex: none;
+    block-size: var(--column-header-height);
+    display: flex;
+    overflow: hidden;
+    background: var(--surface-header);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .onboarding__corner {
+    flex: none;
+    inline-size: var(--row-header-width);
+    border-inline-end: 4px solid var(--border-header);
+    border-block-end: 4px solid var(--border-header);
+  }
+
+  .onboarding__column-header {
+    flex: none;
+    inline-size: var(--cell-width);
+    display: grid;
+    place-items: center;
+    border-inline-end: 1px solid var(--border-header);
+    border-block-end: 1px solid var(--border-header);
+  }
+
+  .onboarding__column-header--selected {
+    inline-size: var(--onboarding-column-a);
+    background: var(--selection-header-bg);
+    color: var(--selection-header-fg);
+    font-weight: 700;
+  }
+
+  .onboarding__rows {
+    position: relative;
+    flex: 1;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-block-end: 6px; /* room for the fill handle when A4, the last row, is open */
+  }
+
+  .onboarding__confetti {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+
+    span {
+      position: absolute;
+      inline-size: calc(var(--cell-width) - 1px);
+      block-size: calc(var(--cell-height) - 1px);
+    }
+  }
+
+  /* Rows */
+
+  .onboarding-row {
+    flex: none;
+    block-size: var(--onboarding-row);
+    display: flex;
+    border-block-end: 1px solid var(--border-grid);
+
+    &[data-state="active"] {
+      flex: 1 0 0;
+      block-size: auto;
+      min-block-size: 500px;
+    }
+
+    &:not([data-state="active"]) :is(.onboarding-row__question, .onboarding-row__stage),
+    &[data-state="active"] .onboarding-row__summary,
+    &[data-state="locked"] .onboarding-row__answer {
+      display: none;
+    }
+  }
+
+  .onboarding-row__header {
+    flex: none;
+    inline-size: var(--row-header-width);
+    display: grid;
+    place-items: center;
+    background: var(--surface-header);
+    border-inline-end: 1px solid var(--border-header);
+    font-size: 11px;
+    color: var(--text-secondary);
+
+    [data-state="active"] > & {
+      place-items: start center;
+      padding-block-start: 10px;
+      background: var(--selection-header-bg);
+      color: var(--selection-header-fg);
+      font-weight: 700;
+    }
+  }
+
+  /* An answered row: its cell, what you picked and a way back in. */
+  .onboarding-row__summary {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--surface-grid);
+    text-align: start;
+    font-family: var(--font-cell);
+    cursor: pointer;
+
+    &:hover:enabled {
+      background: #f1f4f9;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--selection);
+      outline-offset: -2px;
+    }
+
+    &:disabled {
+      cursor: default;
+      color: var(--text-placeholder);
+    }
+  }
+
+  .onboarding-row__label {
+    flex: none;
+    inline-size: var(--onboarding-column-a);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 0 16px;
+    border-inline-end: 1px solid var(--border-grid);
+  }
+
+  .onboarding-row__cell {
+    font: 11px var(--font-mono);
+    color: var(--grey-600);
+
+    :disabled & {
+      color: var(--text-placeholder);
+    }
+  }
+
+  .onboarding-row__name {
+    font-size: 14px;
+    color: var(--text-secondary);
+
+    :disabled & {
+      color: var(--text-placeholder);
+    }
+  }
+
+  .onboarding-row__answer {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 18px;
+  }
+
+  .onboarding-row__value {
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .onboarding-row__value--later {
+    color: var(--orange-800);
+  }
+
+  .onboarding-row__change {
+    --icon-size: 18px;
+
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: auto;
+    font: 500 13px var(--font-chrome);
+    color: var(--blue-700);
+  }
+
+  /* The open row: the question in A, drawn as the selected cell, and the answers across the grid. */
+  .onboarding-row__question {
+    position: relative;
+    flex: none;
+    inline-size: var(--onboarding-column-a);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 20px;
+    box-shadow: inset 0 0 0 2px var(--selection);
+
+    /* The fill handle. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline-end: -5px;
+      inset-block-end: -5px;
+      z-index: 2;
+      inline-size: 8px;
+      block-size: 8px;
+      border: 1px solid var(--white);
+      border-radius: 50%;
+      background: var(--selection);
+    }
+  }
+
+  .onboarding-row__title {
+    font: 700 30px/1.08 var(--font-cell);
+    letter-spacing: -0.8px;
+    text-wrap: balance;
+    outline: none;
+  }
+
+  .onboarding-row__help {
+    font: 14px/1.45 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .onboarding-row__stage {
+    position: relative;
+    flex: 1;
+    min-inline-size: 0;
+    padding: 24px;
+    background: var(--gridlines);
+  }
+
+  /* Buttons shared by the steps: the one red action per step, an outlined one, and text buttons. */
+  .onboarding-button {
+    --icon-size: 20px;
+
+    flex: none;
+    block-size: 52px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 22px 0 24px;
+    border-radius: 26px;
+    font: 500 16px var(--font-chrome);
+    text-decoration: none;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  .onboarding-button--primary {
+    &,
+    &:hover {
+      background: var(--red);
+      color: var(--white);
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--red-hover);
+    }
+
+    &:disabled {
+      background: var(--grey-200);
+      color: var(--grey-600);
+    }
+  }
+
+  .onboarding-button--outlined {
+    --icon-size: 24px;
+
+    gap: 10px;
+    padding: 0 22px 0 16px;
+    border: 1px solid var(--grey-600);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--text-primary);
+
+    &:hover {
+      background: #f1f4f9;
+    }
+  }
+
+  .onboarding-button--large {
+    --icon-size: 24px;
+
+    align-self: flex-start;
+    block-size: 58px;
+    gap: 12px;
+    padding: 0 30px 0 24px;
+    border-radius: 29px;
+    font-size: 18px;
+  }
+
+  .onboarding-text-button {
+    --icon-size: 18px;
+
+    block-size: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-radius: 20px;
+    color: var(--blue-700);
+    font: 500 14px var(--font-chrome);
+    cursor: pointer;
+
+    &:hover {
+      background: rgb(11 87 208 / 8%);
+    }
+  }
+
+  .onboarding-text-button--quiet {
+    color: var(--text-secondary);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .onboarding-round-button {
+    --icon-size: 20px;
+
+    flex: none;
+    inline-size: 36px;
+    block-size: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--red);
+    color: var(--white);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--red-hover);
+    }
+  }
+
+  /* Chrome */
+
+  .app-bar__title--file {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    &:hover {
+      border-color: transparent;
+    }
+  }
+
+  .app-bar__progress {
+    flex: none;
+    margin-inline-start: 8px;
+    font: 12px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  .app-bar__login-button {
+    flex: none;
+    block-size: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-inline-start: 12px;
+    padding: 0 20px 0 14px;
+    border-radius: 20px;
+    font: 500 14px var(--font-chrome);
+    text-decoration: none;
+
+    &,
+    &:hover {
+      background: var(--sky-200);
+      color: var(--navy-900);
+    }
+
+    &:hover {
+      background: var(--sky-250);
+    }
+  }
+
+  .onboarding__formula {
+    cursor: default;
+  }
+
+  .onboarding__project-tab {
+    --icon-size: 16px;
+
+    gap: 6px;
+
+    .icon:last-child {
+      --icon-size: 20px;
+    }
+
+    &[aria-disabled="true"] {
+      &,
+      &:hover {
+        background: none;
+        color: var(--text-placeholder);
+      }
+    }
+  }
+}
+
+/* Phones: the question sits over its answers instead of beside them, and the sheet scrolls. */
+@layer sections {
+  @media (width <= 600px) {
+    .onboarding {
+      --onboarding-column-a: calc(100vw - var(--row-header-width));
+      --onboarding-row: 52px;
+    }
+
+    .onboarding__column-header:not(.onboarding__column-header--selected),
+    .app-bar__progress {
+      display: none;
+    }
+
+    .onboarding-row[data-state="active"] {
+      flex: none;
+      min-block-size: 0;
+      flex-wrap: wrap;
+    }
+
+    .onboarding-row__header {
+      [data-state="active"] > & {
+        align-self: stretch;
+      }
+    }
+
+    .onboarding-row__label {
+      inline-size: 110px;
+      padding-inline: 12px;
+    }
+
+    .onboarding-row__answer {
+      gap: 8px;
+      padding-inline: 12px;
+    }
+
+    .onboarding-row__value {
+      font-size: 15px;
+    }
+
+    .onboarding-row__change {
+      font-size: 0;
+    }
+
+    .onboarding-row__question {
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .onboarding-row__title {
+      font-size: 24px;
+    }
+
+    .onboarding-row__stage {
+      flex-basis: 100%;
+      padding: 16px 12px;
+    }
+
+    .app-bar__login-button {
+      block-size: 36px;
+      margin-inline-start: 0;
+      padding: 0 14px 0 10px;
+    }
+  }
+}

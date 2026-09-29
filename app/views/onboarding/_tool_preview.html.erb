@@ -1,0 +1,33 @@
+<%# A game built in each tool, drawn with cells, frames and terminal text. Pieces are placed with --x/--y/--w/--h. %>
+<span class="onboarding-preview onboarding-preview--<%= tool %>" aria-hidden="true">
+  <% case tool %>
+  <% when "spreadsheet" %>
+    <span class="onboarding-preview__ribbon"></span>
+    <% [ [ "HP", "12" ], [ "ATK", "3" ], [ "GOLD", "+40" ] ].each_with_index do |(key, value), index| %>
+      <span class="onboarding-preview__text" style="--x: 8px; --y: <%= 22 * (index + 1) %>px"><%= key %></span>
+      <span class="onboarding-preview__text <%= "onboarding-preview__text--up" if value.start_with?("+") %>"
+            style="--x: 72px; --y: <%= 22 * (index + 1) %>px"><%= value %></span>
+    <% end %>
+    <span class="onboarding-preview__formula" style="--x: 64px; --y: 88px; --w: 130px; --h: 23px">=IF(HP&lt;1,"RIP")</span>
+  <% when "figma" %>
+    <span class="onboarding-preview__caption" style="--x: 24px; --y: 34px">Room 1</span>
+    <span class="onboarding-preview__frame" style="--x: 24px; --y: 50px; --w: 70px; --h: 48px"></span>
+    <span class="onboarding-preview__hotspot" style="--x: 62px; --y: 66px; --w: 22px; --h: 26px"></span>
+    <span class="onboarding-preview__block" style="--x: 86px; --y: 78px; --w: 52px; --h: 2px; --bg: var(--blue-600)"></span>
+    <span class="onboarding-preview__caption" style="--x: 136px; --y: 34px">Room 2</span>
+    <span class="onboarding-preview__frame" style="--x: 136px; --y: 50px; --w: 70px; --h: 48px"></span>
+  <% when "email" %>
+    <% [ [ "The Dungeon", "You wake up" ], [ "me", "LOOK" ], [ "The Dungeon", "Re: It is dark." ] ].each_with_index do |(from, subject), index| %>
+      <span class="onboarding-preview__mail <%= "onboarding-preview__mail--unread" if index.zero? %>">
+        <span class="onboarding-preview__from"><%= from %></span><span><%= subject %></span>
+      </span>
+    <% end %>
+  <% when "ssh" %>
+    <span>$ ssh play@dungeon</span><span>Door or window? window</span><span>window. Bad choice.</span><span>█</span>
+  <% when "shaders" %>
+    <span class="onboarding-preview__moon"></span>
+    <span class="onboarding-preview__dither"></span>
+  <% when "other" %>
+    <span class="onboarding-preview__error">#N/A</span>
+  <% end %>
+</span>

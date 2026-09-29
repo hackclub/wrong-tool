@@ -1,0 +1,46 @@
+<%# A2: an idea slot machine. The genre reel stops first, then the tool's setting. "I already have an idea"
+    swaps the reels for one big field (data-mode="own"), and skipping is always an option. %>
+<div class="onboarding-idea" data-onboarding-target="idea" data-mode="roll">
+  <div class="onboarding-idea__card onboarding-idea__card--roll">
+    <div class="onboarding-idea__line">
+      <span class="onboarding-idea__article" data-onboarding-target="article">a</span>
+      <span class="onboarding-reel" data-cell="B1" data-onboarding-target="reel">…</span>
+    </div>
+    <div class="onboarding-idea__line">
+      <span class="onboarding-idea__article"></span>
+      <span class="onboarding-reel" data-cell="B2" data-onboarding-target="reel">…</span>
+    </div>
+  </div>
+
+  <div class="onboarding-idea__actions onboarding-idea__actions--roll">
+    <button type="button" class="onboarding-button onboarding-button--outlined" data-action="onboarding#roll">
+      <span class="onboarding-idea__dice" data-onboarding-target="dice"><%= inline_svg_tag "icons/onboarding/casino.svg", class: "icon", aria_hidden: true %></span>
+      <span data-onboarding-target="rollLabel">Roll again</span>
+    </button>
+    <button type="button" class="onboarding-button onboarding-button--primary" data-onboarding-target="useIdea" data-action="onboarding#useIdea">
+      Use this idea<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
+    </button>
+    <span class="onboarding-idea__links">
+      <button type="button" class="onboarding-text-button" data-action="onboarding#openOwn">I already have an idea</button>
+      <button type="button" class="onboarding-text-button onboarding-text-button--quiet" data-action="onboarding#skipIdea">Skip for now</button>
+    </span>
+  </div>
+
+  <form id="onboarding-own-idea" class="onboarding-idea__card onboarding-idea__card--own" data-action="submit->onboarding#useOwn">
+    <label class="onboarding-idea__caption" for="onboarding-own-idea-input">B1 · your idea</label>
+    <span class="onboarding-idea__field">
+      <input id="onboarding-own-idea-input" class="onboarding-idea__input" maxlength="60" autocomplete="off"
+             data-onboarding-target="ownInput" data-action="input->onboarding#typeOwn">
+    </span>
+    <span class="onboarding-idea__note">You can change it later.</span>
+  </form>
+
+  <div class="onboarding-idea__actions onboarding-idea__actions--own">
+    <button form="onboarding-own-idea" class="onboarding-button onboarding-button--primary" disabled data-onboarding-target="useOwn">
+      Use my idea<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
+    </button>
+    <button type="button" class="onboarding-text-button" data-action="onboarding#closeOwn">
+      <%= inline_svg_tag "icons/onboarding/casino.svg", class: "icon", aria_hidden: true %>Back to rolling
+    </button>
+  </div>
+</div>

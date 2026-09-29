@@ -1,0 +1,33 @@
+<% content_for :title, "Start building · Wrong Tool" %>
+
+<%# Onboarding is a sheet too: four questions down column A (A1 → A4). The active row opens up, answered rows
+    fold back into cells you can reopen, and the file name and formula bar keep a running receipt. %>
+<div class="spreadsheet onboarding"
+     data-controller="onboarding"
+     data-onboarding-tools-value="<%= onboarding_tools.to_json %>"
+     data-onboarding-genres-value="<%= onboarding_genres.to_json %>"
+     data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :full) }.to_json %>"
+     data-onboarding-hours-value="<%= hours_per_reward %>">
+  <%= render "pages/app_bar", onboarding: true %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar" %>
+
+  <div class="onboarding__sheet">
+    <div class="onboarding__column-headers" aria-hidden="true">
+      <span class="onboarding__corner"></span>
+      <% ("A".."K").each do |letter| %>
+        <%= tag.span letter, class: [ "onboarding__column-header", ("onboarding__column-header--selected" if letter == "A") ],
+              data: { onboarding_target: ("columnA" if letter == "A") } %>
+      <% end %>
+    </div>
+
+    <div class="onboarding__rows">
+      <% onboarding_steps.each.with_index(1) do |step, number| %>
+        <%= render "onboarding/row", step:, number: %>
+      <% end %>
+      <div class="onboarding__confetti" aria-hidden="true" data-onboarding-target="confetti"></div>
+    </div>
+  </div>
+
+  <%= render "onboarding/tabs" %>
+</div>

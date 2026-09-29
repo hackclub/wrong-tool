@@ -55,24 +55,6 @@
       color: var(--blue-700);
     }
   }
-
-  .sheet-tabs__status {
-    --icon-size: 18px;
-
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    block-size: 28px;
-    margin-inline-start: auto;
-    padding: 0 4px 0 10px;
-    border: 1px solid var(--border-header);
-    border-radius: 4px;
-    background: var(--white);
-    color: var(--text-secondary);
-    font-size: 13px;
-    white-space: nowrap;
-  }
 }
 
 /* Phones: a taller, edge-to-edge tab strip that scrolls sideways without a scrollbar. */
@@ -90,7 +72,6 @@
     }
 
     .sheet-tabs__round-button:not(.sheet-tabs__round-button--menu),
-    .sheet-tabs__status,
     .sheet-tab .icon {
       display: none;
     }

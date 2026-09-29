@@ -6,6 +6,7 @@
  *   foundation/  fonts, design tokens, element defaults
  *   components/  small reusable pieces (icon, ...)
  *   sheet/       the spreadsheet chrome: app bar, toolbar, formula bar, grid, tabs
+ *   onboarding/  the Start building flow, drawn over the same chrome (in the sections layer)
  *   sections/    what each sheet tab shows: which cells go where
  */
 @layer reset, tokens, base, components, sheet, sections;
