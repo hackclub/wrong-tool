@@ -1,5 +1,14 @@
-<% answer = "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat." %>
-<% questions = [ "Lorem ipsum dolor?", "Sit amet consectetur?", "Adipiscing elit sed?", "Do eiusmod tempor?", "Incididunt ut labore?", "Et dolore magna?" ] %>
+<% link = ->(text, url) { link_to(text, url, target: "_blank", rel: "noopener") } %>
+<% faqs = [
+     [ "Who can join?", "Anyone in high school, ages 13 to 18." ],
+     [ "How much does it cost?", "Nothing. The handhelds are on us. If you live outside the US, you might have to pay customs." ],
+     [ "What can I make?", "Any game, as long as you build it in something that isn't a game engine." ],
+     [ "What do I submit?", safe_join([ "A public link to your git repo and your hours from ", link.("Hackatime", hackatime_url), " or ", link.("Lapse", lapse_url), "." ]) ],
+     [ "When's the deadline?", "#{sheet_date(program_dates.end)}." ],
+     [ "Will you actually mail it to me?", "Yep! Log #{hours_per_reward} hours and we'll mail you a handheld." ],
+     [ "Is this legit?", "Yup. We're Hack Club, a nonprofit that's run programs like this for years, including Arcade, High Seas, Summer of Making and Flavortown." ],
+     [ "I've got more questions.", safe_join([ "Ask us on the ", link.("Hack Club Slack", footer_links["slack"]), "." ]) ]
+   ] %>
 
 <h2 class="cell cell--heading faq__title">FAQ</h2>
 
@@ -7,8 +16,9 @@
   <span class="cell cell--table-header faq__question">Question</span>
   <span class="cell cell--table-header faq__answer">Answer</span>
 
-  <% questions.each do |question| %>
+  <% faqs.each do |question, answer| %>
     <span class="cell cell--label cell--wrap faq__question faq__question--item"><%= question %></span>
-    <span class="cell cell--body faq__answer faq__answer--item"><%= answer %></span>
+    <%# The inner span keeps text and links flowing as one paragraph inside the flex cell. %>
+    <span class="cell cell--body faq__answer faq__answer--item"><span><%= answer %></span></span>
   <% end %>
 </div>

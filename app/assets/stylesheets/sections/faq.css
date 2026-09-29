@@ -1,5 +1,5 @@
 @layer sections {
-  .sheet__section--faq { --footer-row: 19; }
+  .sheet__section--faq { --footer-row: 23; }
 
   .faq__title     { grid-column: B / span 4; grid-row: 2 / span 2; }
   .faq__list      { grid-row: 4; }
@@ -16,7 +16,7 @@
    The answer spans that blank row for placement but only draws three rows. */
 @layer sections {
   @media (width <= 600px) {
-    .sheet__section--faq { --footer-row: 41; }
+    .sheet__section--faq { --footer-row: 53; }
 
     .faq__title     { grid-column: A / span 4; grid-row: 1 / span 2; }
     .faq__question,
