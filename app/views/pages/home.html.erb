@@ -1,12 +1,22 @@
 <div class="spreadsheet"
-     data-controller="sheet-tabs cell-selection flap-game"
+     data-controller="sheet-tabs sheet-editor cell-selection flap-game"
      data-action="popstate@window->sheet-tabs#restore
+                  resize@window->sheet-editor#relayout
                   resize@window->cell-selection#relayout
+                  sheet-tabs:change->sheet-editor#load
                   sheet-tabs:change->cell-selection#reset
                   sheet-tabs:change->flap-game#pause
                   flap-game:change->cell-selection#refresh
                   idea-roulette:change->cell-selection#refresh
-                  mini-sheet:select->cell-selection#show">
+                  mini-sheet:select->cell-selection#show
+                  mini-sheet:select->sheet-editor#untrack
+                  cell-selection:select->sheet-editor#track
+                  sheet-editor:change->cell-selection#refresh
+                  sheet-editor:move->cell-selection#step
+                  toolbar:command->cell-selection#command
+                  toolbar:command->sheet-editor#command
+                  menu-bar:command->cell-selection#command
+                  menu-bar:command->sheet-editor#command">
   <%= render "pages/app_bar" %>
   <%= render "pages/toolbar" %>
   <%= render "pages/formula_bar" %>

@@ -23,6 +23,28 @@
     }
   }
 
+  .formula-bar__name {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+  }
+
+  /* The name box while it's being typed into: a field with the blue focus ring, like Sheets. */
+  .formula-bar__name-input {
+    min-inline-size: 0;
+    inline-size: 100%;
+    block-size: 22px;
+    margin-inline-start: -6px;
+    padding: 0 5px;
+    border: 0;
+    border-radius: 2px;
+    outline: 2px solid var(--selection);
+    font: inherit;
+    color: var(--text-primary);
+    background: var(--surface-grid);
+  }
+
   .formula-bar__divider {
     flex: none;
     inline-size: 1px;
@@ -37,10 +59,16 @@
     color: var(--text-placeholder);
   }
 
+  /* Fills the bar, so there's room to click into it and edit the selected cell. */
   .formula-bar__content {
+    flex: 1;
+    align-self: stretch;
+    align-content: center;
+    min-inline-size: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    cursor: text;
   }
 }
 
@@ -63,11 +91,6 @@
 
     .formula-bar__fx {
       padding-inline: 10px;
-    }
-
-    .formula-bar__content {
-      flex: 1;
-      min-inline-size: 0;
     }
   }
 }

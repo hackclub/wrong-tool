@@ -1,17 +1,33 @@
-<header class="app-bar">
+<%# The document's name (renamable), the star and the menu bar. Menu items send menu-bar:command to the
+    sheet, like the toolbar's buttons; undo and redo follow the sheet editor (sheet-editor:format). %>
+<header class="app-bar" data-controller="document-title menu-bar"
+        data-action="menu-bar:rename->document-title#rename sheet-editor:format@window->menu-bar#reflect
+                     mousedown@window->menu-bar#dismiss keydown@window->menu-bar#shortcut resize@window->menu-bar#close">
   <%= image_tag "brand/wrong-tool.svg", alt: "", class: "app-bar__logo" %>
 
   <div class="app-bar__document">
     <div class="app-bar__title-row">
-      <span class="app-bar__title">wrong tool</span>
-      <% %w[star drive-file-move cloud-done].each do |name| %>
+      <input class="app-bar__title" value="wrong tool" size="10" aria-label="Rename" autocomplete="off" spellcheck="false"
+             data-document-title-target="input" data-default="wrong tool"
+             data-action="focus->document-title#begin keydown->document-title#key blur->document-title#commit">
+      <button type="button" class="app-bar__status-icon app-bar__star" aria-label="Star" aria-pressed="false"
+              data-document-title-target="star" data-action="document-title#star">
+        <%= inline_svg_tag "icons/header/star.svg", class: "icon app-bar__star-outline", aria_hidden: true %>
+        <svg class="icon app-bar__star-filled" viewBox="0 -960 960 960" aria-hidden="true"><path d="m233-80 65-281L80-550l288-25 112-265 112 265 288 25-218 189 65 281-247-149L233-80Z"/></svg>
+      </button>
+      <% %w[drive-file-move cloud-done].each do |name| %>
         <%= inline_svg_tag "icons/header/#{name}.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
       <% end %>
     </div>
 
-    <nav class="menu-bar" aria-label="Menu">
-      <% %w[File Edit View Insert Format Data Tools Ship Help].each do |item| %>
-        <span class="menu-bar__item"><%= item %></span>
+    <nav class="menu-bar" role="menubar" aria-label="Menu"
+         data-action="mousedown->menu-bar#hold keydown->menu-bar#navigate">
+      <% menu_bar_menus.each do |name, items| %>
+        <div class="menu-bar__menu" data-menu-bar-target="menu">
+          <button type="button" class="menu-bar__item" role="menuitem" aria-haspopup="menu" aria-expanded="false"
+                  data-action="click->menu-bar#toggle mouseenter->menu-bar#hover mouseleave->menu-bar#unhover"><%= name %></button>
+          <%= render "pages/menu_items", items:, label: name %>
+        </div>
       <% end %>
     </nav>
   </div>
@@ -33,4 +49,44 @@
       <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
     </a>
   </div>
+
+  <%# Help > Keyboard shortcuts (Ctrl+/) %>
+  <dialog class="menu-dialog menu-dialog--shortcuts" aria-labelledby="shortcuts-title"
+          data-menu-bar-target="shortcuts" data-action="click->menu-bar#backdrop close->menu-bar#closed">
+    <div class="menu-dialog__header">
+      <h2 class="menu-dialog__title" id="shortcuts-title">Keyboard shortcuts</h2>
+      <input type="search" class="menu-dialog__search" placeholder="Search keyboard shortcuts" aria-label="Search keyboard shortcuts"
+             autocomplete="off" spellcheck="false" data-menu-bar-target="shortcutSearch" data-action="input->menu-bar#filterShortcuts">
+      <button type="button" class="menu-dialog__close" aria-label="Close" data-action="menu-bar#closeDialog">
+        <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+      </button>
+    </div>
+    <div class="menu-dialog__body">
+      <% keyboard_shortcut_groups.each do |group, shortcuts| %>
+        <section class="menu-dialog__group" data-menu-bar-target="shortcutGroup">
+          <h3 class="menu-dialog__group-title"><%= group %></h3>
+          <% shortcuts.each do |label, keys| %>
+            <div class="menu-dialog__shortcut">
+              <span><%= label %></span>
+              <kbd class="menu-dialog__keys" data-shortcut="<%= keys %>"><%= keys %></kbd>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  </dialog>
+
+  <%# Insert > Link and Insert > Comment ask for their text here. %>
+  <dialog class="menu-dialog menu-dialog--prompt" aria-labelledby="menu-prompt-title"
+          data-menu-bar-target="prompt" data-action="click->menu-bar#backdrop close->menu-bar#closed">
+    <form method="dialog" data-action="submit->menu-bar#submitPrompt">
+      <h2 class="menu-dialog__title" id="menu-prompt-title" data-menu-bar-target="promptTitle"></h2>
+      <input class="menu-dialog__input" autocomplete="off" spellcheck="false" aria-labelledby="menu-prompt-title"
+             data-menu-bar-target="promptInput">
+      <div class="menu-dialog__buttons">
+        <button type="button" class="menu-dialog__button" data-action="menu-bar#closeDialog">Cancel</button>
+        <button class="menu-dialog__button menu-dialog__button--primary">OK</button>
+      </div>
+    </form>
+  </dialog>
 </header>

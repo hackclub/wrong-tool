@@ -1,7 +1,7 @@
 <div class="sheet-viewport" data-sheet-tabs-target="viewport"
      data-controller="endless-rows" data-action="scroll->endless-rows#fill resize@window->endless-rows#fill">
   <div class="sheet">
-    <div class="sheet__column-headers">
+    <div class="sheet__column-headers" data-action="mousedown->cell-selection#pressHeader">
       <span class="sheet__corner"></span>
       <% ("A".."Z").each do |letter| %>
         <span class="sheet__column-header" data-cell-selection-target="columnHeader"><%= letter %></span>
@@ -9,7 +9,7 @@
     </div>
 
     <div class="sheet__body">
-      <div class="sheet__row-headers" data-endless-rows-target="headers">
+      <div class="sheet__row-headers" data-endless-rows-target="headers" data-action="mousedown->cell-selection#pressHeader">
         <%# As many as a section spans, so gridlines never outrun their row numbers. %>
         <% 1.upto(80) do |number| %>
           <%= render "pages/row_header", number: %>
@@ -18,8 +18,9 @@
       <template data-endless-rows-target="template"><%= render "pages/row_header" %></template>
 
       <div class="sheet__cells" tabindex="0"
-           data-cell-selection-target="grid"
-           data-action="click->cell-selection#click keydown->flap-game#key keydown->cell-selection#move">
+           data-cell-selection-target="grid" data-sheet-editor-target="grid"
+           data-action="mousedown->cell-selection#press click->cell-selection#click dblclick->sheet-editor#edit
+                        keydown->flap-game#key keydown->sheet-editor#key keydown->cell-selection#move">
         <% section_names.each_with_index do |name, index| %>
           <%= tag.section id: name.parameterize, class: [ "sheet__section", "sheet__section--#{name.parameterize}" ], aria: { label: name },
                 hidden: !index.zero?, data: { sheet_tabs_target: "section" } do %>
@@ -28,7 +29,14 @@
           <% end %>
         <% end %>
 
+        <%# What's been typed into the open tab, drawn by the sheet editor. %>
+        <div class="sheet__entries" data-sheet-editor-target="entries"></div>
+        <div class="sheet__range" data-cell-selection-target="range" hidden></div>
         <div class="sheet__selection" data-cell-selection-target="selection" hidden></div>
+        <input class="sheet__editor" data-sheet-editor-target="input" hidden
+               autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Cell contents"
+               data-action="keydown->sheet-editor#type input->sheet-editor#mirror blur->sheet-editor#blur
+                            click->sheet-editor#keep dblclick->sheet-editor#keep">
       </div>
     </div>
   </div>

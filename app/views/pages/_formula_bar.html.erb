@@ -1,9 +1,13 @@
-<div class="formula-bar">
-  <span class="formula-bar__name-box">
-    <span data-cell-selection-target="nameBox">A1</span>
+<div class="formula-bar" data-action="click->sheet-editor#edit">
+  <%# Click to type an address or a range (B12, B2:D5) and press Enter to go there. %>
+  <span class="formula-bar__name-box" data-action="click->cell-selection#name">
+    <span class="formula-bar__name" data-cell-selection-target="nameBox">A1</span>
+    <input class="formula-bar__name-input" data-cell-selection-target="nameInput" hidden
+           autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Name box"
+           data-action="keydown->cell-selection#nameKey blur->cell-selection#closeName">
     <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
   </span>
   <span class="formula-bar__divider"></span>
   <span class="formula-bar__fx">fx</span>
-  <output class="formula-bar__content" data-cell-selection-target="formula"></output>
+  <output class="formula-bar__content" data-cell-selection-target="formula" data-sheet-editor-target="formula"></output>
 </div>

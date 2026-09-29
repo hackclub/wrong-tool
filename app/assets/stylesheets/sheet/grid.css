@@ -8,6 +8,9 @@
   }
 
   .sheet {
+    --selection-range: rgb(14 101 235 / 10%);
+    --selection-header-full-bg: var(--blue-700);
+
     inline-size: calc(var(--row-header-width) + var(--column-count) * var(--cell-width));
   }
 
@@ -71,6 +74,12 @@
     font-weight: 700;
   }
 
+  .sheet__column-headers,
+  .sheet__row-headers {
+    cursor: default;
+    user-select: none;
+  }
+
   /* The cell grid. Column lines are named after their letters, so a cell at B2
      spanning four columns is `grid-column: B / span 4; grid-row: 2`. Rows are
      implicit: the grid stretches to the height of the row headers beside it. */
@@ -124,22 +133,67 @@
     }
   }
 
-  /* Placed by the cell-selection controller through --column, --row, --width and
-     --height. It overhangs the cell by a pixel so it covers the gridlines around it. */
-  .sheet__selection {
+  /* Whole columns and rows (header clicks, select all) get the darker header. */
+  .sheet__row-header--full,
+  .sheet__column-header--full {
+    background: var(--selection-header-full-bg);
+    color: var(--white);
+  }
+
+  /* View > Show > Gridlines, unticked. */
+  .sheet__cells--no-gridlines {
+    background-image: none;
+  }
+
+  /* The active cell and the range are placed by the cell-selection controller through
+     --column, --row, --width and --height. They overhang by a pixel so they cover the
+     gridlines around them. */
+  .sheet__selection,
+  .sheet__range {
     position: relative;
     z-index: 4;
     grid-column: var(--column) / span var(--width);
     grid-row: var(--row) / span var(--height);
     margin: -1px 0 0 -1px;
-    border: 2px solid var(--selection);
     pointer-events: none;
-    scroll-margin: var(--column-header-height) 0 0 var(--row-header-width);
+  }
 
-    /* Fill handle */
+  .sheet__selection {
+    border: 2px solid var(--selection);
+    scroll-margin: var(--column-header-height) 0 0 var(--row-header-width);
+  }
+
+  /* Inside a range the active cell is marked by the gap in the range's tint instead. */
+  .sheet__selection--in-range {
+    border-color: transparent;
+  }
+
+  /* A tinted range with a thin outline, leaving a hole over the active cell
+     (--hole-column/--hole-row/--hole-width/--hole-height, in cells from the range's corner). */
+  .sheet__range {
+    --hole-left: calc(var(--hole-column) * var(--cell-width));
+    --hole-top: calc(var(--hole-row) * var(--cell-height));
+    --hole-right: calc(var(--hole-left) + var(--hole-width) * var(--cell-width) - 1px);
+    --hole-bottom: calc(var(--hole-top) + var(--hole-height) * var(--cell-height) - 1px);
+
+    border: 1px solid var(--selection);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--selection-range);
+      clip-path: polygon(evenodd,
+        0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+        var(--hole-left) var(--hole-top), var(--hole-right) var(--hole-top),
+        var(--hole-right) var(--hole-bottom), var(--hole-left) var(--hole-bottom), var(--hole-left) var(--hole-top));
+    }
+
+    /* Fill handle, at the range's corner */
     &::after {
       content: "";
       position: absolute;
+      z-index: 1;
       inset-inline-end: -5px;
       inset-block-end: -5px;
       inline-size: 8px;
@@ -147,6 +201,20 @@
       border: 1px solid var(--white);
       border-radius: 50%;
       background: var(--selection);
+    }
+  }
+
+  .sheet__cells:has(.sheet__editor:not([hidden])) .sheet__range::after {
+    display: none;
+  }
+
+  /* One cell: the active cell's border does the drawing, so only the handle shows. */
+  .sheet__range--single {
+    z-index: 5;
+    border-color: transparent;
+
+    &::before {
+      display: none;
     }
   }
 }
