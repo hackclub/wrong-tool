@@ -105,3 +105,11 @@
     margin-inline-start: 6px;
   }
 }
+
+@layer sheet {
+  @media (width <= 600px) {
+    .toolbar-shelf {
+      display: none;
+    }
+  }
+}

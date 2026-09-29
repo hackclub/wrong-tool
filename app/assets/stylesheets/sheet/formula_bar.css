@@ -43,3 +43,31 @@
     text-overflow: ellipsis;
   }
 }
+
+@layer sheet {
+  @media (width <= 600px) {
+    .formula-bar {
+      block-size: 36px;
+      border-block-start: 1px solid var(--border-subtle);
+    }
+
+    .formula-bar__name-box {
+      inline-size: 52px;
+      padding: 0 0 0 12px;
+      font-weight: 700;
+
+      .icon {
+        display: none;
+      }
+    }
+
+    .formula-bar__fx {
+      padding-inline: 10px;
+    }
+
+    .formula-bar__content {
+      flex: 1;
+      min-inline-size: 0;
+    }
+  }
+}

@@ -234,3 +234,79 @@
     to { translate: -50% 0; }
   }
 }
+
+/* Phones: the hero re-laid into columns A–D. The screwdriver art and the "or"
+   arrow need more columns than a phone has, so they drop out; a touch hint and a
+   formula prefix on "pick one" come in instead. */
+@layer sections {
+  .hero__hint,
+  .hero__pick-one-formula {
+    display: none;
+  }
+
+  @media (width <= 600px) {
+    .sheet__section--hero { --footer-row: 23; }
+
+    .hero__kicker           { grid-column: A / span 3;  grid-row: 1; }
+    .hero__name             { grid-column: A / span 4;  grid-row: 2 / span 2; }
+    .hero__title            { grid-column: A / span 4;  grid-row: 4 / span 2; }
+    .hero__subtitle         { grid-column: A / span 4;  grid-row: 6 / span 3; }
+    .hero__cta              { grid-column: A / span 4;  grid-row: 9 / span 2; }
+    .hero__marquee          { grid-column: A / span 5;  grid-row: 11; }
+    .hero__handheld--rg35xx { grid-column: A / span 2; }
+    .hero__handheld--miyoo  { grid-column: C / span 2; }
+    .hero__photo            { grid-row: 12 / span 5; }
+    .hero__caption          { grid-row: 17; }
+    .hero__pick-one         { grid-column: A / span 4;  grid-row: 18; }
+    .hero__hint             { grid-column: A / span 4;  grid-row: 20; }
+
+    .hero__art,
+    .hero__or {
+      display: none;
+    }
+
+    .hero__kicker,
+    .hero__pick-one,
+    .hero__hint {
+      font-size: 11px;
+    }
+
+    .hero__name {
+      font-size: 60px;
+      letter-spacing: -2.6px;
+    }
+
+    .hero__title {
+      font-size: 19px;
+      letter-spacing: -0.4px;
+      text-wrap: balance;
+    }
+
+    .hero__subtitle {
+      font-size: 14.5px;
+      line-height: 1.35;
+    }
+
+    .hero__cta {
+      margin: 4px 4px 5px 5px;
+      font-size: 16px;
+    }
+
+    .hero__marquee-track,
+    .hero__caption {
+      font-size: 12.5px;
+    }
+
+    .hero__pick-one {
+      justify-content: flex-start;
+    }
+
+    .hero__pick-one-formula {
+      display: inline;
+    }
+
+    .hero__hint {
+      display: flex;
+    }
+  }
+}

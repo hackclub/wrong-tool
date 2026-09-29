@@ -46,6 +46,9 @@
         class: "cell cell--photo hero__photo hero__handheld--miyoo", data: { formula: %(=IMAGE("miyoo-mini-plus.webp")) } %>
 
   <span class="cell cell--label hero__caption hero__handheld--rg35xx" data-formula='=SHIP(handheld, "RG35XX Pro")'>ANBERNIC RG35XX Pro</span>
-  <span class="cell cell--formula hero__pick-one" data-formula="=CHOOSE(1, 2)">pick one</span>
+  <span class="cell cell--formula hero__pick-one" data-formula="=CHOOSE(1, 2)"><span><span class="hero__pick-one-formula">=CHOOSE(1, 2) · </span>pick one</span></span>
   <span class="cell cell--label hero__caption hero__handheld--miyoo" data-formula='=SHIP(handheld, "Miyoo Mini Plus")'>Miyoo Mini Plus</span>
 </div>
+
+<%# Phones only: the desktop hint is gone, but touch needs explaining. %>
+<span class="cell cell--formula hero__hint">tap a cell · swipe to pan · tabs are the nav</span>

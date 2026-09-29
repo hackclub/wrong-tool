@@ -13,3 +13,19 @@
     grid-template-columns: subgrid;
   }
 }
+
+/* Phones: the credit wraps over three rows, then one link per column. */
+@layer sheet {
+  @media (width <= 600px) {
+    .sheet-footer__text {
+      grid-column: A / span 4;
+      grid-row: var(--footer-row) / span 3;
+      font-size: 13px;
+    }
+
+    .sheet-footer__links {
+      grid-column: A / span 4;
+      grid-row: calc(var(--footer-row) + 3);
+    }
+  }
+}

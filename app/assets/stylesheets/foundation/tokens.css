@@ -60,6 +60,7 @@
     --border-grid: var(--grey-200);
     --border-header: var(--grey-400);
     --border-control: var(--grey-600);
+    --border-subtle: #e1e3e1;
 
     --hover-chrome: var(--grey-250);
     --hover-toolbar: var(--grey-300);
@@ -79,5 +80,14 @@
     --column-count: 26;
     --row-header-width: 46px;
     --column-header-height: 22px;
+  }
+
+  /* Phones: narrower cells so a sheet fits four columns, with E peeking in. */
+  @media (width <= 600px) {
+    :root {
+      --cell-width: 84px;
+      --cell-height: 28px;
+      --row-header-width: 32px;
+    }
   }
 }

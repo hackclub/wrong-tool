@@ -11,13 +11,23 @@ export default class extends Controller {
 
   connect() {
     this.selectionTarget.hidden = false
+    this.cellWidth = this.#cellSize.width
     this.reset()
   }
 
-  // Selects the section's marked starting cell, or B2.
+  // Selects the section's marked starting cell, or its first cell.
   reset() {
-    const initial = this.initialTargets.find(cell => this.#section.contains(cell))
-    this.#select(initial ? this.#boxOf(initial) : { column: 1, row: 1 })
+    const start = this.initialTargets.find(cell => this.#section.contains(cell)) ?? this.#cells[0]
+    this.#select(start ? this.#boxOf(start) : { column: 0, row: 0 })
+  }
+
+  // The grid switches between desktop and phone cell sizes at the breakpoint.
+  relayout() {
+    const { width } = this.#cellSize
+    if (width === this.cellWidth) return
+
+    this.cellWidth = width
+    this.reset()
   }
 
   click(event) {
@@ -81,8 +91,7 @@ export default class extends Controller {
 
   // The topmost cell covering a position, if any.
   #cellAt({ column, row }) {
-    const cells = [ ...this.#section.querySelectorAll(".cell") ]
-    return cells.reverse().find(cell => {
+    return this.#cells.reverse().find(cell => {
       const box = this.#boxOf(cell)
       return column >= box.column && column < box.column + box.width &&
         row >= box.row && row < box.row + box.height
@@ -106,6 +115,11 @@ export default class extends Controller {
       width: parseFloat(style.getPropertyValue("--cell-width")),
       height: parseFloat(style.getPropertyValue("--cell-height"))
     }
+  }
+
+  // Cells laid out in the open section, skipping any hidden at this size.
+  get #cells() {
+    return [ ...this.#section.querySelectorAll(".cell") ].filter(cell => cell.offsetParent)
   }
 
   get #section() {

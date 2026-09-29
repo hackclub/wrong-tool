@@ -33,6 +33,7 @@
     font-family: var(--font-cell);
     color: var(--text-primary);
     background: var(--surface-grid);
+    -webkit-tap-highlight-color: transparent;
   }
 
   a {

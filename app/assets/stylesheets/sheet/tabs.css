@@ -74,3 +74,36 @@
     white-space: nowrap;
   }
 }
+
+/* Phones: a taller, edge-to-edge tab strip that scrolls sideways without a scrollbar. */
+@layer sheet {
+  @media (width <= 600px) {
+    .sheet-tabs {
+      block-size: 48px;
+      gap: 0;
+      padding: 0;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .sheet-tabs__round-button:not(.sheet-tabs__round-button--menu),
+    .sheet-tabs__status,
+    .sheet-tab .icon {
+      display: none;
+    }
+
+    .sheet-tabs__round-button--menu {
+      inline-size: 44px;
+      block-size: 100%;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .sheet-tab {
+      padding-inline: 16px;
+    }
+  }
+}

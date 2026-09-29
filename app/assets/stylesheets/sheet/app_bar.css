@@ -153,3 +153,50 @@
     }
   }
 }
+
+/* Phones: logo, name and a Start pill. The rest of the chrome is desktop-only. */
+@layer sheet {
+  @media (width <= 600px) {
+    .app-bar {
+      block-size: 52px;
+      gap: 10px;
+      padding: 0 6px 0 14px;
+    }
+
+    .app-bar__logo {
+      inline-size: 30px;
+      block-size: 30px;
+    }
+
+    .app-bar__document {
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    .app-bar__title {
+      padding-inline: 0;
+      font-size: 17px;
+    }
+
+    .app-bar__status-icon,
+    .menu-bar,
+    .app-bar__round-button,
+    .app-bar__meet-button,
+    .app-bar__real-sheet-button,
+    .app-bar__build-caret,
+    .app-bar__build-rest {
+      display: none;
+    }
+
+    .app-bar__build-button {
+      block-size: 36px;
+      margin-inline-start: 0;
+      border-radius: 18px;
+    }
+
+    .app-bar__build-label {
+      gap: 6px;
+      padding: 0 14px 0 10px;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 <div class="spreadsheet"
      data-controller="sheet-tabs cell-selection"
-     data-action="popstate@window->sheet-tabs#restore sheet-tabs:change->cell-selection#reset">
+     data-action="popstate@window->sheet-tabs#restore resize@window->cell-selection#relayout sheet-tabs:change->cell-selection#reset">
   <%= render "pages/app_bar" %>
   <%= render "pages/toolbar" %>
   <%= render "pages/formula_bar" %>
