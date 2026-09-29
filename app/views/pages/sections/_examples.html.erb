@@ -1,0 +1,34 @@
+<% examples = [
+     { name: "Doom Bookmarklet", by: "@PianoMan0",
+       url: "https://github.com/PianoMan0/Doom-Bookmarklet", image: "examples/doom-bookmarklet.webp" },
+     { name: "CSS Aim Trainer", by: "@ascpixi",
+       url: "https://ascpixi.dev/css-aim-trainer/", image: "examples/css-aim-trainer.webp" },
+     { name: "efisnake", by: "@simon0302010",
+       url: "https://github.com/simon0302010/efisnake", image: "examples/efisnake.webp" },
+     { name: "Minesweeper-nw", by: "@Oignontom8283",
+       url: "https://github.com/Oignontom8283/Minesweeper-nw", image: "examples/minesweeper-nw.webp" },
+     { name: "ascii3d", by: "@0xMarta",
+       url: "https://github.com/0xMarta/ascii3d", image: "examples/ascii3d.webp" },
+     { name: "flap in the sheets", by: "@cskartikey",
+       url: flap_url, image: "examples/flap-in-the-sheets.webp" }
+   ] %>
+
+<h2 class="cell cell--heading examples__title">Examples</h2>
+<p class="cell cell--kicker examples__intro">Here's what people have already built in the past!</p>
+
+<span class="cell cell--table-header examples__all">All</span>
+<span class="cell cell--formula examples__count" data-formula="=COUNTA(examples)"><%= examples.size %></span>
+
+<div class="sheet__rows examples__cards">
+  <% examples.each do |example| %>
+    <article class="examples__card">
+      <%= link_to example[:url], target: "_blank", rel: "noopener", class: "cell examples__shot",
+            data: { formula: %(=IMAGE("#{File.basename(example[:image])}")) } do %>
+        <%= image_tag example[:image], alt: "Screenshot of #{example[:name]}", class: "examples__image" %>
+      <% end %>
+      <%= link_to "#{example[:name]} ↗", example[:url], target: "_blank", rel: "noopener", class: "cell cell--link cell--label examples__name",
+            data: { formula: %(=HYPERLINK("#{example[:url]}", "#{example[:name]}")) } %>
+      <span class="cell cell--formula examples__meta"><%= example[:by] %></span>
+    </article>
+  <% end %>
+</div>

@@ -1,7 +1,7 @@
 module PagesHelper
   # Each section of the landing page is a sheet; the sheet tabs are the navigation.
   def section_names
-    [ "Hero", "How it works", "Ideas", "FAQ" ]
+    [ "Hero", "How it works", "Ideas", "Examples", "FAQ" ]
   end
 
   def hours_per_reward

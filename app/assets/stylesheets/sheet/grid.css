@@ -97,10 +97,10 @@
     background-position: 0 -1px, -1px 0;
   }
 
-  /* One section per sheet tab, sharing the grid's lines. Content lives in the first 60 rows. */
+  /* One section per sheet tab, sharing the grid's lines. Content lives in the first 80 rows. */
   .sheet__section {
     grid-column: 1 / -1;
-    grid-row: 1 / span 60;
+    grid-row: 1 / span 80;
     display: grid;
     grid-template-columns: subgrid;
     grid-template-rows: subgrid;

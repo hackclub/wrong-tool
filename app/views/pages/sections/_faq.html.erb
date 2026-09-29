@@ -1,12 +1,12 @@
 <% link = ->(text, url) { link_to(text, url, target: "_blank", rel: "noopener") } %>
 <% faqs = [
      [ "Who can join?", "Anyone in high school, ages 13 to 18." ],
-     [ "How much does it cost?", "Nothing. The handhelds are on us. If you live outside the US, you might have to pay customs." ],
+     [ "How much does it cost?", "Nothing. Lol. If you live outside the US, you might have to pay customs." ],
      [ "What can I make?", "Any game, as long as you build it in something that isn't a game engine." ],
      [ "What do I submit?", safe_join([ "A public link to your git repo and your hours from ", link.("Hackatime", hackatime_url), " or ", link.("Lapse", lapse_url), "." ]) ],
      [ "When's the deadline?", "#{sheet_date(program_dates.end)}." ],
      [ "Will you actually mail it to me?", "Yep! Log #{hours_per_reward} hours and we'll mail you a handheld." ],
-     [ "Is this legit?", "Yup. We're Hack Club, a nonprofit that's run programs like this for years, including Arcade, High Seas, Summer of Making and Flavortown." ],
+     [ "Is this legit?", "Yup. We're Hack Club, a nonprofit that's run programs like this for years, including Stardance, Arcade, High Seas, Summer of Making and Flavortown." ],
      [ "I've got more questions.", safe_join([ "Ask us on the ", link.("Hack Club Slack", footer_links["slack"]), "." ]) ]
    ] %>
 

@@ -39,15 +39,27 @@ class SectionsTest < ApplicationSystemTestCase
     assert_selection "B18", formula: '=SHIP(handheld, "RG35XX Pro")'
   end
 
+  test "the FAQ answers the common questions, with links" do
+    visit "/#faq"
+    assert_selector ".faq__question--item", count: 8
+    assert_selector ".faq__answer--item", text: "oct 16."
+
+    within(all(".faq__answer--item")[3]) do
+      assert_link "Hackatime", href: "https://hackatime.hackclub.com/"
+      assert_link "Lapse", href: "https://lapse.hackclub.com/"
+    end
+    assert_link "Hack Club Slack", href: "https://hackclub.com/slack/"
+  end
+
   test "every sheet ends with the footer, two rows below its content" do
-    { "hero" => "B21", "how-it-works" => "B21", "ideas" => "B22", "faq" => "B19" }.each do |section, address|
+    { "hero" => "B21", "how-it-works" => "B21", "ideas" => "B22", "examples" => "B25", "faq" => "B23" }.each do |section, address|
       visit "/##{section}"
       find("##{section} .sheet-footer__text").click
       assert_selection address, formula: "Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers."
     end
 
     find("#faq .sheet-footer__links a", text: "slack").click
-    assert_selection "B21", formula: '=HYPERLINK("https://hackclub.com/slack/", "slack")'
+    assert_selection "B25", formula: '=HYPERLINK("https://hackclub.com/slack/", "slack")'
   end
 
   test "the hero leads with the program name" do

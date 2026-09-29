@@ -26,7 +26,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "every other sheet starts on A1 and sits in columns A to D" do
-    %w[How\ it\ works Ideas FAQ].each do |name|
+    %w[How\ it\ works Ideas Examples FAQ].each do |name|
       click_on name
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: "A1"
     end
@@ -45,9 +45,9 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   test "the FAQ stacks each answer under its question" do
     click_on "FAQ"
     all(".faq__answer--item").first.click
-    assert_selection "A6", formula: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    assert_selection "A6", formula: "Anyone in high school, ages 13 to 18."
     all(".faq__question--item")[1].click
-    assert_selection "A10", formula: "Sit amet consectetur?"
+    assert_selection "A10", formula: "How much does it cost?"
   end
 
   test "leaves flap to the desktop" do
@@ -55,7 +55,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "the footer follows each sheet's content" do
-    { "Hero" => "A22", "How it works" => "A33", "Ideas" => "A24", "FAQ" => "A41" }.each do |name, address|
+    { "Hero" => "A22", "How it works" => "A33", "Ideas" => "A24", "Examples" => "A57", "FAQ" => "A53" }.each do |name, address|
       click_on name
       find(".sheet__section:not([hidden]) .sheet-footer__text").click
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: address

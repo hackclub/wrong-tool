@@ -10,7 +10,8 @@
 
     <div class="sheet__body">
       <div class="sheet__row-headers" data-endless-rows-target="headers">
-        <% 1.upto(50) do |number| %>
+        <%# As many as a section spans, so gridlines never outrun their row numbers. %>
+        <% 1.upto(80) do |number| %>
           <%= render "pages/row_header", number: %>
         <% end %>
       </div>
