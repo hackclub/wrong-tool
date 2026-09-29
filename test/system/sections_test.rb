@@ -52,7 +52,7 @@ class SectionsTest < ApplicationSystemTestCase
     { "hero" => "B21", "faq" => "B19", "reward" => "B13" }.each do |section, address|
       visit "/##{section}"
       find("##{section} .sheet-footer__text").click
-      assert_selection address, formula: '=HYPERLINK("https://cskartikey.dev/", "@cskartikey")'
+      assert_selection address, formula: "Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers."
     end
 
     find("#reward .sheet-footer__links a", text: "slack").click
