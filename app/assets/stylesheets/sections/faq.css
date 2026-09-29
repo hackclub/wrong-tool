@@ -12,19 +12,33 @@
   }
 }
 
-/* Phones: each question over its answer, full width, with a blank row between pairs.
-   The answer spans that blank row for placement but only draws three rows. */
+/* Phones: each question on one row with its answer tucked right under it (two rows,
+   three for long ones), then a blank row before the next. The answer spans that blank
+   row for placement but draws only its own rows. */
 @layer sections {
   @media (width <= 600px) {
-    .sheet__section--faq { --footer-row: 53; }
+    .sheet__section--faq { --footer-row: 38; }
 
     .faq__title     { grid-column: A / span 4; grid-row: 1 / span 2; }
     .faq__question,
     .faq__answer    { grid-column: A / span 4; }
 
+    .faq__question--item {
+      grid-row: auto;
+      font-size: 14px;
+    }
+
     .faq__answer--item {
-      grid-row: span 4;
+      grid-row: span 3;
       align-self: start;
+      align-items: flex-start;
+      block-size: calc(2 * var(--cell-height) - 1px);
+      padding-block-start: 2px;
+      color: var(--text-secondary);
+    }
+
+    .faq__answer--long {
+      grid-row: span 4;
       block-size: calc(3 * var(--cell-height) - 1px);
     }
 

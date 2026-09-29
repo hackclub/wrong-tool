@@ -18,7 +18,10 @@
 
   <% faqs.each do |question, answer| %>
     <span class="cell cell--label cell--wrap faq__question faq__question--item"><%= question %></span>
-    <%# The inner span keeps text and links flowing as one paragraph inside the flex cell. %>
-    <span class="cell cell--body faq__answer faq__answer--item"><span><%= answer %></span></span>
+    <%# The inner span keeps text and links flowing as one paragraph inside the flex cell.
+        Long answers get an extra row on phones. %>
+    <%= tag.span class: [ "cell cell--body faq__answer faq__answer--item", { "faq__answer--long": strip_tags(answer).length > 100 } ] do %>
+      <span><%= answer %></span>
+    <% end %>
   <% end %>
 </div>
