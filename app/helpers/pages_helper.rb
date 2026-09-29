@@ -1,11 +1,7 @@
 module PagesHelper
   # Each section of the landing page is a sheet; the sheet tabs are the navigation.
   def section_names
-    [ "Hero", "How it works", "Ideas", "Rules", "Reward", "Gallery", "FAQ" ]
-  end
-
-  def reward_name
-    "RG35XX Pro"
+    [ "Hero", "How it works", "Ideas", "FAQ" ]
   end
 
   def hours_per_reward
@@ -33,6 +29,25 @@ module PagesHelper
   # The original flap, played in Google Sheets.
   def flap_url
     "https://cskartikey.dev/flap"
+  end
+
+  def hackatime_url
+    "https://hackatime.hackclub.com/"
+  end
+
+  def lapse_url
+    "https://lapse.hackclub.com/"
+  end
+
+  # What the idea roulette on the Ideas sheet spins through.
+  def idea_genres
+    [ "platformer", "rhythm game", "roguelike", "dating sim", "tower defense", "racing game",
+      "puzzle game", "idle clicker", "text adventure", "fishing game", "bullet hell", "card game" ]
+  end
+
+  def idea_platforms
+    [ "google sheets", "figma", "google slides", "google forms", "powerpoint", "excel",
+      "pure css", "a pdf", "notion", "your inbox", "a terminal", "git commits" ]
   end
 
   def footer_links

@@ -1,34 +1,83 @@
 @layer sections {
-  .sheet__section--ideas { --footer-row: 20; }
+  /* The footer sits below room for a full log, so it doesn't jump as spins pile up. */
+  .sheet__section--ideas { --footer-row: 22; }
 
-  .ideas__title  { grid-column: B / span 8; grid-row: 2 / span 2; }
-  .ideas__intro  { grid-column: B / span 6; grid-row: 4; }
-  .ideas__list   { grid-row: 5; }
-  .ideas__heat   { grid-column: B; }
-  .ideas__tool   { grid-column: C; }
-  .ideas__game   { grid-column: D / span 2; }
-  .ideas__how    { grid-column: F / span 7; }
+  .ideas__title             { grid-column: B / span 8; grid-row: 2 / span 2; }
+  .ideas__intro             { grid-column: B / span 8; grid-row: 4; }
+  .ideas__label--genre      { grid-column: B / span 3; grid-row: 6; }
+  .ideas__label--platform   { grid-column: E / span 3; grid-row: 6; }
+  .ideas__reel--genre       { grid-column: B / span 3; grid-row: 7 / span 3; }
+  .ideas__reel--platform    { grid-column: E / span 3; grid-row: 7 / span 3; }
+  .ideas__spin              { grid-column: B / span 2; grid-row: 11; }
+  .ideas__result            { grid-column: D / span 4; grid-row: 11; }
+  .ideas__log-heading       { grid-column: B / span 6; grid-row: 13; }
+  .ideas__log               { grid-row: 14; }
+  .ideas__log-number        { grid-column: B; }
+  .ideas__log-entry         { grid-column: C / span 5; }
+
+  .ideas__roulette {
+    display: contents;
+  }
+
+  /* Slot reels: settled ones are outlined in green, rolling ones go grey. */
+  .ideas__reel {
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px var(--green);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .ideas__reel--rolling {
+    background: var(--surface-header);
+    box-shadow: inset 0 0 0 1px var(--border-header);
+    color: var(--text-placeholder);
+  }
+
+  .ideas__result {
+    font-size: 15px;
+  }
+
+  .ideas__log-number {
+    justify-content: flex-end;
+  }
 }
 
-/* Phones: heat, tool and game fit A–D; the description starts at E, a pan away. */
+/* Phones: the reels side by side across A–D, a full-width Spin button, then the log. */
 @layer sections {
   @media (width <= 600px) {
-    .sheet__section--ideas { --footer-row: 19; }
+    .sheet__section--ideas { --footer-row: 24; }
 
-    .ideas__title  { grid-column: A / span 4; grid-row: 1 / span 2; }
-    .ideas__intro  { grid-column: A / span 5; grid-row: 3; font-size: 12px; }
-    .ideas__list   { grid-row: 4; }
-    .ideas__heat   { grid-column: A; }
-    .ideas__tool   { grid-column: B; }
-    .ideas__game   { grid-column: C / span 2; }
-    .ideas__how    { grid-column: E / span 5; }
+    .ideas__title             { grid-column: A / span 4; grid-row: 1 / span 2; }
+    .ideas__intro             { grid-column: A / span 4; grid-row: 3 / span 2; }
+    .ideas__label--genre      { grid-column: A / span 2; grid-row: 6; }
+    .ideas__label--platform   { grid-column: C / span 2; grid-row: 6; }
+    .ideas__reel--genre       { grid-column: A / span 2; grid-row: 7 / span 3; }
+    .ideas__reel--platform    { grid-column: C / span 2; grid-row: 7 / span 3; }
+    .ideas__spin              { grid-column: A / span 4; grid-row: 11 / span 2; }
+    .ideas__result            { grid-column: A / span 4; grid-row: 13; }
+    .ideas__log-heading       { grid-column: A / span 4; grid-row: 15; }
+    .ideas__log               { grid-row: 16; }
+    .ideas__log-number        { grid-column: A; }
+    .ideas__log-entry         { grid-column: B / span 3; }
 
-    .ideas__tool:not(.cell--table-header) {
-      font-size: 10.5px;
+    .ideas__intro {
+      font-size: 12px;
+      white-space: normal;
+      line-height: 1.3;
     }
 
-    .ideas__game:not(.cell--table-header) {
-      font-size: 13px;
+    .ideas__reel {
+      font-size: 18px;
+    }
+
+    .ideas__spin {
+      margin: 4px 4px 5px 5px;
+      font-size: 16px;
+    }
+
+    .ideas__result {
+      font-size: 14px;
     }
   }
 }

@@ -2,35 +2,18 @@ require "application_system_test_case"
 
 class SectionsTest < ApplicationSystemTestCase
   test "cells in table rows land on the right address" do
-    visit "/#rules"
-    all(".rules__allowed.cell--false").first.click
+    visit "/#how-it-works"
+    all(".how-it-works__step--item")[2].click
 
-    assert_selection "I8", formula: "=RUNS_IN_MEDIUM(B8) → FALSE"
+    assert_selection "C10", formula: "Put it in a git repo"
   end
 
-  test "the gallery's second row starts on row 11" do
-    visit "/#gallery"
-    all(".gallery__image")[4].click
-
-    assert_selection "B11", formula: '=IMAGE("amet (ssh).png")'
-  end
-
-  test "an input cell keeps focus and shows its value in the formula bar" do
-    visit "/#reward"
-    input = find(".reward__hours input")
-    input.click
-
-    assert_selection "B7", formula: "12"
-    assert_equal input, page.active_element
-  end
-
-  test "the reward shows both handhelds as selectable image cells" do
-    visit "/#reward"
-    assert_selector "img[alt^='ANBERNIC RG35XX Pro']"
-    assert_selector "img[alt^='Miyoo Mini Plus']"
-
-    find("img[alt^='Miyoo Mini Plus']").click
-    assert_selection "K2", formula: '=IMAGE("miyoo-mini-plus.webp")'
+  test "how it works numbers its steps and links the hour trackers" do
+    visit "/#how-it-works"
+    assert_selector ".how-it-works__number--step", count: 4
+    assert_text "Submit your repo and hours by oct 16."
+    assert_link "Hackatime ↗", href: "https://hackatime.hackclub.com/"
+    assert_link "Lapse ↗", href: "https://lapse.hackclub.com/"
   end
 
   test "the hero offers both handhelds" do
@@ -49,14 +32,14 @@ class SectionsTest < ApplicationSystemTestCase
   end
 
   test "every sheet ends with the footer, two rows below its content" do
-    { "hero" => "B21", "faq" => "B19", "reward" => "B13" }.each do |section, address|
+    { "hero" => "B21", "how-it-works" => "B21", "ideas" => "B22", "faq" => "B19" }.each do |section, address|
       visit "/##{section}"
       find("##{section} .sheet-footer__text").click
       assert_selection address, formula: "Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers."
     end
 
-    find("#reward .sheet-footer__links a", text: "slack").click
-    assert_selection "B15", formula: '=HYPERLINK("https://hackclub.com/slack/", "slack")'
+    find("#faq .sheet-footer__links a", text: "slack").click
+    assert_selection "B21", formula: '=HYPERLINK("https://hackclub.com/slack/", "slack")'
   end
 
   test "the hero leads with the program name" do

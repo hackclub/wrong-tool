@@ -8,12 +8,6 @@
 
     /* Cell states */
     --green-50: #e6f4ea;
-    --red-700: #c62828;
-    --red-50: #fdecee;
-    --amber-800: #8a5200;
-    --amber-50: #fff1d6;
-    --pink-ship: #fff0f2;
-    --yellow-input: #fffbe0;
     --yellow-100: #fff3c4;
     --amber-900: #5c4400;
 
@@ -53,11 +47,6 @@
     --icon-color: var(--grey-700);
     --text-kicker: #555;
     --text-formula: #6b6b6b;
-
-    --placeholder-stripe: #ececec;
-    --placeholder-stripe-alt: #f6f6f6;
-    --placeholder-border: #d0d0d0;
-    --placeholder-text: #666;
 
     --border-grid: var(--grey-200);
     --border-header: var(--grey-400);

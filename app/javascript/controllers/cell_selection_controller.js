@@ -44,13 +44,12 @@ export default class extends Controller {
     }
 
     this.#select(position)
-    // Let input cells keep focus so they can be typed into.
-    if (!event.target.matches("input")) this.gridTarget.focus({ preventScroll: true })
+    this.gridTarget.focus({ preventScroll: true })
   }
 
   move(event) {
     const move = MOVES[event.key]
-    if (!move || event.target.matches("input")) return
+    if (!move) return
 
     // Step off the edge of the selected box, so merged cells are crossed in one move.
     const { column, row, width, height } = this.box
@@ -70,11 +69,7 @@ export default class extends Controller {
     this.#drawSelection(box)
     this.#highlightHeaders(box)
     this.nameBoxTarget.textContent = `${COLUMNS[box.column]}${box.row + 1}`
-    this.formulaTarget.textContent = cell ? this.#formulaOf(cell) : ""
-  }
-
-  #formulaOf(cell) {
-    return cell.dataset.formula ?? cell.querySelector("input")?.value ?? cell.textContent.trim()
+    this.formulaTarget.textContent = cell ? cell.dataset.formula ?? cell.textContent.trim() : ""
   }
 
   #drawSelection({ column, row, width, height }) {

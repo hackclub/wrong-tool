@@ -1,26 +1,29 @@
-<% short = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." %>
-<% medium = "Sed do eiusmod tempor incididunt ut labore." %>
-<% ideas = {
-     "Mild" => [ [ "GOOGLE SHEETS", "Lorem ipsum", short ], [ "FIGMA", "Dolor sit", medium ], [ "GOOGLE FORMS", "Amet elit", short ], [ "EXCEL", "Sed tempor", medium ] ],
-     "Spicy" => [ [ "CSS", "Magna aliqua", medium ], [ "PDF", "Ut enim", short ], [ "SSH", "Minim veniam", medium ], [ "EMAIL", "Quis nostrud", short ] ],
-     "Unhinged" => [ [ "FONTS", "Duis aute", short ], [ "SHADERS", "Irure dolor", medium ], [ "DNS", "Velit esse", short ], [ "GIT", "Cillum fugiat", medium ] ]
-   } %>
+<% genre, platform = idea_genres.first, idea_platforms.second %>
 
-<h2 class="cell cell--heading ideas__title">Example ideas</h2>
-<p class="cell cell--kicker ideas__intro"><%= medium %></p>
+<h2 class="cell cell--heading ideas__title">Idea roulette</h2>
+<p class="cell cell--kicker ideas__intro">Stuck? Spin it. Build whatever lands, or ignore it. Any game in any non-engine tool counts.</p>
 
-<div class="sheet__rows ideas__list">
-  <button type="button" class="cell cell--table-header ideas__heat" data-formula='=FILTER(ideas, heat="All")'>Heat ▾ All</button>
-  <span class="cell cell--table-header ideas__tool">Tool</span>
-  <span class="cell cell--table-header ideas__game">Game</span>
-  <span class="cell cell--table-header ideas__how">How it works</span>
+<div class="ideas__roulette" data-controller="idea-roulette"
+     data-idea-roulette-genres-value="<%= idea_genres.to_json %>" data-idea-roulette-platforms-value="<%= idea_platforms.to_json %>">
+  <span class="cell cell--table-header ideas__label ideas__label--genre"
+        data-formula="=INDEX(genres, RANDBETWEEN(1, <%= idea_genres.size %>))">make a</span>
+  <span class="cell cell--table-header ideas__label ideas__label--platform"
+        data-formula="=INDEX(platforms, RANDBETWEEN(1, <%= idea_platforms.size %>))">in</span>
 
-  <% ideas.each do |heat, tier| %>
-    <% tier.each do |tool, game, how| %>
-      <span class="cell cell--heat-<%= heat.downcase %> ideas__heat"><%= heat %></span>
-      <span class="cell cell--formula ideas__tool"><%= tool %></span>
-      <span class="cell cell--label ideas__game"><%= game %></span>
-      <span class="cell ideas__how"><%= how %></span>
+  <%= tag.span genre, class: "cell ideas__reel ideas__reel--genre", data: { idea_roulette_target: "genre", formula: %(="#{genre}") } %>
+  <%= tag.span platform, class: "cell ideas__reel ideas__reel--platform", data: { idea_roulette_target: "platform", formula: %(="#{platform}") } %>
+
+  <button type="button" class="cell cell--cta ideas__spin" data-idea-roulette-target="button"
+          data-action="idea-roulette#spin" data-formula="=SPIN()">Spin ↻</button>
+  <span class="cell ideas__result" data-idea-roulette-target="result"
+        data-formula='=CONCAT("make a ", B7, " in ", E7)'>make a <%= genre %> in <%= platform %>.</span>
+
+  <%# The last six spins, newest first. Filled in by the idea-roulette controller. %>
+  <span class="cell cell--table-header ideas__log-heading" data-idea-roulette-target="logHeading" hidden>Past spins</span>
+  <div class="sheet__rows ideas__log">
+    <% 6.times do %>
+      <span class="cell cell--formula ideas__log-number" data-idea-roulette-target="logNumber" hidden></span>
+      <span class="cell ideas__log-entry" data-idea-roulette-target="logEntry" hidden></span>
     <% end %>
-  <% end %>
+  </div>
 </div>

@@ -78,78 +78,6 @@
     color: var(--text-formula);
   }
 
-  .cell--true,
-  .cell--false {
-    justify-content: center;
-    font: 700 13px var(--font-mono);
-  }
-
-  .cell--true {
-    background: var(--green-50);
-    color: var(--green);
-  }
-
-  .cell--false {
-    background: var(--red-50);
-    color: var(--red-700);
-  }
-
-  .cell--check {
-    justify-content: center;
-    font-size: 19px;
-    color: var(--green);
-  }
-
-  .cell--bar {
-    font: 14px var(--font-mono);
-    color: var(--green);
-    white-space: pre;
-  }
-
-  .cell--input {
-    padding: 0;
-    background: var(--yellow-input);
-
-    input {
-      inline-size: 100%;
-      block-size: 100%;
-      padding-inline: 8px;
-      border: 0;
-      outline: none;
-      background: transparent;
-      font: 15px var(--font-mono);
-      text-align: end;
-
-      &::-webkit-inner-spin-button {
-        opacity: 1;
-      }
-    }
-  }
-
-  /* Idea heat, from harmless to reckless */
-
-  .cell--heat-mild,
-  .cell--heat-spicy,
-  .cell--heat-unhinged {
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .cell--heat-mild {
-    background: var(--green-50);
-    color: var(--green);
-  }
-
-  .cell--heat-spicy {
-    background: var(--amber-50);
-    color: var(--amber-800);
-  }
-
-  .cell--heat-unhinged {
-    background: var(--red-50);
-    color: var(--red-700);
-  }
-
   .cell--link {
     color: var(--green);
     text-decoration: underline;
@@ -177,24 +105,7 @@
     }
   }
 
-  .cell--ship {
-    background: var(--pink-ship);
-    font-size: 16px;
-    font-weight: 700;
-  }
-
-  /* Images and placeholders */
-
-  .cell--image {
-    justify-content: center;
-    text-align: center;
-    white-space: normal;
-    border: 1px solid var(--placeholder-border);
-    background: repeating-linear-gradient(135deg, var(--placeholder-stripe) 0 8px, var(--placeholder-stripe-alt) 8px 16px);
-    font: 12px var(--font-mono);
-    line-height: 1.35;
-    color: var(--placeholder-text);
-  }
+  /* Images */
 
   /* An <img> cell. Replaced elements only stretch to their grid area when asked to. */
   .cell--photo {
@@ -213,10 +124,7 @@
       font-size: 26px;
     }
 
-    .cell--table-header,
-    .cell--heat-mild,
-    .cell--heat-spicy,
-    .cell--heat-unhinged {
+    .cell--table-header {
       font-size: 12px;
     }
 
@@ -224,9 +132,5 @@
       font-size: 13.5px;
     }
 
-    /* 16px keeps iOS from zooming in when the input is focused. */
-    .cell--input input {
-      font-size: 16px;
-    }
   }
 }

@@ -1,27 +1,38 @@
 <% steps = [
-     [ "Lorem ipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit." ],
-     [ "Dolor sit amet", "Sed do eiusmod tempor incididunt ut labore." ],
-     [ "Consectetur", "Lorem ipsum dolor sit amet, consectetur adipiscing elit." ],
-     [ "Adipiscing elit", "Sed do eiusmod tempor incididunt ut labore." ]
+     [ "Commit to a platform", "Pick one tool that isn't a game engine: google sheets, figma, slides, forms, css, your inbox. The whole game gets built inside it." ],
+     [ "Build & track hours", "Writing code? Track it with Hackatime. Not writing code? Record your sessions with Lapse. Every #{hours_per_reward} hours counts toward a handheld." ],
+     [ "Put it in a git repo", "Everything goes in a repo. If the tool can export (.xlsx, .fig, .pptx, .pdf), commit the exported copy. If it can't, a README.md with the link works." ],
+     [ "Ship it", "Submit your repo and hours by #{sheet_date(program_dates.end)}. We review, then mail your handheld." ]
    ] %>
-<% done = [ true, false, false, false ] %>
-<% progress = done.count(true) * 4 %>
+<% repo = [ [ "my-wrong-game/", "" ], [ "├─ README.md", "← what it is + the link" ], [ "└─ game.xlsx", "← exported copy, if the tool exports" ] ] %>
 
 <h2 class="cell cell--heading how-it-works__title">How it works</h2>
 
 <div class="sheet__rows how-it-works__steps">
-  <span class="cell cell--table-header how-it-works__done">Done</span>
+  <span class="cell cell--table-header how-it-works__number">#</span>
   <span class="cell cell--table-header how-it-works__step">Step</span>
   <span class="cell cell--table-header how-it-works__detail">What you do</span>
 
   <% steps.each_with_index do |(name, detail), index| %>
-    <%= tag.button done[index] ? "☑" : "☐", type: "button", role: "checkbox",
-          class: "cell cell--check how-it-works__done",
-          aria: { checked: done[index], label: name }, data: { formula: done[index].to_s.upcase } %>
-    <span class="cell cell--label how-it-works__step"><%= index + 1 %>. <%= name %></span>
-    <span class="cell how-it-works__detail"><%= detail %></span>
+    <span class="cell how-it-works__number how-it-works__number--step"><%= index + 1 %></span>
+    <span class="cell cell--label how-it-works__step how-it-works__step--item"><%= name %></span>
+    <span class="cell cell--body how-it-works__detail how-it-works__detail--item"><%= detail %></span>
   <% end %>
 </div>
 
-<span class="cell cell--label how-it-works__progress-label">Progress</span>
-<span class="cell cell--bar how-it-works__progress" data-formula="=SPARKLINE(COUNTIF(B6:B9,TRUE)/4)"><%= "█" * progress %><%= "░" * (16 - progress) %>  <%= progress * 100 / 16 %>%</span>
+<span class="cell cell--table-header how-it-works__tracking-heading">Tracking hours</span>
+<span class="cell how-it-works__tracking-label how-it-works__tracking--code">writing code</span>
+<%= link_to "Hackatime ↗", hackatime_url, target: "_blank", rel: "noopener", class: "cell cell--link how-it-works__tracking-link how-it-works__tracking--code",
+      data: { formula: %(=HYPERLINK("#{hackatime_url}", "Hackatime")) } %>
+<span class="cell how-it-works__tracking-label how-it-works__tracking--other">not writing code</span>
+<%= link_to "Lapse ↗", lapse_url, target: "_blank", rel: "noopener", class: "cell cell--link how-it-works__tracking-link how-it-works__tracking--other",
+      data: { formula: %(=HYPERLINK("#{lapse_url}", "Lapse")) } %>
+<span class="cell cell--formula how-it-works__tracking-note">sheets, figma, slides, forms → lapse</span>
+
+<span class="cell cell--table-header how-it-works__repo-heading">Your repo</span>
+<div class="sheet__rows how-it-works__repo">
+  <% repo.each do |file, note| %>
+    <span class="cell how-it-works__repo-file"><%= file %></span>
+    <span class="cell cell--formula how-it-works__repo-note"><%= note %></span>
+  <% end %>
+</div>

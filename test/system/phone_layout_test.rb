@@ -26,25 +26,20 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "every other sheet starts on A1 and sits in columns A to D" do
-    %w[How\ it\ works Ideas Rules Reward Gallery FAQ].each do |name|
+    %w[How\ it\ works Ideas FAQ].each do |name|
       click_on name
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: "A1"
     end
   end
 
-  test "tables keep their columns, panning right for the rest" do
+  test "sheets re-lay their tables into columns A to D" do
+    click_on "How it works"
+    all(".how-it-works__detail--item").first.click
+    assert_selection "B6", formula: "Pick one tool that isn't a game engine: google sheets, figma, slides, forms, css, your inbox. The whole game gets built inside it."
+
     click_on "Ideas"
-    find(".ideas__game", text: "Lorem ipsum").click
-    assert_selection "C5", formula: "Lorem ipsum"
-
-    find(".ideas__how", text: "How it works").click
-    assert_selection "E4", formula: "How it works"
-
-    click_on "Rules"
-    all(".rules__allowed.cell--true").first.click
-    assert_selection "D6", formula: "=RUNS_IN_MEDIUM(B6) → TRUE"
-    all(".rules__rule").last.click # short rules take one row, long ones two
-    assert_selection "A18", formula: "Lorem ipsum dolor sit"
+    find(".ideas__reel--platform").click
+    assert_selection "C7", formula: '="figma"'
   end
 
   test "the FAQ stacks each answer under its question" do
@@ -60,7 +55,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "the footer follows each sheet's content" do
-    { "Hero" => "A22", "Ideas" => "A19", "Reward" => "A19", "FAQ" => "A41" }.each do |name, address|
+    { "Hero" => "A22", "How it works" => "A33", "Ideas" => "A24", "FAQ" => "A41" }.each do |name, address|
       click_on name
       find(".sheet__section:not([hidden]) .sheet-footer__text").click
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: address
