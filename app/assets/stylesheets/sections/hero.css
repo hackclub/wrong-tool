@@ -21,11 +21,10 @@
     text-decoration: none;
   }
 
-  /* The program name overhangs its cells and lets the art underneath show through. */
+  /* The program name overhangs its cells, over the art underneath. */
   .hero__name {
     position: relative;
     overflow: visible;
-    background: transparent;
     font-size: 84px;
     line-height: 1;
     letter-spacing: -3.5px;
@@ -62,7 +61,6 @@
     display: block;
     overflow: visible;
     padding: 0;
-    background: transparent;
     pointer-events: none;
 
     > * {

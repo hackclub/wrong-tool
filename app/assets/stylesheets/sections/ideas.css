@@ -9,3 +9,26 @@
   .ideas__game   { grid-column: D / span 2; }
   .ideas__how    { grid-column: F / span 7; }
 }
+
+/* Phones: heat, tool and game fit A–D; the description starts at E, a pan away. */
+@layer sections {
+  @media (width <= 600px) {
+    .sheet__section--ideas { --footer-row: 19; }
+
+    .ideas__title  { grid-column: A / span 4; grid-row: 1 / span 2; }
+    .ideas__intro  { grid-column: A / span 5; grid-row: 3; font-size: 12px; }
+    .ideas__list   { grid-row: 4; }
+    .ideas__heat   { grid-column: A; }
+    .ideas__tool   { grid-column: B; }
+    .ideas__game   { grid-column: C / span 2; }
+    .ideas__how    { grid-column: E / span 5; }
+
+    .ideas__tool:not(.cell--table-header) {
+      font-size: 10.5px;
+    }
+
+    .ideas__game:not(.cell--table-header) {
+      font-size: 13px;
+    }
+  }
+}

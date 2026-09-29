@@ -97,13 +97,15 @@
     background-position: 0 -1px, -1px 0;
   }
 
-  /* One section per sheet tab, sharing the grid's lines. Content lives in the first 40 rows. */
+  /* One section per sheet tab, sharing the grid's lines. Content lives in the first 60 rows. */
   .sheet__section {
     grid-column: 1 / -1;
-    grid-row: 1 / span 40;
+    grid-row: 1 / span 60;
     display: grid;
     grid-template-columns: subgrid;
     grid-template-rows: subgrid;
+    /* Opening /#faq scrolls to the section; this keeps it clear of the sticky headers. */
+    scroll-margin: var(--column-header-height) 0 0 var(--row-header-width);
   }
 
   /* A run of table rows that fills in row by row: its cells only pick their

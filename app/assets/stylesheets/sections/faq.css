@@ -11,3 +11,26 @@
     grid-row: span 2;
   }
 }
+
+/* Phones: each question over its answer, full width, with a blank row between pairs.
+   The answer spans that blank row for placement but only draws three rows. */
+@layer sections {
+  @media (width <= 600px) {
+    .sheet__section--faq { --footer-row: 41; }
+
+    .faq__title     { grid-column: A / span 4; grid-row: 1 / span 2; }
+    .faq__question,
+    .faq__answer    { grid-column: A / span 4; }
+
+    .faq__answer--item {
+      grid-row: span 4;
+      align-self: start;
+      block-size: calc(3 * var(--cell-height) - 1px);
+    }
+
+    .faq__question.cell--table-header,
+    .faq__answer.cell--table-header {
+      display: none;
+    }
+  }
+}

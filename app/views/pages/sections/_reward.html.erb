@@ -9,10 +9,10 @@
 <span class="cell cell--table-header reward__next-heading">Hours to next</span>
 
 <label class="cell cell--input reward__hours">
-  <input type="number" min="0" max="999" value="<%= hours %>" aria-label="Hours logged">
+  <input type="number" inputmode="numeric" min="0" max="999" value="<%= hours %>" aria-label="Hours logged">
 </label>
 <span class="cell cell--number reward__count" data-formula="=FLOOR(B7/<%= hours_per_reward %>)"><%= rewards %></span>
-<span class="cell cell--number reward__next" data-formula="=<%= hours_per_reward %>-MOD(B7,<%= hours_per_reward %>)"><%= hours_per_reward - hours % hours_per_reward %></span>
+<span class="cell cell--number reward__next" data-formula="=<%= hours_per_reward %>-MOD(B7,<%= hours_per_reward %>)"><span><span class="reward__next-label">Hours to next: </span><%= hours_per_reward - hours % hours_per_reward %></span></span>
 
 <span class="cell cell--formula reward__hours-hint">↑ type your hours</span>
 <span class="cell cell--formula reward__count-hint">=FLOOR(B7/<%= hours_per_reward %>)</span>

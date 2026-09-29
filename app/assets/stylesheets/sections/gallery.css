@@ -21,3 +21,19 @@
   .gallery__image    { grid-column: 1 / -1; grid-row: span 4; }
   .gallery__caption  { grid-column: 1 / -1; }
 }
+
+/* Phones: two screenshots a row. */
+@layer sections {
+  @media (width <= 600px) {
+    .sheet__section--gallery { --footer-row: 29; }
+
+    .gallery__title  { grid-column: A / span 4; grid-row: 1 / span 2; }
+    .gallery__intro  { grid-column: A / span 4; grid-row: 3; font-size: 12px; }
+    .gallery__grid   { grid-row: 4; }
+
+    .gallery__item {
+      &:nth-child(odd)  { grid-column: A / span 2; }
+      &:nth-child(even) { grid-column: C / span 2; }
+    }
+  }
+}

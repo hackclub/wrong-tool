@@ -1,5 +1,6 @@
-/* Content typed into the grid. Cells stop 1px short on the right and bottom so
-   the gridlines behind them stay visible. Modifiers are the reusable cell styles. */
+/* Content typed into the grid. Cells have no fill of their own, so text sits on the
+   gridlines; they still stop 1px short on the right and bottom so filled cells
+   (headers, buttons, tags) leave the gridlines showing. Modifiers are the reusable styles. */
 @layer sheet {
   .cell {
     min-inline-size: 0;
@@ -8,7 +9,6 @@
     margin: 0 1px 1px 0;
     padding-inline: 6px;
     overflow: hidden;
-    background: var(--surface-grid);
     font-size: 14px;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -203,5 +203,30 @@
     min-block-size: 0;
     padding: 0;
     object-fit: contain;
+  }
+}
+
+/* Phones: smaller headings and table labels to suit 84px columns. */
+@layer sheet {
+  @media (width <= 600px) {
+    .cell--heading {
+      font-size: 26px;
+    }
+
+    .cell--table-header,
+    .cell--heat-mild,
+    .cell--heat-spicy,
+    .cell--heat-unhinged {
+      font-size: 12px;
+    }
+
+    .cell--body {
+      font-size: 13.5px;
+    }
+
+    /* 16px keeps iOS from zooming in when the input is focused. */
+    .cell--input input {
+      font-size: 16px;
+    }
   }
 }

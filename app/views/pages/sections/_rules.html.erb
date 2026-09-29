@@ -12,7 +12,8 @@
   <span class="cell cell--table-header rules__allowed">Allowed?</span>
 
   <% rules.each_with_index do |(rule, allowed), index| %>
-    <span class="cell rules__rule"><%= rule %></span>
+    <%# Long rules wrap onto a second row on phones. %>
+    <%= tag.span rule, class: [ "cell rules__rule", { "rules__rule--long": rule.length > 40 } ] %>
     <%= tag.span allowed.to_s.upcase, class: [ "cell rules__allowed", allowed ? "cell--true" : "cell--false" ],
           data: { formula: "=RUNS_IN_MEDIUM(B#{index + 6}) → #{allowed.to_s.upcase}" } %>
   <% end %>
