@@ -50,6 +50,10 @@ module PagesHelper
       "pure css", "a pdf", "notion", "your inbox", "a terminal", "git commits" ]
   end
 
+  def footer_credit
+    "Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers."
+  end
+
   def footer_links
     {
       "slack" => "https://hackclub.com/slack/",

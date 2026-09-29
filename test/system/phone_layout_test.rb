@@ -42,12 +42,18 @@ class PhoneLayoutTest < ApplicationSystemTestCase
     assert_selection "C7", formula: '="figma"'
   end
 
-  test "the FAQ stacks each answer under its question" do
+  test "the FAQ is its own two-column sheet, rows sized to fit" do
     click_on "FAQ"
-    all(".faq__answer--item").first.click
-    assert_selection "A5", formula: "Anyone in high school, ages 13 to 18."
-    all(".faq__question--item")[1].click
-    assert_selection "A8", formula: "How much does it cost?"
+    assert_selector "[data-cell-selection-target=nameBox]", exact_text: "A1"
+    assert_no_selector ".sheet__row-headers"
+
+    all(".faq-sheet__answer").first.click
+    assert_selection "B3", formula: "Anyone in high school, ages 13 to 18."
+    assert_selector ".faq-sheet__row[data-selected]", exact_text: "3"
+    assert_selector ".faq-sheet__column[data-selected]", exact_text: "B"
+
+    all(".faq-sheet__question")[1].click
+    assert_selection "A4", formula: "How much does it cost?"
   end
 
   test "leaves flap to the desktop" do
@@ -55,7 +61,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
   end
 
   test "the footer follows each sheet's content" do
-    { "Hero" => "A22", "How it works" => "A33", "Ideas" => "A24", "Examples" => "A57", "FAQ" => "A38" }.each do |name, address|
+    { "Hero" => "A22", "How it works" => "A33", "Ideas" => "A24", "Examples" => "A57" }.each do |name, address|
       click_on name
       find(".sheet__section:not([hidden]) .sheet-footer__text").click
       assert_selector "[data-cell-selection-target=nameBox]", exact_text: address

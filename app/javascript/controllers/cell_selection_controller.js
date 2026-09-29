@@ -26,6 +26,12 @@ export default class extends Controller {
     if (this.box) this.#select(this.box)
   }
 
+  // Shows a cell picked somewhere else, like the phone FAQ's mini-sheet.
+  show({ detail: { address, formula } }) {
+    this.nameBoxTarget.textContent = address
+    this.formulaTarget.textContent = formula
+  }
+
   // The grid switches between desktop and phone cell sizes at the breakpoint.
   relayout() {
     const { width } = this.#cellSize

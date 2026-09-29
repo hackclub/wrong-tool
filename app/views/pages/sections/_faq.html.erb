@@ -18,10 +18,40 @@
 
   <% faqs.each do |question, answer| %>
     <span class="cell cell--label cell--wrap faq__question faq__question--item"><%= question %></span>
-    <%# The inner span keeps text and links flowing as one paragraph inside the flex cell.
-        Long answers get an extra row on phones. %>
-    <%= tag.span class: [ "cell cell--body faq__answer faq__answer--item", { "faq__answer--long": strip_tags(answer).length > 100 } ] do %>
-      <span><%= answer %></span>
-    <% end %>
+    <%# The inner span keeps text and links flowing as one paragraph inside the flex cell. %>
+    <span class="cell cell--body faq__answer faq__answer--item"><span><%= answer %></span></span>
   <% end %>
+</div>
+
+<%# Phones: the FAQ as its own two-column sheet whose rows grow to fit the answers.
+    The big grid's headers step aside while it's open (see faq.css). %>
+<div class="faq-sheet" data-controller="mini-sheet"
+     data-action="click->mini-sheet#select sheet-tabs:change@window->mini-sheet#reset">
+  <span class="faq-sheet__corner"></span>
+  <span class="faq-sheet__column" data-mini-sheet-target="column" data-column="A">A</span>
+  <span class="faq-sheet__column" data-mini-sheet-target="column" data-column="B">B</span>
+
+  <span class="faq-sheet__row" data-mini-sheet-target="row" data-row="1">1</span>
+  <h2 class="faq-sheet__cell faq-sheet__title" data-mini-sheet-target="cell" data-row="1" data-columns="A B">FAQ</h2>
+
+  <span class="faq-sheet__row" data-mini-sheet-target="row" data-row="2">2</span>
+  <span class="faq-sheet__cell faq-sheet__heading" data-mini-sheet-target="cell" data-row="2" data-columns="A">Question</span>
+  <span class="faq-sheet__cell faq-sheet__heading" data-mini-sheet-target="cell" data-row="2" data-columns="B">Answer</span>
+
+  <% faqs.each.with_index(3) do |(question, answer), row| %>
+    <span class="faq-sheet__row" data-mini-sheet-target="row" data-row="<%= row %>"><%= row %></span>
+    <span class="faq-sheet__cell faq-sheet__question" data-mini-sheet-target="cell" data-row="<%= row %>" data-columns="A"><%= question %></span>
+    <span class="faq-sheet__cell faq-sheet__answer" data-mini-sheet-target="cell" data-row="<%= row %>" data-columns="B"><%= answer %></span>
+  <% end %>
+
+  <% footer_row = faqs.size + 3 %>
+  <span class="faq-sheet__row" data-mini-sheet-target="row" data-row="<%= footer_row %>"><%= footer_row %></span>
+  <p class="faq-sheet__cell faq-sheet__footer" data-mini-sheet-target="cell" data-row="<%= footer_row %>" data-columns="A B">
+    <%= footer_credit %>
+    <span class="faq-sheet__links">
+      <% footer_links.each do |name, url| %>
+        <%= link_to name, url, target: "_blank", rel: "noopener" %>
+      <% end %>
+    </span>
+  </p>
 </div>

@@ -12,39 +12,187 @@
   }
 }
 
-/* Phones: each question on one row with its answer tucked right under it (two rows,
-   three for long ones), then a blank row before the next. The answer spans that blank
-   row for placement but draws only its own rows. */
+/* The phone FAQ's own sheet (see _faq.html.erb). Desktop uses the grid above. */
 @layer sections {
+  .faq-sheet {
+    display: none;
+  }
+
   @media (width <= 600px) {
-    .sheet__section--faq { --footer-row: 38; }
+    /* While the FAQ is open, the big grid's headers and selection step aside for it. */
+    .sheet-viewport:has(.sheet__section--faq:not([hidden])) {
+      overflow-x: hidden;
 
-    .faq__title     { grid-column: A / span 4; grid-row: 1 / span 2; }
-    .faq__question,
-    .faq__answer    { grid-column: A / span 4; }
+      .sheet {
+        inline-size: auto;
+      }
 
-    .faq__question--item {
-      grid-row: auto;
-      font-size: 14px;
+      .sheet__column-headers,
+      .sheet__row-headers,
+      .sheet__selection {
+        display: none;
+      }
+
+      .sheet__cells {
+        flex: 1;
+        display: block;
+        inline-size: auto;
+        background: none;
+      }
     }
 
-    .faq__answer--item {
-      grid-row: span 3;
-      align-self: start;
-      align-items: flex-start;
-      block-size: calc(2 * var(--cell-height) - 1px);
-      padding-block-start: 2px;
+    /* The formula bar grows to show a whole answer. */
+    .spreadsheet:has(.sheet__section--faq:not([hidden])) {
+      .formula-bar {
+        block-size: auto;
+        align-items: flex-start;
+      }
+
+      .formula-bar__name-box {
+        padding-block-start: 9px;
+      }
+
+      .formula-bar__divider {
+        margin-block-start: 9px;
+      }
+
+      .formula-bar__fx {
+        padding-block-start: 7px;
+      }
+
+      .formula-bar__content {
+        padding: 8px 12px 8px 0;
+        line-height: 1.4;
+        white-space: normal;
+        text-wrap: pretty;
+      }
+    }
+
+    .sheet__section--faq {
+      display: block;
+
+      > :not(.faq-sheet) {
+        display: none;
+      }
+    }
+
+    .faq-sheet {
+      display: grid;
+      grid-template-columns: var(--row-header-width) 128px minmax(0, 1fr);
+      align-content: start;
+      background: var(--surface-grid);
+    }
+
+    .faq-sheet__corner,
+    .faq-sheet__column {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+      block-size: var(--column-header-height);
+      border-block-end: 1px solid var(--border-header);
+      background: var(--surface-header);
+    }
+
+    .faq-sheet__corner {
+      border-inline-end: 3px solid var(--border-header);
+      border-block-end-width: 3px;
+    }
+
+    .faq-sheet__column,
+    .faq-sheet__row {
       color: var(--text-secondary);
+      font-size: 11px;
     }
 
-    .faq__answer--long {
-      grid-row: span 4;
-      block-size: calc(3 * var(--cell-height) - 1px);
+    .faq-sheet__column {
+      display: grid;
+      place-items: center;
+      border-inline-end: 1px solid var(--border-header);
     }
 
-    .faq__question.cell--table-header,
-    .faq__answer.cell--table-header {
-      display: none;
+    .faq-sheet__row {
+      display: flex;
+      justify-content: center;
+      padding-block-start: 8px;
+      border-inline-end: 1px solid var(--border-header);
+      border-block-end: 1px solid var(--border-header);
+      background: var(--surface-header);
+    }
+
+    .faq-sheet__column[data-selected],
+    .faq-sheet__row[data-selected] {
+      background: var(--selection-header-bg);
+      color: var(--selection-header-fg);
+      font-weight: 700;
+    }
+
+    .faq-sheet__cell {
+      position: relative;
+      min-inline-size: 0;
+      margin: 0;
+      padding: 7px 8px;
+      border-inline-end: 1px solid var(--border-grid);
+      border-block-end: 1px solid var(--border-grid);
+      cursor: cell;
+      text-wrap: pretty;
+
+      &[data-selected] {
+        box-shadow: inset 0 0 0 2px var(--selection);
+
+        /* Fill handle */
+        &::after {
+          content: "";
+          position: absolute;
+          inset-inline-end: -5px;
+          inset-block-end: -5px;
+          z-index: 1;
+          inline-size: 8px;
+          block-size: 8px;
+          border: 1px solid var(--white);
+          border-radius: 50%;
+          background: var(--selection);
+        }
+      }
+    }
+
+    .faq-sheet__title {
+      grid-column: span 2;
+      padding: 8px 8px 6px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .faq-sheet__heading {
+      border-block-end: 3px solid var(--border-header);
+      background: var(--green-header);
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .faq-sheet__question {
+      font-size: 13.5px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .faq-sheet__answer {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .faq-sheet__footer {
+      grid-column: span 2;
+      padding-block: 12px;
+      color: var(--text-kicker);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .faq-sheet__links {
+      display: flex;
+      gap: 16px;
+      margin-block-start: 8px;
     }
   }
 }

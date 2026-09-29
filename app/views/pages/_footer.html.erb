@@ -1,7 +1,5 @@
 <%# Sits two rows below each sheet's content; the section's stylesheet sets --footer-row. %>
-<p class="cell cell--body sheet-footer__text" data-formula='Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers.'>
-  <span>Made with ♥ by teenagers, for teenagers at Hack Club — a 501(c)(3) nonprofit and a network of 100k+ technical high schoolers.</span>
-</p>
+<p class="cell cell--body sheet-footer__text"><span><%= footer_credit %></span></p>
 
 <nav class="sheet-footer__links" aria-label="Hack Club">
   <% footer_links.each do |name, url| %>
