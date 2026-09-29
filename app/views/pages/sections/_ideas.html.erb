@@ -1,7 +1,7 @@
 <% genre, platform = idea_genres.first, idea_platforms.second %>
 
-<h2 class="cell cell--heading ideas__title">Idea roulette</h2>
-<p class="cell cell--kicker ideas__intro">Stuck? Spin it. Build whatever lands, or ignore it. Any game in any non-engine tool counts.</p>
+<h2 class="cell cell--heading ideas__title">Ideas</h2>
+<p class="cell cell--kicker ideas__intro">Not sure what to make? Click the spin button!</p>
 
 <div class="ideas__roulette" data-controller="idea-roulette"
      data-idea-roulette-genres-value="<%= idea_genres.to_json %>" data-idea-roulette-platforms-value="<%= idea_platforms.to_json %>">
@@ -14,7 +14,7 @@
   <%= tag.span platform, class: "cell ideas__reel ideas__reel--platform", data: { idea_roulette_target: "platform", formula: %(="#{platform}") } %>
 
   <button type="button" class="cell cell--cta ideas__spin" data-idea-roulette-target="button"
-          data-action="idea-roulette#spin" data-formula="=SPIN()">Spin ↻</button>
+          data-action="idea-roulette#spin" data-formula="=SPIN()">Spin</button>
   <span class="cell ideas__result" data-idea-roulette-target="result"
         data-formula='=CONCAT("make a ", B7, " in ", E7)'>make a <%= genre %> in <%= platform %>.</span>
 
