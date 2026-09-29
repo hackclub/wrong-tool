@@ -12,6 +12,20 @@ module PagesHelper
     10
   end
 
+  def program_dates
+    Date.new(2026, 10, 2)..Date.new(2026, 10, 16)
+  end
+
+  # "oct 2", as the dates read on the sheet.
+  def sheet_date(date)
+    date.strftime("%b %-d").downcase
+  end
+
+  # DATE(2026,10,2), for building formulas.
+  def date_formula(date)
+    "DATE(#{date.year},#{date.month},#{date.day})"
+  end
+
   def organizer_url
     "https://cskartikey.dev/"
   end

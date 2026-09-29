@@ -26,7 +26,7 @@ class PhoneLayoutTest < ApplicationSystemTestCase
     assert_selection "A2", formula: '=YSWS("wrong tool")'
 
     find(".hero__pick-one").click
-    assert_selection "A18", formula: "=CHOOSE(1, 2)"
+    assert_selection "A19", formula: "=CHOOSE(1, 2)"
   end
 
   private

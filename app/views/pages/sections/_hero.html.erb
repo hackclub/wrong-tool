@@ -22,6 +22,10 @@
 <%= tag.h2 title, class: "cell cell--title hero__title", data: { formula: %(="#{title}") } %>
 <p class="cell cell--subtitle cell--wrap hero__subtitle"><span>build it in <strong>google sheets</strong>, <strong>figma</strong>, <strong>email</strong>, or whatever else you like. log&nbsp;<%= hours_per_reward %> hours and we'll send you a handheld.</span></p>
 <a href="#" class="cell cell--cta hero__cta" data-formula="=START(building)" data-cell-selection-target="initial">Start building →</a>
+<%= tag.span class: "cell hero__dates",
+      data: { formula: %(=#{date_formula(program_dates.begin)} & " → " & #{date_formula(program_dates.end)}) } do %>
+  <span>runs <%= tag.time sheet_date(program_dates.begin), datetime: program_dates.begin.iso8601 %> → <%= tag.time sheet_date(program_dates.end), datetime: program_dates.end.iso8601 %></span>
+<% end %>
 
 <%# The prize marquee scrolls and the two handhelds take turns being picked. %>
 <div class="hero__prize" data-controller="prize-picker" data-prize-picker-pick-value="rg35xx">
