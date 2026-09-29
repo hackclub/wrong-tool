@@ -10,4 +10,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".sheet__section", 4
     assert_select ".sheet__section:not([hidden])#hero"
   end
+
+  test "gives iOS a home screen icon and name" do
+    get root_path
+
+    assert_select "link[rel=apple-touch-icon][href='/apple-touch-icon.png'][sizes='180x180']"
+    assert_select "meta[name=apple-mobile-web-app-title][content='wrong tool']"
+  end
 end
