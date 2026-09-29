@@ -1,0 +1,83 @@
+/* Flap in the sheets, beside the hero and level with its top, so the whole game is in the
+   first screen. The board fills I3:K14 exactly, so its 36 × 44 pixels come out almost
+   square; column H is left empty as a gutter. */
+@layer sections {
+  .flap__title   { grid-column: I / span 3;  grid-row: 2; }
+  .flap__board   { grid-column: I / span 3;  grid-row: 3 / span 12; }
+  .flap__button  { grid-column: I;           grid-row: 15; }
+  .flap__score   { grid-column: J / span 2;  grid-row: 15; }
+  .flap__link    { grid-column: I / span 3;  grid-row: 16; }
+
+  .flap {
+    --flap-button: #4caf50;
+    --flap-ink: #202124;
+    --flap-sky: #9edcf5;
+    --flap-cloud: #eaf8fe;
+    --flap-pipe: #59b83a;
+    --flap-pipe-edge: #4ead34;
+    --flap-grass: #73c442;
+    --flap-sand: #d7b45b;
+    --flap-soil: #b88a39;
+    --flap-bird: #ffd541;
+    --flap-wing: #f4b62f;
+    --flap-beak: #f28c28;
+
+    display: contents;
+  }
+
+  .flap__title {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  /* The board: 36 × 44 pixels, painted by the flap-game controller. */
+  .flap__board {
+    display: grid;
+    grid-template-columns: repeat(36, 1fr);
+    grid-template-rows: repeat(44, 1fr);
+    align-items: stretch;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .flap__pixel {
+    background: var(--flap-sky);
+  }
+
+  .flap__pixel--cloud    { background: var(--flap-cloud); }
+  .flap__pixel--stem,
+  .flap__pixel--cap      { background: var(--flap-pipe); }
+  .flap__pixel--cap-edge { background: var(--flap-pipe-edge); }
+  .flap__pixel--grass    { background: var(--flap-grass); }
+  .flap__pixel--sand     { background: var(--flap-sand); }
+  .flap__pixel--soil     { background: var(--flap-soil); }
+  .flap__pixel--bird     { background: var(--flap-bird); }
+  .flap__pixel--wing     { background: var(--flap-wing); }
+  .flap__pixel--beak     { background: var(--flap-beak); }
+  .flap__pixel--eye      { background: var(--flap-ink); }
+
+  .flap__button {
+    justify-content: center;
+    background: var(--flap-button);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .flap__score {
+    font-size: 12.5px;
+    color: var(--text-formula);
+  }
+
+  .flap__link {
+    justify-content: flex-end;
+    font: 12.5px var(--font-mono);
+  }
+
+  /* Desktop only. */
+  @media (width <= 600px) {
+    .flap {
+      display: none;
+    }
+  }
+}

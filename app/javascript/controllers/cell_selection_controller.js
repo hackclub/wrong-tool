@@ -21,6 +21,11 @@ export default class extends Controller {
     this.#select(start ? this.#boxOf(start) : { column: 0, row: 0 })
   }
 
+  // Re-reads the selected cell, for when its contents change underneath the selection.
+  refresh() {
+    if (this.box) this.#select(this.box)
+  }
+
   // The grid switches between desktop and phone cell sizes at the breakpoint.
   relayout() {
     const { width } = this.#cellSize

@@ -1,0 +1,17 @@
+<%# A copy of flap in the sheets, the Google Sheets game: a 36 × 44 board with one
+    button that starts the game and flaps. Desktop only. %>
+<div class="flap">
+  <%= link_to "FLAP IN THE SHEETS", flap_url, target: "_blank", rel: "noopener", class: "cell cell--label flap__title",
+        data: { formula: %(=HYPERLINK("#{flap_url}", "FLAP IN THE SHEETS")) } %>
+
+  <div class="cell flap__board" role="img" aria-label="Flap: a bird between green pipes"
+       data-flap-game-target="board" data-action="click->flap-game#flap" data-formula="=FLAP(space)">
+    <% (36 * 44).times do %><span class="flap__pixel"></span><% end %>
+  </div>
+
+  <button type="button" class="cell flap__button" data-action="flap-game#flap" data-formula="=FLAP()">FLAP!</button>
+  <span class="cell cell--number flap__score" data-flap-game-target="score" data-formula="=MAX(score, best)">score 0 · best 0</span>
+
+  <%= link_to "cskartikey.dev/flap ↗", flap_url, target: "_blank", rel: "noopener", class: "cell cell--link flap__link",
+        data: { formula: %(=HYPERLINK("#{flap_url}", "play the real one")) } %>
+</div>

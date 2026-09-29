@@ -1,6 +1,10 @@
 <div class="spreadsheet"
-     data-controller="sheet-tabs cell-selection"
-     data-action="popstate@window->sheet-tabs#restore resize@window->cell-selection#relayout sheet-tabs:change->cell-selection#reset">
+     data-controller="sheet-tabs cell-selection flap-game"
+     data-action="popstate@window->sheet-tabs#restore
+                  resize@window->cell-selection#relayout
+                  sheet-tabs:change->cell-selection#reset
+                  sheet-tabs:change->flap-game#pause
+                  flap-game:change->cell-selection#refresh">
   <%= render "pages/app_bar" %>
   <%= render "pages/toolbar" %>
   <%= render "pages/formula_bar" %>

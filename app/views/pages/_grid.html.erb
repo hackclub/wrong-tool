@@ -18,7 +18,7 @@
 
       <div class="sheet__cells" tabindex="0"
            data-cell-selection-target="grid"
-           data-action="click->cell-selection#click keydown->cell-selection#move">
+           data-action="click->cell-selection#click keydown->flap-game#key keydown->cell-selection#move">
         <% section_names.each_with_index do |name, index| %>
           <%= tag.section id: name.parameterize, class: [ "sheet__section", "sheet__section--#{name.parameterize}" ], aria: { label: name },
                 hidden: !index.zero?, data: { sheet_tabs_target: "section" } do %>

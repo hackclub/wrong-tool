@@ -30,6 +30,11 @@ module PagesHelper
     "https://cskartikey.dev/"
   end
 
+  # The original flap, played in Google Sheets.
+  def flap_url
+    "https://cskartikey.dev/flap"
+  end
+
   def footer_links
     {
       "slack" => "https://hackclub.com/slack/",

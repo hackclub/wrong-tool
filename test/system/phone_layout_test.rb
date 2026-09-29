@@ -55,6 +55,10 @@ class PhoneLayoutTest < ApplicationSystemTestCase
     assert_selection "A10", formula: "Sit amet consectetur?"
   end
 
+  test "leaves flap to the desktop" do
+    assert_no_selector ".flap__board"
+  end
+
   test "the footer follows each sheet's content" do
     { "Hero" => "A22", "Ideas" => "A19", "Reward" => "A19", "FAQ" => "A41" }.each do |name, address|
       click_on name
