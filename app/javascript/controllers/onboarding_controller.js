@@ -1,37 +1,48 @@
 import { Controller } from "@hotwired/stimulus"
 
-// The onboarding sheet: pick a wrong tool (A1), roll or write an idea (A2), claim a handheld (A3) and save it
+// The onboarding sheet: pick a wrong tool (A1), roll or write an idea (A2), pick a handheld (A3) and save it
 // all (A4). Tapping an answer moves on after a short flash; answered rows fold into cells that reopen them.
 // Everything lives in this tab until sign-in, which is mocked until there are users.
-const PALETTE = [ "#1e7b45", "#3fbf73", "#ec3750", "#d3e3fd", "#fff8c4", "#2e9e5c", "#fff1d6", "#1a73e8" ]
 const PICK_DELAY = 360
-const CLAIM_FRAMES = 17
+// The mascot's congratulations: [frame in the sprite strip, how long it shows (ms), sound to start]. It bends
+// into a tick, holds it, waves it and straightens back up, with Clippy's own sounds on the frames it had them.
+const MASCOT_FRAMES = [
+  [ 0, 100, "first" ], [ 1, 10 ], [ 2, 10 ], [ 3, 10, "second" ], [ 4, 10 ], [ 5, 10 ], [ 6, 10 ], [ 7, 10 ], [ 8, 10 ], [ 9, 100 ],
+  [ 10, 100 ], [ 11, 100 ], [ 12, 600 ], [ 13, 100 ], [ 14, 100 ], [ 12, 600 ],
+  [ 15, 100 ], [ 16, 100 ], [ 17, 100 ], [ 18, 100 ], [ 19, 100 ], [ 0, 100 ]
+]
+const MASCOT_SLIDE = 280
 
 export default class extends Controller {
   static targets = [
     "row", "summary", "value",
     "tool", "otherName", "otherInput",
     "idea", "reel", "article", "dice", "rollLabel", "useIdea", "ownInput", "useOwn",
-    "prize", "confetti", "columnA",
-    "save", "receiptPhoto", "receiptTool", "receiptIdea", "receiptPrize", "receiptSaved", "signIn", "signInLabel", "prizeName",
+    "prize", "mascot", "mascotSprite", "mascotSay",
+    "save", "receiptPhoto", "receiptTool", "receiptIdea", "receiptPrize", "signIn", "signInLabel", "gameTitle",
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
-  static values = { tools: Array, genres: Array, prizes: Array, hours: Number }
+  static values = { tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object }
 
   connect() {
     this.state = {
       step: 1, tool: null, custom: "", otherOpen: false,
       genre: "", phrase: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
       rolling: false, stop1: true, stop2: true, spin: 0, ownOpen: false, own: "",
-      prize: null, claimFrame: -1, signing: false, signed: false
+      prize: null, claiming: false, signing: false, signed: false
     }
+    this.sounds = Object.fromEntries(Object.entries(this.soundsValue).map(([ name, url ]) => {
+      const audio = new Audio(url)
+      audio.preload = "auto"
+      return [ name, audio ]
+    }))
     this.#render()
   }
 
   disconnect() {
     clearTimeout(this.pickTimer)
     clearTimeout(this.rollTimer)
-    clearInterval(this.claimTimer)
+    clearTimeout(this.claimTimer)
     clearTimeout(this.signTimer)
   }
 
@@ -129,18 +140,22 @@ export default class extends Controller {
     this.#afterIdea()
   }
 
-  // A3. Claiming stamps the handheld and bursts the grid into colored cells, then moves on.
+  // A3. Picking a handheld brings the mascot up to congratulate you, then moves on once it's done.
 
   claim({ params: { prize } }) {
-    if (this.state.claimFrame >= 0) return
-    this.#set({ prize, claimFrame: 0 })
-    if (reducedMotion()) return this.#after(PICK_DELAY, () => this.#finishClaim())
+    if (this.state.claiming) return
+    this.#set({ prize, claiming: true })
+    const name = this.prizesValue.find(({ id }) => id === prize).name
+    this.mascotSayTarget.textContent = `Nice pick! The ${name} is yours after ${this.hoursValue} hours.`
+    this.mascotTarget.toggleAttribute("data-visible", true)
 
-    clearInterval(this.claimTimer)
-    this.claimTimer = setInterval(() => {
-      if (this.state.claimFrame >= CLAIM_FRAMES) this.#finishClaim()
-      else this.#set({ claimFrame: this.state.claimFrame + 1 })
-    }, 105)
+    if (reducedMotion()) {
+      this.#showMascotFrame(12)
+      this.#play("second")
+      this.claimTimer = setTimeout(() => this.#finishClaim(), 1500)
+    } else {
+      this.claimTimer = setTimeout(() => this.#playMascot(0), MASCOT_SLIDE)
+    }
   }
 
   // A4
@@ -165,9 +180,35 @@ export default class extends Controller {
     this.#goTo(this.state.prize ? 4 : 3)
   }
 
+  #playMascot(index) {
+    if (index === MASCOT_FRAMES.length) {
+      this.mascotTarget.toggleAttribute("data-visible", false)
+      this.claimTimer = setTimeout(() => this.#finishClaim(), MASCOT_SLIDE)
+      return
+    }
+    const [ frame, duration, sound ] = MASCOT_FRAMES[index]
+    this.#showMascotFrame(frame)
+    if (sound) this.#play(sound)
+    this.claimTimer = setTimeout(() => this.#playMascot(index + 1), duration)
+  }
+
+  // From the start each time; a browser that won't play it just stays quiet.
+  #play(name) {
+    const audio = this.sounds[name]
+    if (!audio) return
+    audio.currentTime = 0
+    audio.play().catch(() => {})
+  }
+
+  #showMascotFrame(frame) {
+    this.mascotSpriteTarget.style.setProperty("--frame", frame)
+  }
+
   #finishClaim() {
-    clearInterval(this.claimTimer)
-    this.#set({ claimFrame: -1 })
+    this.mascotTarget.toggleAttribute("data-visible", false)
+    this.mascotSayTarget.textContent = ""
+    this.#showMascotFrame(0)
+    this.#set({ claiming: false })
     this.#goTo(4)
   }
 
@@ -206,7 +247,7 @@ export default class extends Controller {
     const tool = this.#tool()
     const toolName = this.#toolName()
     const prize = this.prizesValue.find(prize => prize.id === s.prize)
-    const claiming = s.claimFrame >= 0
+    const claiming = s.claiming
     const done = { 1: !!s.tool, 2: !!s.idea || s.ideaSkipped, 3: !!prize && !claiming, 4: s.signed }
     const values = {
       1: toolName,
@@ -229,7 +270,6 @@ export default class extends Controller {
     this.#renderIdea(toolName)
     this.#renderPrizes()
     this.#renderSave(toolName, prize)
-    this.#renderConfetti()
 
     const slug = s.idea ? s.idea.replace(/^(a|an) /i, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 36) : "untitled_game"
     this.fileNameTarget.textContent = tool ? slug + tool.extension : "untitled_wrong_game"
@@ -243,12 +283,12 @@ export default class extends Controller {
   #formula(toolName, prize, claiming) {
     const s = this.state
     switch (s.step) {
-      case 1: return s.otherOpen ? `=PICK("${s.custom || "…"}")` : s.tool ? `=PICK("${toolName}")` : "=PICK(wrong_tool)"
+      case 1: return s.otherOpen ? `=PICK("${s.custom || "…"}")` : s.tool ? `=PICK("${toolName}")` : "=PICK(platform)"
       case 2:
         if (s.rolling) return `=IDEA(RAND(), "${toolName}")`
         if (s.ownOpen) return `="${s.own}"`
         return s.idea ? `="${s.idea}"` : `=IDEA(RAND(), "${toolName}")`
-      case 3: return claiming ? `=CLAIM("${prize.full}") → TRUE` : `=CLAIM(prize, ${this.hoursValue} hrs)`
+      case 3: return claiming ? `=PRIZE("${prize.full}") → TRUE` : `=PRIZE(${this.hoursValue} hrs)`
       default: return s.signed ? "=SAVE(A1:A3) → TRUE" : s.signing ? "=SAVE(A1:A3) → #LOADING" : "=SAVE(A1:A3)"
     }
   }
@@ -301,42 +341,13 @@ export default class extends Controller {
     this.receiptIdeaTarget.textContent = s.idea || "#LATER"
     this.receiptIdeaTarget.classList.toggle("onboarding-receipt__later", !s.idea)
     this.receiptPrizeTarget.textContent = prize?.full ?? "—"
-    this.receiptSavedTarget.textContent = s.signed ? "TRUE" : "#UNSAVED"
     this.saveTarget.dataset.signed = s.signed
     this.signInTarget.toggleAttribute("data-signing", s.signing)
     this.signInTarget.setAttribute("aria-busy", s.signing)
-    this.signInLabelTarget.textContent = s.signing ? "Signing in…" : "Sign in with Hack Club"
-    this.prizeNameTarget.textContent = prize?.full ?? "handheld"
+    this.signInLabelTarget.textContent = s.signing ? "Signing in…" : "Get started"
+    this.gameTitleTarget.textContent = s.idea ? `${capitalize(s.idea)}.` : "Your game."
   }
 
-  // Colored cells over columns B onward: they thicken toward frame 7, then clear.
-  #renderConfetti() {
-    const frame = this.state.claimFrame
-    const layer = this.confettiTarget
-    if (frame < 0) return layer.replaceChildren()
-
-    const style = getComputedStyle(layer)
-    const left = this.columnATarget.getBoundingClientRect().right - layer.getBoundingClientRect().left
-    const width = parseFloat(style.getPropertyValue("--cell-width"))
-    const height = parseFloat(style.getPropertyValue("--cell-height"))
-    const columns = Math.ceil((layer.clientWidth - left) / width)
-    const rows = Math.ceil(layer.clientHeight / height)
-    const density = 0.34 * (1 - Math.abs(frame - 7) / 11)
-
-    const cells = []
-    for (let row = 0; row < rows; row++) {
-      for (let column = 0; column < columns; column++) {
-        const index = row * columns + column
-        if (noise(index, frame) >= density) continue
-        const cell = document.createElement("span")
-        cell.style.left = `${left + column * width}px`
-        cell.style.top = `${row * height}px`
-        cell.style.background = PALETTE[Math.floor(noise(index, frame + 5) * PALETTE.length)]
-        cells.push(cell)
-      }
-    }
-    layer.replaceChildren(...cells)
-  }
 }
 
 function any(list) {
@@ -355,12 +366,6 @@ function article(word) {
 
 function capitalize(text) {
   return text.charAt(0).toUpperCase() + text.slice(1)
-}
-
-// The same pseudo-random value for the same cell and frame, so the burst doesn't flicker.
-function noise(a, b) {
-  const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453
-  return x - Math.floor(x)
 }
 
 function reducedMotion() {

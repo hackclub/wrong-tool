@@ -6,8 +6,9 @@
      data-controller="onboarding"
      data-onboarding-tools-value="<%= onboarding_tools.to_json %>"
      data-onboarding-genres-value="<%= onboarding_genres.to_json %>"
-     data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :full) }.to_json %>"
-     data-onboarding-hours-value="<%= hours_per_reward %>">
+     data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :name, :full) }.to_json %>"
+     data-onboarding-hours-value="<%= hours_per_reward %>"
+     data-onboarding-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
   <%= render "pages/app_bar", onboarding: true %>
   <%= render "pages/toolbar" %>
   <%= render "onboarding/formula_bar" %>
@@ -16,8 +17,7 @@
     <div class="onboarding__column-headers" aria-hidden="true">
       <span class="onboarding__corner"></span>
       <% ("A".."K").each do |letter| %>
-        <%= tag.span letter, class: [ "onboarding__column-header", ("onboarding__column-header--selected" if letter == "A") ],
-              data: { onboarding_target: ("columnA" if letter == "A") } %>
+        <%= tag.span letter, class: [ "onboarding__column-header", ("onboarding__column-header--selected" if letter == "A") ] %>
       <% end %>
     </div>
 
@@ -25,7 +25,13 @@
       <% onboarding_steps.each.with_index(1) do |step, number| %>
         <%= render "onboarding/row", step:, number: %>
       <% end %>
-      <div class="onboarding__confetti" aria-hidden="true" data-onboarding-target="confetti"></div>
+    </div>
+
+    <%# Pops up from the bottom edge to congratulate you on your prize (A3). %>
+    <div class="onboarding-mascot" data-onboarding-target="mascot">
+      <p class="onboarding-mascot__bubble" role="status" data-onboarding-target="mascotSay"></p>
+      <span class="onboarding-mascot__sprite" aria-hidden="true" data-onboarding-target="mascotSprite"
+            style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
     </div>
   </div>
 

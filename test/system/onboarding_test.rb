@@ -8,7 +8,7 @@ class OnboardingTest < ApplicationSystemTestCase
 
     find(".app-bar__build-button").click
     assert_current_path onboarding_path
-    assert_selector "h2", text: "Pick your wrong tool."
+    assert_selector "h2", text: "Pick your platform."
   end
 
   test "picking a tool, an idea and a prize, then signing in" do
@@ -27,16 +27,16 @@ class OnboardingTest < ApplicationSystemTestCase
 
     assert_selector "h2", text: "Pick your prize."
     click_on "Mini Plus"
-    assert_selector ".onboarding-prize[data-claimed]", text: "CLAIMED"
+    assert_selector ".onboarding-prize[data-claimed]", text: "Mini Plus"
+    assert_selector ".onboarding-mascot[data-visible]", text: "Nice pick! The Mini Plus is yours after 10 hours."
 
-    assert_selector "h2", text: "Save your project.", wait: 5
+    assert_selector "h2", text: "Last step.", wait: 5
+    assert_selector ".onboarding-save__title", text: "#{idea[0].upcase}#{idea[1..]}."
     assert_selector ".onboarding-receipt", text: "SSH"
-    assert_selector ".onboarding-receipt__saved", exact_text: "#UNSAVED"
     assert_selector ".app-bar__title", text: /\.sh\z/
-    click_on "Sign in with Hack Club"
+    click_on "Get started"
 
-    assert_selector ".onboarding-save__title", text: "Saved.", wait: 3
-    assert_selector ".onboarding-receipt__saved", exact_text: "TRUE"
+    assert_selector ".onboarding-save__title", text: "You're in.", wait: 3
     assert_selector ".app-bar__progress", exact_text: "A1:A4 done"
     assert_selector ".onboarding__project-tab[aria-disabled=false]"
   end
@@ -56,7 +56,7 @@ class OnboardingTest < ApplicationSystemTestCase
     visit onboarding_path
     click_on "Email"
     click_on "I already have an idea"
-    fill_in "B1 · your idea", with: "a heist game in my drafts"
+    find("[aria-label='Your idea']").fill_in with: "a heist game in my drafts"
     click_on "Use my idea"
     assert_selector ".onboarding-row[data-state=done]", text: "A heist game in my drafts"
 

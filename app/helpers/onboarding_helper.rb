@@ -2,14 +2,14 @@ module OnboardingHelper
   # The four questions, one per cell down column A.
   def onboarding_steps
     [
-      { label: "Wrong tool", question: "Pick your wrong tool.",
+      { label: "Platform", question: "Pick your platform.",
         help: "Anything not built for games. You can switch later." },
-      { label: "Building", question: "What are you building?",
-        help: "A starting point. Roll again, write your own, or skip." },
+      { label: "Project", question: "What are you building?",
+        help: "You can switch it later. Just start something for now :)" },
       { label: "Prize", question: "Pick your prize.",
-        help: "Pick one. It ships once you log #{hours_per_reward} hours." },
-      { label: "Save", question: "Save your project.",
-        help: "Saves your tool, idea and prize to your Hack Club account." }
+        help: "Pick one. It ships once you log #{hours_per_reward} hours. (You can get more!)" },
+      { label: "Start", question: "Last step.",
+        help: "Sign-in with Hack Club to start!" }
     ]
   end
 

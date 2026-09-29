@@ -56,9 +56,6 @@
 
     <% if onboarding %>
       <span class="app-bar__progress" data-onboarding-target="progress">Step 1 of 4</span>
-      <a href="#" class="app-bar__login-button">
-        <%= inline_svg_tag "icons/onboarding/login.svg", class: "icon", aria_hidden: true %>Log in
-      </a>
     <% else %>
       <%= link_to onboarding_path, class: "app-bar__build-button" do %>
         <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>

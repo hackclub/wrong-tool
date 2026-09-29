@@ -197,23 +197,6 @@
     object-fit: contain;
   }
 
-  .onboarding-prize__stamp {
-    position: absolute;
-    inset-block-start: 22px;
-    inset-inline-end: 22px;
-    padding: 8px 14px;
-    border: 3px solid var(--red);
-    background: var(--white);
-    font: 700 20px/1 var(--font-mono);
-    letter-spacing: 0.5px;
-    color: var(--red);
-    rotate: -6deg;
-
-    :not([data-claimed]) > * > & {
-      display: none;
-    }
-  }
-
   .onboarding-prize__strip {
     flex: none;
     display: flex;
@@ -240,32 +223,21 @@
     letter-spacing: -0.6px;
   }
 
-  .onboarding-prize__claim,
-  .onboarding-prize__claimed {
-    --icon-size: 24px;
+  /* An empty radio until the handheld is picked, then a filled blue one. */
+  .onboarding-prize__radio {
+    --icon-size: 28px;
 
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 4px;
     margin-inline-start: auto;
-    font: 500 15px var(--font-chrome);
+    color: #8e918f;
   }
 
-  .onboarding-prize__claim {
-    color: var(--blue-700);
-
-    [data-claimed] & {
-      display: none;
-    }
+  .onboarding-prize__radio--checked {
+    color: var(--selection);
   }
 
-  .onboarding-prize__claimed {
-    color: var(--green);
-
-    :not([data-claimed]) > * > & {
-      display: none;
-    }
+  .onboarding-prize:not([data-claimed]) .onboarding-prize__radio--checked,
+  .onboarding-prize[data-claimed] .onboarding-prize__radio:not(.onboarding-prize__radio--checked) {
+    display: none;
   }
 
   /* A4 */
@@ -288,17 +260,6 @@
     flex-direction: column;
     border: 1px solid var(--border-header);
     background: var(--white);
-  }
-
-  .onboarding-receipt__title {
-    flex: none;
-    block-size: 30px;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    border-block-end: 1px solid var(--border-header);
-    background: var(--green-header);
-    font: 700 13px var(--font-cell);
   }
 
   .onboarding-receipt__photo {
@@ -354,17 +315,6 @@
     color: var(--orange-800);
   }
 
-  .onboarding-receipt__saved {
-    background: var(--red-50);
-    color: var(--red-800);
-    font-weight: 700;
-
-    [data-signed="true"] & {
-      background: var(--green-50);
-      color: var(--green);
-    }
-  }
-
   .onboarding-save__panel {
     min-inline-size: 0;
     max-inline-size: 520px;
@@ -375,15 +325,9 @@
   }
 
   .onboarding-save__title {
-    font: 700 40px/1.08 var(--font-cell);
-    letter-spacing: -1.2px;
+    font: 700 44px/1.08 var(--font-cell);
+    letter-spacing: -1.3px;
     text-wrap: balance;
-  }
-
-  .onboarding-save__body {
-    font: 17px/1.5 var(--font-cell);
-    color: var(--text-secondary);
-    text-wrap: pretty;
   }
 
   .onboarding-save__spinner {
@@ -398,46 +342,6 @@
     [data-signing] > & {
       display: none;
     }
-  }
-
-  .onboarding-save__fine-print {
-    font: 13px/1.5 var(--font-chrome);
-    color: var(--grey-600);
-  }
-
-  .onboarding-save__formula {
-    --icon-size: 22px;
-
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font: 13px var(--font-mono);
-    color: var(--green);
-  }
-
-  .onboarding-save__progress {
-    max-inline-size: 420px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .onboarding-save__progress-label {
-    display: flex;
-    justify-content: space-between;
-    font: 13px var(--font-chrome);
-    color: var(--text-secondary);
-  }
-
-  .onboarding-save__hours {
-    font: 500 12px var(--font-mono);
-    color: var(--text-primary);
-  }
-
-  .onboarding-save__track {
-    block-size: 8px;
-    border-radius: 4px;
-    background: var(--grey-100);
   }
 
   @keyframes onboarding-spin {

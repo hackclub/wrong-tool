@@ -1,8 +1,7 @@
-<%# A4: saving locks in the claim rather than "making an account". The receipt shows exactly what gets saved
-    (#UNSAVED → TRUE). Sign-in is mocked until there are users; data-signed flips the panel. %>
+<%# A4: your game, headed by the idea you picked, and one button to sign in and start. The receipt shows what
+    gets saved. Sign-in is mocked until there are users; data-signed flips the panel. %>
 <div class="onboarding-save" data-onboarding-target="save" data-signed="false">
   <div class="onboarding-receipt">
-    <div class="onboarding-receipt__title">Your claim</div>
     <div class="onboarding-receipt__photo">
       <% onboarding_prizes.each do |prize| %>
         <%= image_tag prize[:image], alt: prize[:alt], class: "onboarding-receipt__image", hidden: true,
@@ -10,36 +9,24 @@
       <% end %>
     </div>
     <dl class="onboarding-receipt__rows">
-      <div class="onboarding-receipt__row"><dt>Tool</dt><dd class="onboarding-receipt__strong" data-onboarding-target="receiptTool">—</dd></div>
+      <div class="onboarding-receipt__row"><dt>Platform</dt><dd class="onboarding-receipt__strong" data-onboarding-target="receiptTool">—</dd></div>
       <div class="onboarding-receipt__row"><dt>Building</dt><dd data-onboarding-target="receiptIdea">#LATER</dd></div>
       <div class="onboarding-receipt__row"><dt>Prize</dt><dd class="onboarding-receipt__strong" data-onboarding-target="receiptPrize">—</dd></div>
-      <div class="onboarding-receipt__row"><dt>Hours</dt><dd>0 of <%= hours_per_reward %></dd></div>
-      <div class="onboarding-receipt__row"><dt>Saved</dt><dd class="onboarding-receipt__saved" data-onboarding-target="receiptSaved">#UNSAVED</dd></div>
     </dl>
   </div>
 
   <div class="onboarding-save__panel onboarding-save__panel--unsigned">
-    <h3 class="onboarding-save__title">Sign in to keep this.</h3>
-    <p class="onboarding-save__body">Your tool, idea and prize only exist in this tab right now. Signing in saves them and starts tracking your hours.</p>
+    <h3 class="onboarding-save__title" data-onboarding-target="gameTitle">Your game.</h3>
     <button type="button" class="onboarding-button onboarding-button--primary onboarding-button--large"
             data-onboarding-target="signIn" data-action="onboarding#signIn">
       <%= inline_svg_tag "icons/onboarding/login.svg", class: "icon onboarding-save__login", aria_hidden: true %>
       <%= inline_svg_tag "icons/onboarding/progress-activity.svg", class: "icon onboarding-save__spinner", aria_hidden: true %>
-      <span data-onboarding-target="signInLabel">Sign in with Hack Club</span>
+      <span data-onboarding-target="signInLabel">Get started</span>
     </button>
-    <span class="onboarding-save__fine-print">Uses your Hack Club Slack account. No account yet? You can make one here.</span>
   </div>
 
   <div class="onboarding-save__panel onboarding-save__panel--signed" role="status">
-    <span class="onboarding-save__formula">
-      <%= inline_svg_tag "icons/onboarding/check-circle-filled.svg", class: "icon", aria_hidden: true %>=SAVE(everything) → TRUE
-    </span>
-    <h3 class="onboarding-save__title">Saved.</h3>
-    <p class="onboarding-save__body">Hours start counting when you open your project. <%= hours_per_reward %> to go for the <span data-onboarding-target="prizeName">handheld</span>.</p>
-    <div class="onboarding-save__progress">
-      <span class="onboarding-save__progress-label"><span>Toward your handheld</span><span class="onboarding-save__hours">0 of <%= hours_per_reward %> hrs</span></span>
-      <span class="onboarding-save__track"></span>
-    </div>
+    <h3 class="onboarding-save__title">You're in.</h3>
     <a href="#" class="onboarding-button onboarding-button--primary onboarding-button--large">
       Open my project<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
     </a>
