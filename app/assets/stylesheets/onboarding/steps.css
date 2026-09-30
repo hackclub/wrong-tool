@@ -324,6 +324,15 @@
     gap: 18px;
   }
 
+  .onboarding-save__form {
+    align-self: flex-start;
+  }
+
+  .onboarding-save__error {
+    font: 14px/1.45 var(--font-chrome);
+    color: var(--red-800);
+  }
+
   .onboarding-save__title {
     font: 700 44px/1.08 var(--font-cell);
     letter-spacing: -1.3px;

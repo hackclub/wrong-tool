@@ -11,7 +11,8 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector "h2", text: "Pick your platform."
   end
 
-  test "picking a tool, an idea and a prize, then signing in" do
+  test "picking a tool, an idea and a prize, then signing in with Hack Club" do
+    mock_hack_club_auth
     visit onboarding_path
     assert_selector ".formula-bar__name", exact_text: "A1"
     assert_selector ".app-bar__progress", exact_text: "Step 1 of 4"
@@ -35,9 +36,14 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".app-bar__title", text: /\.sh\z/
     click_on "Get started"
 
-    assert_selector ".onboarding-save__title", text: "You're in.", wait: 3
+    # Back from Hack Club Auth, signed in, with the answers from before the trip.
+    assert_current_path onboarding_path
+    assert_selector ".onboarding-save__title", text: "You're in."
+    assert_selector ".onboarding-row[data-state=done]", text: "SSH"
+    assert_selector ".onboarding-row[data-state=done]", text: "Miyoo Mini Plus"
     assert_selector ".app-bar__progress", exact_text: "A1:A4 done"
     assert_selector ".onboarding__project-tab[aria-disabled=false]"
+    assert User.exists?(hca_id: "ident!heidi")
   end
 
   test "Other asks for the tool's name" do

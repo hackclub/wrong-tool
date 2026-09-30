@@ -1,0 +1,7 @@
+orpheus:
+  hca_id: ident!orpheus
+  email: orpheus@hackclub.com
+  name: Orpheus
+  slack_id: U0ORPHEUS
+  verification_status: verified
+  ysws_eligible: true

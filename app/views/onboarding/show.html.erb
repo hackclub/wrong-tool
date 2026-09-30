@@ -4,10 +4,12 @@
     fold back into cells you can reopen, and the file name and formula bar keep a running receipt. %>
 <div class="spreadsheet onboarding"
      data-controller="onboarding"
+     data-action="pageshow@window->onboarding#resume"
      data-onboarding-tools-value="<%= onboarding_tools.to_json %>"
      data-onboarding-genres-value="<%= onboarding_genres.to_json %>"
      data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :name, :full) }.to_json %>"
      data-onboarding-hours-value="<%= hours_per_reward %>"
+     data-onboarding-signed-in-value="<%= signed_in? %>"
      data-onboarding-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
   <%= render "pages/app_bar", onboarding: true %>
   <%= render "pages/toolbar" %>

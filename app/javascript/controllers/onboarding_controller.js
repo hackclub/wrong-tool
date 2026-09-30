@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // The onboarding sheet: pick a wrong tool (A1), roll or write an idea (A2), pick a handheld (A3) and save it
 // all (A4). Tapping an answer moves on after a short flash; answered rows fold into cells that reopen them.
-// Everything lives in this tab until sign-in, which is mocked until there are users.
+// Answers live in this tab (sessionStorage keeps them across the trip to Hack Club Auth) until sign-in.
 const PICK_DELAY = 360
 // The mascot's congratulations: [frame in the sprite strip, how long it shows (ms), sound to start]. It bends
 // into a tick, holds it, waves it and straightens back up, with Clippy's own sounds on the frames it had them.
@@ -12,6 +12,8 @@ const MASCOT_FRAMES = [
   [ 15, 100 ], [ 16, 100 ], [ 17, 100 ], [ 18, 100 ], [ 19, 100 ], [ 0, 100 ]
 ]
 const MASCOT_SLIDE = 280
+const ANSWERS_KEY = "wrong-tool:onboarding"
+const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "idea", "ideaTool", "ideaOwn", "ideaSkipped", "prize" ]
 
 export default class extends Controller {
   static targets = [
@@ -22,15 +24,18 @@ export default class extends Controller {
     "save", "receiptPhoto", "receiptTool", "receiptIdea", "receiptPrize", "signIn", "signInLabel", "gameTitle",
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
-  static values = { tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object }
+  static values = { tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object, signedIn: Boolean }
 
   connect() {
     this.state = {
       step: 1, tool: null, custom: "", otherOpen: false,
       genre: "", phrase: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
       rolling: false, stop1: true, stop2: true, spin: 0, ownOpen: false, own: "",
-      prize: null, signing: false, signed: false
+      prize: null, signing: false, signed: this.signedInValue,
+      ...this.#restoreAnswers()
     }
+    // Back from signing in with everything answered: straight to the last step.
+    if (this.state.signed && this.state.prize) this.state.step = 4
     this.sounds = Object.fromEntries(Object.entries(this.soundsValue).map(([ name, url ]) => {
       const audio = new Audio(url)
       audio.preload = "auto"
@@ -43,7 +48,6 @@ export default class extends Controller {
     clearTimeout(this.pickTimer)
     clearTimeout(this.rollTimer)
     clearTimeout(this.mascotTimer)
-    clearTimeout(this.signTimer)
   }
 
   // An answered row, reopened.
@@ -150,10 +154,16 @@ export default class extends Controller {
 
   // A4
 
-  signIn() {
-    if (this.state.signing || this.state.signed) return
+  // Back (from Hack Club Auth, say) to a page the browser kept as it was: the button is ready to try again.
+  resume({ persisted }) {
+    if (persisted && this.state.signing) this.#set({ signing: false })
+  }
+
+  // The form posts to Hack Club Auth; the answers so far wait in this tab for the trip back.
+  signIn(event) {
+    if (this.state.signing || this.state.signed) return event.preventDefault()
+    this.#saveAnswers()
     this.#set({ signing: true })
-    this.signTimer = setTimeout(() => this.#set({ signing: false, signed: true }), 1100)
   }
 
   // Flow
@@ -241,6 +251,20 @@ export default class extends Controller {
     if (tool.id !== "other") return tool.phrases
     const name = this.state.custom.trim() || "your tool"
     return [ `in ${name}`, `built inside ${name}`, `that only runs in ${name}`, `where ${name} is the engine` ]
+  }
+
+  #saveAnswers() {
+    const answers = Object.fromEntries(ANSWERS.map(key => [ key, this.state[key] ]))
+    try { sessionStorage.setItem(ANSWERS_KEY, JSON.stringify(answers)) } catch {}
+  }
+
+  #restoreAnswers() {
+    try {
+      const answers = JSON.parse(sessionStorage.getItem(ANSWERS_KEY)) ?? {}
+      return Object.fromEntries(ANSWERS.filter(key => key in answers).map(key => [ key, answers[key] ]))
+    } catch {
+      return {}
+    }
   }
 
   // Drawing

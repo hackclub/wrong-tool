@@ -1,5 +1,5 @@
 <%# A4: your game, headed by the idea you picked, and one button to sign in and start. The receipt shows what
-    gets saved. Sign-in is mocked until there are users; data-signed flips the panel. %>
+    gets saved. Get started signs in with Hack Club Auth; data-signed flips the panel. %>
 <div class="onboarding-save" data-onboarding-target="save" data-signed="false">
   <div class="onboarding-receipt">
     <div class="onboarding-receipt__photo">
@@ -17,12 +17,18 @@
 
   <div class="onboarding-save__panel onboarding-save__panel--unsigned">
     <h3 class="onboarding-save__title" data-onboarding-target="gameTitle">Your game.</h3>
-    <button type="button" class="onboarding-button onboarding-button--primary onboarding-button--large"
-            data-onboarding-target="signIn" data-action="onboarding#signIn">
+    <%# Off to Hack Club Auth and back to /start, where the answers kept in this tab pick up again. %>
+    <%= button_to "/auth/hackclub", params: { origin: onboarding_path },
+          class: "onboarding-button onboarding-button--primary onboarding-button--large",
+          form: { class: "onboarding-save__form", data: { turbo: false, action: "submit->onboarding#signIn" } },
+          data: { onboarding_target: "signIn" } do %>
       <%= inline_svg_tag "icons/onboarding/login.svg", class: "icon onboarding-save__login", aria_hidden: true %>
       <%= inline_svg_tag "icons/onboarding/progress-activity.svg", class: "icon onboarding-save__spinner", aria_hidden: true %>
       <span data-onboarding-target="signInLabel">Get started</span>
-    </button>
+    <% end %>
+    <% if alert %>
+      <p class="onboarding-save__error" role="alert"><%= alert %></p>
+    <% end %>
   </div>
 
   <div class="onboarding-save__panel onboarding-save__panel--signed" role="status">
