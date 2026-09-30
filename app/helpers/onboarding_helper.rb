@@ -8,8 +8,8 @@ module OnboardingHelper
         help: "You can switch it later. Just start something for now :)" },
       { label: "Prize", question: "Pick your prize.",
         help: "Pick one. It ships once you log #{hours_per_reward} hours. (You can get more!)" },
-      { label: "Start", question: "Last step.",
-        help: "Sign-in with Hack Club to start!" }
+      { label: "Commit", question: "Set your pace.",
+        help: "Pick a pace and a time, then sign your pledge." }
     ]
   end
 
@@ -21,14 +21,24 @@ module OnboardingHelper
                    "that runs on checkboxes", "powered by iterative calc" ] },
       { id: "figma", name: "Figma", extension: ".fig",
         phrases: [ "in Figma prototypes", "where frames are rooms", "run on Figma variables", "played in Present mode" ] },
-      { id: "email", name: "Email", extension: ".eml",
+      { id: "email", name: "Email", extension: ".eml", preposition: "over",
         phrases: [ "played over email", "where every reply is a turn", "run by inbox filters", "in your drafts folder" ] },
-      { id: "ssh", name: "SSH", extension: ".sh",
+      { id: "ssh", name: "SSH", extension: ".sh", preposition: "over",
         phrases: [ "over SSH", "in a login shell", "hiding in .bash_profile", "for a bare terminal" ] },
       { id: "shaders", name: "Shaders", extension: ".glsl",
         phrases: [ "in one fragment shader", "where state is pixels", "in a single GLSL file", "running only on the GPU" ] },
       { id: "other", name: "Other", extension: ".???", phrases: [] }
     ]
+  end
+
+  # A4's answers: minutes a day (with how the chip reads), and when you usually build (with when Clippy checks in).
+  def onboarding_paces
+    [ [ 20, "20 min" ], [ 45, "45 min" ], [ 60, "1 hr" ], [ 120, "2 hrs" ], [ 180, "3 hrs" ] ]
+  end
+
+  def onboarding_build_times
+    [ [ "after school", "after school" ], [ "evening", "every evening" ], [ "late night", "late at night" ],
+      [ "weekends", "on weekends" ] ]
   end
 
   def onboarding_genres

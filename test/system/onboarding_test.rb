@@ -24,24 +24,54 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_button "Roll again", wait: 5
     idea = find(".formula-bar__content").text.delete_prefix('="').delete_suffix('"')
     assert_match(/\Aan? .+/, idea)
+    genre = all(".onboarding-reel").first.text
     click_on "Use this idea"
 
     assert_selector "h2", text: "Pick your prize."
     click_on "Mini Plus"
-    assert_selector "h2", text: "Last step.", wait: 0.5
-    assert_selector ".onboarding-mascot[data-visible]", text: "Nice pick! The Mini Plus is yours after 10 hours."
+    assert_selector "h2", text: "Set your pace.", wait: 0.5
+    assert_selector ".onboarding-mascot__bubble", text: "Nice pick! The Mini Plus is yours after 10 hours."
     assert_selector ".onboarding-prize[data-claimed]", text: "Mini Plus", visible: :all
-    assert_selector ".onboarding-save__title", text: "#{idea[0].upcase}#{idea[1..]}."
-    assert_selector ".onboarding-receipt", text: "SSH"
-    assert_selector ".app-bar__title", text: /\.sh\z/
-    click_on "Get started"
 
-    # Back from Hack Club Auth, signed in, with the answers from before the trip.
+    # Nothing's picked for you, so there's nothing to sign yet.
+    assert_equal [ "20 min", "45 min", "1 hr", "2 hrs", "3 hrs" ], all(".onboarding-chip").first(5).map(&:text)
+    assert_no_checked_field "45 min", visible: :all
+    assert_button "Hold to sign with Hack Club", disabled: true
+    assert_selector ".onboarding-commit__sign-hint", text: "Answer both to sign."
+    assert_selector ".onboarding-pledge__signature", visible: :hidden
+    assert_selector ".onboarding-pledge__text", text: /I'll ship an? #{Regexp.escape(genre)}/
+    assert_selector ".onboarding-pledge__text", text: "over SSH by"
+    assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in to keep you on track."
+
+    find(".onboarding-chip", text: "45 min").click
+    assert_selector ".onboarding-commit__finish", text: /\AYou'd finish by [A-Z][a-z]{2} \d+\.\z/
+    assert_selector ".onboarding-commit__sign-hint", text: "Pick a time first."
+    assert_selector ".formula-bar__content", text: /\A=SHIP\("#{Regexp.escape(genre)}","SSH",DATE\(\d+,\d+\)\)\z/
+    assert_button "Hold to sign with Hack Club", disabled: true
+    find(".onboarding-chip", text: "evening").click
+    assert_selector ".app-bar__title", text: /\.sh\z/
+    assert_selector ".onboarding-commit__sign-hint", text: "Holding signs your name to this pledge."
+    assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in every evening to keep you on track."
+
+    # A click isn't a hold, and letting go early runs it back.
+    click_on "Hold to sign with Hack Club"
     assert_current_path onboarding_path
-    assert_selector ".onboarding-save__title", text: "You're in."
+    hold_sign_button(seconds: 0.4)
+    assert_selector ".onboarding-commit__sign-hint", text: "Almost. Hold until it's signed."
+    assert_no_selector ".onboarding-commit[data-pledged]"
+
+    hold_sign_button(seconds: 1.6)
+
+    # Back from Hack Club Auth, signed in, with the answers from before the trip: the pledge signs itself.
+    assert_current_path onboarding_path
+    assert_selector ".onboarding-commit[data-pledged]"
+    assert_selector ".onboarding-pledge__name", exact_text: "Heidi"
+    assert_selector ".onboarding-mascot__bubble", text: "Signed. I'll check in every evening to keep you on track."
+    assert_selector ".onboarding-commit__title", text: "Day 1 starts now."
+    assert_selector ".formula-bar__content", text: /→ TRUE\z/
     assert_selector ".onboarding-row[data-state=done]", text: "SSH"
     assert_selector ".onboarding-row[data-state=done]", text: "Miyoo Mini Plus"
-    assert_selector ".app-bar__progress", exact_text: "A1:A4 done"
+    assert_selector ".app-bar__progress", exact_text: "Day 1"
     assert_selector ".onboarding__project-tab[aria-disabled=false]"
     assert User.exists?(hca_id: "ident!heidi")
   end
@@ -69,4 +99,27 @@ class OnboardingTest < ApplicationSystemTestCase
     click_on "Skip for now"
     assert_selector ".onboarding-row[data-state=done]", text: "Not decided yet"
   end
+
+  test "a skipped idea ships as something cursed, and weekends only count weekends" do
+    visit onboarding_path
+    click_on "Figma"
+    click_on "Skip for now"
+    click_on "RG35XX Pro"
+
+    assert_selector ".onboarding-pledge__text", text: "I'll ship something cursed in Figma"
+    find(".onboarding-chip", text: "3 hrs").click
+    weekdays = find(".onboarding-commit__finish").text
+    find(".onboarding-chip", text: "weekends").click
+    assert_not_equal weekdays, find(".onboarding-commit__finish").text
+    assert_selector ".formula-bar__content", text: /\A=SHIP\("something cursed","Figma",DATE/
+  end
+
+  private
+    # Presses the sign button and keeps it down, the way you'd hold it.
+    def hold_sign_button(seconds:)
+      button = find_button("Hold to sign with Hack Club")
+      page.driver.browser.action.click_and_hold(button.native).perform
+      sleep seconds
+      page.driver.browser.action.release.perform
+    end
 end

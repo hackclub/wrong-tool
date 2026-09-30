@@ -10,6 +10,9 @@
      data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :name, :full) }.to_json %>"
      data-onboarding-hours-value="<%= hours_per_reward %>"
      data-onboarding-signed-in-value="<%= signed_in? %>"
+     data-onboarding-name-value="<%= current_user&.name %>"
+     data-onboarding-check-ins-value="<%= onboarding_build_times.to_h.to_json %>"
+     data-onboarding-program-value="<%= { start: program_dates.begin.iso8601, end: program_dates.end.iso8601 }.to_json %>"
      data-onboarding-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
   <%= render "pages/app_bar", onboarding: true %>
   <%= render "pages/toolbar" %>
@@ -27,13 +30,6 @@
       <% onboarding_steps.each.with_index(1) do |step, number| %>
         <%= render "onboarding/row", step:, number: %>
       <% end %>
-    </div>
-
-    <%# Pops up from the bottom edge to congratulate you on your prize (A3). %>
-    <div class="onboarding-mascot" data-onboarding-target="mascot">
-      <p class="onboarding-mascot__bubble" role="status" data-onboarding-target="mascotSay"></p>
-      <span class="onboarding-mascot__sprite" aria-hidden="true" data-onboarding-target="mascotSprite"
-            style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
     </div>
   </div>
 

@@ -76,57 +76,6 @@
     padding-block-end: 6px; /* room for the fill handle when A4, the last row, is open */
   }
 
-  /* The mascot sits below the bottom edge until it's shown, then springs up with its speech bubble. */
-  .onboarding-mascot {
-    position: absolute;
-    inset-inline-end: 56px;
-    inset-block-end: 0;
-    z-index: 6;
-    display: flex;
-    align-items: flex-end;
-    gap: 14px;
-    pointer-events: none;
-    opacity: 0;
-    translate: 0 130%;
-
-    @media (prefers-reduced-motion: no-preference) {
-      transition: translate 280ms cubic-bezier(0.3, 1.5, 0.5, 1), opacity 180ms;
-    }
-
-    &[data-visible] {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-
-  .onboarding-mascot__bubble {
-    max-inline-size: 230px;
-    margin-block-end: 72px;
-    padding: 12px 16px;
-    border: 1px solid #e0d68a;
-    border-radius: 10px 10px 2px 10px;
-    background: #fff8c4;
-    box-shadow: 0 1px 3px rgb(60 64 67 / 20%);
-    font: 500 15px/1.35 var(--font-chrome);
-    color: var(--text-primary);
-    text-wrap: pretty;
-
-    &:empty {
-      display: none;
-    }
-  }
-
-  /* One 124×93 frame of the sprite strip at a time; the controller steps --frame. */
-  .onboarding-mascot__sprite {
-    --frame: 0;
-
-    flex: none;
-    inline-size: 124px;
-    block-size: 93px;
-    background-repeat: no-repeat;
-    background-position: calc(var(--frame) * -124px) 0;
-  }
-
   /* Rows */
 
   .onboarding-row {
@@ -301,6 +250,7 @@
     flex: 1;
     min-inline-size: 0;
     padding: 24px;
+    overflow: clip; /* A4's burst of cells reaches into the padding, and no further. */
     background: var(--gridlines);
 
     /* The answers stop growing at about the size they were designed for; past that, it's more sheet. */

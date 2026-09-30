@@ -64,6 +64,7 @@
     --font-chrome: "Roboto", Arial, sans-serif;
     --font-cell: Arial, Helvetica, sans-serif;
     --font-mono: "IBM Plex Mono", monospace;
+    --font-signature: "Caveat", cursive;
 
     /* Grid geometry */
     --cell-width: 100px;

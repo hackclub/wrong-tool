@@ -33,3 +33,11 @@
   font-display: swap;
   src: url("/plex-mono-700.woff2") format("woff2");
 }
+
+/* Handwriting, for signing the pledge on A4. */
+@font-face {
+  font-family: "Caveat";
+  font-weight: 600;
+  font-display: swap;
+  src: url("/caveat-600.woff2") format("woff2");
+}

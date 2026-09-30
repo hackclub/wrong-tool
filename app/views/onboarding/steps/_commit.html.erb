@@ -1,0 +1,87 @@
+<%# A4: commit to a pace and a time to build; the pledge card reads back what those add up to, with Clippy
+    perched on top, and holding the button signs it with Hack Club. Neither question starts answered.
+    data-inked and data-pledged on .onboarding-commit step through the signing. %>
+<div class="onboarding-commit" data-onboarding-target="commit">
+  <div class="onboarding-commit__questions">
+    <div class="onboarding-commit__question" role="radiogroup" aria-labelledby="onboarding-pace-question">
+      <h3 class="onboarding-commit__label" id="onboarding-pace-question">How much will you build a day?</h3>
+      <div class="onboarding-chips">
+        <% onboarding_paces.each do |minutes, label| %>
+          <label class="onboarding-chip">
+            <input type="radio" name="onboarding-pace" value="<%= minutes %>" class="onboarding-chip__input"
+                   data-label="<%= label %>" data-onboarding-target="pace" data-action="onboarding#pickPace">
+            <%= inline_svg_tag "icons/onboarding/check.svg", class: "icon onboarding-chip__check", aria_hidden: true %><%= label %>
+          </label>
+        <% end %>
+      </div>
+      <p class="onboarding-commit__finish" aria-live="polite" data-onboarding-target="finishLine"></p>
+    </div>
+
+    <div class="onboarding-commit__question" role="radiogroup" aria-labelledby="onboarding-when-question">
+      <h3 class="onboarding-commit__label" id="onboarding-when-question">When do you usually build?</h3>
+      <div class="onboarding-chips">
+        <% onboarding_build_times.each do |time, _check_in| %>
+          <label class="onboarding-chip">
+            <input type="radio" name="onboarding-build-time" value="<%= time %>" class="onboarding-chip__input"
+                   data-onboarding-target="buildTime" data-action="onboarding#pickBuildTime">
+            <%= inline_svg_tag "icons/onboarding/check.svg", class: "icon onboarding-chip__check", aria_hidden: true %><%= time %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="onboarding-commit__side">
+    <figure class="onboarding-pledge">
+      <%# Clippy sits on the card: he hops when you answer, congratulates you on your prize and on signing. %>
+      <div class="onboarding-mascot" data-onboarding-target="mascot">
+        <p class="onboarding-mascot__bubble" role="status" data-onboarding-target="mascotSay"></p>
+        <span class="onboarding-mascot__sprite" aria-hidden="true" data-onboarding-target="mascotSprite"
+              style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+      </div>
+
+      <div class="onboarding-pledge__header">Pledge</div>
+      <div class="onboarding-pledge__body">
+        <blockquote class="onboarding-pledge__text">
+          I'll ship <span class="onboarding-pledge__blank" data-onboarding-target="pledgeIdea"></span>
+          <span data-onboarding-target="pledgePreposition">in</span> <span class="onboarding-pledge__blank" data-onboarding-target="pledgeTool"></span>
+          by <span class="onboarding-pledge__blank" data-onboarding-target="pledgeDate"></span>.
+        </blockquote>
+        <p class="onboarding-pledge__accountable" data-onboarding-target="accountable">Clippy will check in to keep you on track.</p>
+        <%# The signature goes on as you hold the button (your name once Hack Club knows it). %>
+        <figcaption class="onboarding-pledge__signature">
+          <span class="onboarding-pledge__ink" data-onboarding-target="ink"></span>
+          <span class="onboarding-pledge__name" data-onboarding-target="signature"></span>
+        </figcaption>
+      </div>
+    </figure>
+
+    <div class="onboarding-commit__unsigned">
+      <%# Off to Hack Club Auth and back to /start, where the answers kept in this tab pick up and the pledge
+          signs. Holding the button (or Space/Enter) is what submits it; a click alone doesn't. %>
+      <%= button_to "/auth/hackclub", params: { origin: onboarding_path }, disabled: true,
+            class: "onboarding-button onboarding-button--primary onboarding-button--large onboarding-hold",
+            form: { class: "onboarding-commit__form", data: { turbo: false } },
+            data: { onboarding_target: "signIn",
+                    action: "pointerdown->onboarding#holdStart pointerup->onboarding#holdEnd pointerleave->onboarding#holdEnd " \
+                            "pointercancel->onboarding#holdEnd keydown->onboarding#holdKey keyup->onboarding#holdKeyEnd " \
+                            "click->onboarding#holdClick contextmenu->onboarding#holdClick" } do %>
+        <span class="onboarding-hold__fill" data-onboarding-target="holdFill"></span>
+        <%= inline_svg_tag "icons/onboarding/draw.svg", class: "icon onboarding-hold__pen", aria_hidden: true %>
+        <%= inline_svg_tag "icons/onboarding/progress-activity.svg", class: "icon onboarding-hold__spinner", aria_hidden: true %>
+        <span class="onboarding-hold__label" data-onboarding-target="signInLabel">Hold to sign with Hack Club</span>
+      <% end %>
+      <span class="onboarding-commit__sign-hint" aria-live="polite" data-onboarding-target="signHint">Answer both to sign.</span>
+      <% if alert %>
+        <p class="onboarding-commit__error" role="alert"><%= alert %></p>
+      <% end %>
+    </div>
+
+    <div class="onboarding-commit__signed" role="status">
+      <h3 class="onboarding-commit__title">Day 1 starts now.</h3>
+      <a href="#" class="onboarding-button onboarding-button--primary">
+        Open my project<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
+      </a>
+    </div>
+  </div>
+</div>
