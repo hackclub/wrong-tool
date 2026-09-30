@@ -20,3 +20,10 @@ Rails.application.config.middleware.use OmniAuth::Builder do
 end
 
 OmniAuth.config.logger = Rails.logger
+
+# Hack Club Auth's whoami (https://github.com/hackclub/auth/pull/279): the browser asks it, with HCA's own
+# session cookie, for the first name of someone signed in to HCA but not to us yet, so the pledge can be signed
+# in their name before OAuth. An HCA admin enables it for our app and allowlists this site's origin; it only
+# sees HCA's cookie from a hackclub.com subdomain, and answers nothing anywhere else.
+Rails.application.config.x.hack_club_auth_whoami_url =
+  ENV.fetch("HACK_CLUB_AUTH_WHOAMI_URL", "https://auth.hackclub.com/api/external/whoami")

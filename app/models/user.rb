@@ -9,6 +9,7 @@ class User < ApplicationRecord
       user.update!(
         email: auth.info.email,
         name: auth.info.name,
+        first_name: auth.info.first_name,
         slack_id: claims[:slack_id],
         verification_status: claims[:verification_status],
         ysws_eligible: claims[:ysws_eligible] || false

@@ -50,7 +50,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_button "Hold to sign with Hack Club", disabled: true
     find(".onboarding-chip", text: "evening").click
     assert_selector ".app-bar__title", text: /\.sh\z/
-    assert_selector ".onboarding-commit__sign-hint", text: "Holding signs your name to this pledge."
+    assert_selector ".onboarding-commit__sign-hint", text: "Hold, then sign in with Hack Club to finish."
     assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in every evening to keep you on track."
 
     # A click isn't a hold, and letting go early runs it back.
@@ -114,6 +114,31 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".formula-bar__content", text: /\A=SHIP\("something cursed","Figma",DATE/
   end
 
+
+  test "someone already signed in to Hack Club sees their name go on as they hold, before signing in here" do
+    mock_hack_club_auth
+    with_whoami(signed_in: true, email: "heidi@hackclub.com", first_name: "Heidi") do
+      visit onboarding_path
+      click_on "Email"
+      click_on "Skip for now"
+      click_on "RG35XX Pro"
+      find(".onboarding-chip", text: "1 hr").click
+      find(".onboarding-chip", text: "late night").click
+      assert_selector ".onboarding-commit__sign-hint", text: "Holding signs your name to this pledge."
+
+      button = find_button("Hold to sign with Hack Club")
+      page.driver.browser.action.click_and_hold(button.native).perform
+      assert_selector ".onboarding-pledge__name", text: /\AH/
+      sleep 1.4
+      page.driver.browser.action.release.perform
+
+      # Still signs in with Hack Club Auth; the name comes back the same.
+      assert_selector ".onboarding-commit[data-pledged]"
+      assert_selector ".onboarding-pledge__name", exact_text: "Heidi"
+      assert_selector ".onboarding-mascot__bubble", text: "Signed. I'll check in late at night to keep you on track."
+    end
+  end
+
   private
     # Presses the sign button and keeps it down, the way you'd hold it.
     def hold_sign_button(seconds:)
@@ -121,5 +146,14 @@ class OnboardingTest < ApplicationSystemTestCase
       page.driver.browser.action.click_and_hold(button.native).perform
       sleep seconds
       page.driver.browser.action.release.perform
+    end
+
+    # Hack Club Auth's whoami, answering with `identity` (a data: URL stands in for it).
+    def with_whoami(**identity)
+      config = Rails.application.config.x
+      config.hack_club_auth_whoami_url = "data:application/json,#{ERB::Util.url_encode(identity.to_json)}"
+      yield
+    ensure
+      config.hack_club_auth_whoami_url = nil
     end
 end

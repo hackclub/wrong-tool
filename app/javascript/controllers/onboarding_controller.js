@@ -36,7 +36,7 @@ export default class extends Controller {
   ]
   static values = {
     tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object,
-    signedIn: Boolean, name: String, program: Object, checkIns: Object
+    signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object
   }
 
   connect() {
@@ -57,6 +57,7 @@ export default class extends Controller {
       return [ name, audio ]
     }))
     this.#render()
+    this.#askWhoami()
     if (this.signedInValue && takeSigningFlag() && this.#commitReady()) {
       this.state.step = 4
       this.#render()
@@ -264,6 +265,24 @@ export default class extends Controller {
     try { sessionStorage.setItem(SIGNING_KEY, "true") } catch {}
     this.#set({ signing: true })
     this.signInTarget.form.submit()
+  }
+
+  // Signed in to Hack Club but not to us yet? Hack Club Auth's whoami tells us your first name, so the pledge
+  // is signed in it as you hold. Anything else (not signed in there, or not allowed from here) leaves it unsigned.
+  async #askWhoami() {
+    if (!this.whoamiUrlValue) return
+    try {
+      const response = await fetch(this.whoamiUrlValue, { credentials: "include" })
+      const { signed_in: signedIn, first_name: firstName } = await response.json()
+      if (signedIn && firstName) {
+        this.hackClubName = firstName
+        this.#render()
+      }
+    } catch {}
+  }
+
+  #signerName() {
+    return this.nameValue || this.hackClubName || ""
   }
 
   #hop() {
@@ -541,7 +560,7 @@ export default class extends Controller {
     this.accountableTarget.textContent = `Clippy will check in${checkIn ? ` ${checkIn}` : ""} to keep you on track.`
 
     // The signature goes on as you hold (your name, if Hack Club's told us it), and finishes in the ceremony.
-    const name = this.nameValue
+    const name = this.#signerName()
     const ceremony = s.signTick >= 0
     const ink = s.pledged || s.signing || ceremony ? 1 : s.holdP
     const written = ceremony ? Math.max(Math.ceil(s.holdP * name.length), s.signTick + 1) : Math.ceil(ink * name.length)
@@ -565,7 +584,8 @@ export default class extends Controller {
       : !s.pace ? "Pick a pace first."
       : !s.buildTime ? "Pick a time first."
       : s.letGo ? "Almost. Hold until it's signed."
-      : "Holding signs your name to this pledge."
+      : this.#signerName() ? "Holding signs your name to this pledge."
+      : "Hold, then sign in with Hack Club to finish."
   }
 }
 
