@@ -27,10 +27,9 @@ class OnboardingTest < ApplicationSystemTestCase
 
     assert_selector "h2", text: "Pick your prize."
     click_on "Mini Plus"
-    assert_selector ".onboarding-prize[data-claimed]", text: "Mini Plus"
+    assert_selector "h2", text: "Last step.", wait: 0.5
     assert_selector ".onboarding-mascot[data-visible]", text: "Nice pick! The Mini Plus is yours after 10 hours."
-
-    assert_selector "h2", text: "Last step.", wait: 5
+    assert_selector ".onboarding-prize[data-claimed]", text: "Mini Plus", visible: :all
     assert_selector ".onboarding-save__title", text: "#{idea[0].upcase}#{idea[1..]}."
     assert_selector ".onboarding-receipt", text: "SSH"
     assert_selector ".app-bar__title", text: /\.sh\z/

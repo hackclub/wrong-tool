@@ -29,7 +29,7 @@ export default class extends Controller {
       step: 1, tool: null, custom: "", otherOpen: false,
       genre: "", phrase: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
       rolling: false, stop1: true, stop2: true, spin: 0, ownOpen: false, own: "",
-      prize: null, claiming: false, signing: false, signed: false
+      prize: null, signing: false, signed: false
     }
     this.sounds = Object.fromEntries(Object.entries(this.soundsValue).map(([ name, url ]) => {
       const audio = new Audio(url)
@@ -42,7 +42,7 @@ export default class extends Controller {
   disconnect() {
     clearTimeout(this.pickTimer)
     clearTimeout(this.rollTimer)
-    clearTimeout(this.claimTimer)
+    clearTimeout(this.mascotTimer)
     clearTimeout(this.signTimer)
   }
 
@@ -140,22 +140,12 @@ export default class extends Controller {
     this.#afterIdea()
   }
 
-  // A3. Picking a handheld brings the mascot up to congratulate you, then moves on once it's done.
+  // A3. Picking a handheld moves straight on; the mascot pops up to congratulate you on the way.
 
   claim({ params: { prize } }) {
-    if (this.state.claiming) return
-    this.#set({ prize, claiming: true })
-    const name = this.prizesValue.find(({ id }) => id === prize).name
-    this.mascotSayTarget.textContent = `Nice pick! The ${name} is yours after ${this.hoursValue} hours.`
-    this.mascotTarget.toggleAttribute("data-visible", true)
-
-    if (reducedMotion()) {
-      this.#showMascotFrame(12)
-      this.#play("second")
-      this.claimTimer = setTimeout(() => this.#finishClaim(), 1500)
-    } else {
-      this.claimTimer = setTimeout(() => this.#playMascot(0), MASCOT_SLIDE)
-    }
+    this.#set({ prize })
+    this.#congratulate(this.prizesValue.find(({ id }) => id === prize).name)
+    this.#goTo(4)
   }
 
   // A4
@@ -180,16 +170,37 @@ export default class extends Controller {
     this.#goTo(this.state.prize ? 4 : 3)
   }
 
-  #playMascot(index) {
-    if (index === MASCOT_FRAMES.length) {
-      this.mascotTarget.toggleAttribute("data-visible", false)
-      this.claimTimer = setTimeout(() => this.#finishClaim(), MASCOT_SLIDE)
-      return
+  // The mascot lives over the whole sheet, so it keeps congratulating you on A4 while you carry on. Picking
+  // again starts it over.
+  #congratulate(prizeName) {
+    clearTimeout(this.mascotTimer)
+    this.mascotSayTarget.textContent = `Nice pick! The ${prizeName} is yours after ${this.hoursValue} hours.`
+    this.mascotTarget.toggleAttribute("data-visible", true)
+
+    if (reducedMotion()) {
+      this.#showMascotFrame(12)
+      this.#play("second")
+      this.mascotTimer = setTimeout(() => this.#dismissMascot(), 1500)
+    } else {
+      this.#showMascotFrame(0)
+      this.mascotTimer = setTimeout(() => this.#playMascot(0), MASCOT_SLIDE)
     }
+  }
+
+  #playMascot(index) {
+    if (index === MASCOT_FRAMES.length) return this.#dismissMascot()
     const [ frame, duration, sound ] = MASCOT_FRAMES[index]
     this.#showMascotFrame(frame)
     if (sound) this.#play(sound)
-    this.claimTimer = setTimeout(() => this.#playMascot(index + 1), duration)
+    this.mascotTimer = setTimeout(() => this.#playMascot(index + 1), duration)
+  }
+
+  #dismissMascot() {
+    this.mascotTarget.toggleAttribute("data-visible", false)
+    this.mascotTimer = setTimeout(() => {
+      this.mascotSayTarget.textContent = ""
+      this.#showMascotFrame(0)
+    }, MASCOT_SLIDE)
   }
 
   // From the start each time; a browser that won't play it just stays quiet.
@@ -202,14 +213,6 @@ export default class extends Controller {
 
   #showMascotFrame(frame) {
     this.mascotSpriteTarget.style.setProperty("--frame", frame)
-  }
-
-  #finishClaim() {
-    this.mascotTarget.toggleAttribute("data-visible", false)
-    this.mascotSayTarget.textContent = ""
-    this.#showMascotFrame(0)
-    this.#set({ claiming: false })
-    this.#goTo(4)
   }
 
   #after(delay, callback) {
@@ -247,8 +250,7 @@ export default class extends Controller {
     const tool = this.#tool()
     const toolName = this.#toolName()
     const prize = this.prizesValue.find(prize => prize.id === s.prize)
-    const claiming = s.claiming
-    const done = { 1: !!s.tool, 2: !!s.idea || s.ideaSkipped, 3: !!prize && !claiming, 4: s.signed }
+    const done = { 1: !!s.tool, 2: !!s.idea || s.ideaSkipped, 3: !!prize, 4: s.signed }
     const values = {
       1: toolName,
       2: s.idea ? capitalize(s.idea) : s.ideaSkipped ? "Not decided yet" : "",
@@ -275,12 +277,12 @@ export default class extends Controller {
     this.fileNameTarget.textContent = tool ? slug + tool.extension : "untitled_wrong_game"
     this.progressTarget.textContent = s.signed ? "A1:A4 done" : `Step ${s.step} of 4`
     this.nameBoxTarget.textContent = `A${s.step}`
-    this.formulaTarget.textContent = this.#formula(toolName, prize, claiming)
+    this.formulaTarget.textContent = this.#formula(toolName)
     this.element.toggleAttribute("data-saved", s.signed)
     this.projectTabTarget.setAttribute("aria-disabled", !s.signed)
   }
 
-  #formula(toolName, prize, claiming) {
+  #formula(toolName) {
     const s = this.state
     switch (s.step) {
       case 1: return s.otherOpen ? `=PICK("${s.custom || "…"}")` : s.tool ? `=PICK("${toolName}")` : "=PICK(platform)"
@@ -288,7 +290,7 @@ export default class extends Controller {
         if (s.rolling) return `=IDEA(RAND(), "${toolName}")`
         if (s.ownOpen) return `="${s.own}"`
         return s.idea ? `="${s.idea}"` : `=IDEA(RAND(), "${toolName}")`
-      case 3: return claiming ? `=PRIZE("${prize.full}") → TRUE` : `=PRIZE(${this.hoursValue} hrs)`
+      case 3: return `=PRIZE(${this.hoursValue} hrs)`
       default: return s.signed ? "=SAVE(A1:A3) → TRUE" : s.signing ? "=SAVE(A1:A3) → #LOADING" : "=SAVE(A1:A3)"
     }
   }

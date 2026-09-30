@@ -16,7 +16,7 @@
   <div class="onboarding__sheet">
     <div class="onboarding__column-headers" aria-hidden="true">
       <span class="onboarding__corner"></span>
-      <% ("A".."K").each do |letter| %>
+      <% ("A".."Z").each do |letter| %>
         <%= tag.span letter, class: [ "onboarding__column-header", ("onboarding__column-header--selected" if letter == "A") ] %>
       <% end %>
     </div>

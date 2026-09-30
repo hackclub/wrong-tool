@@ -138,7 +138,7 @@
     &[data-state="active"] {
       flex: 1 0 0;
       block-size: auto;
-      min-block-size: 500px;
+      min-block-size: 440px;
     }
 
     &:not([data-state="active"]) :is(.onboarding-row__question, .onboarding-row__stage),
@@ -302,6 +302,12 @@
     min-inline-size: 0;
     padding: 24px;
     background: var(--gridlines);
+
+    /* The answers stop growing at about the size they were designed for; past that, it's more sheet. */
+    > * {
+      max-inline-size: 1040px;
+      max-block-size: 640px;
+    }
   }
 
   /* Buttons shared by the steps: the one red action per step, an outlined one, and text buttons. */
@@ -536,6 +542,10 @@
     .onboarding-row__stage {
       flex-basis: 100%;
       padding: 16px 12px;
+
+      > * {
+        max-block-size: none;
+      }
     }
 
     .app-bar__login-button {
