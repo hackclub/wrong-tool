@@ -18,7 +18,6 @@
         aria: { current: ("page" if current == :project), disabled: !project_open },
         data: { onboarding_target: ("projectTab" if current == :onboarding), turbo_prefetch: false } do %>
     <%= inline_svg_tag "icons/onboarding/lock.svg", class: "icon onboarding__unsaved-only", aria_hidden: true %>
-    <%= inline_svg_tag "icons/onboarding/lock-open.svg", class: "icon onboarding__saved-only", aria_hidden: true %>
     My project<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
   <% end %>
   <% if current != :onboarding && project_open %>
