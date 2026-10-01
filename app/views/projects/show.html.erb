@@ -1,0 +1,238 @@
+<% content_for :title, "#{@project.title} · Wrong Tool" %>
+<% build_days = @project.build_days %>
+<% set_up = @project.set_up? %>
+
+<%# Your project, the sheet onboarding unlocks: what you pledged and setting up to build it (Hackatime, Slack, a
+    repo), then once you're set up, your goal and schedule. Clippy keeps you to it, with your streak and the
+    leaderboard beside. %>
+<div class="spreadsheet onboarding project" data-saved
+     data-controller="project"
+     data-project-clippy-value="<%= flash[:clippy] %>"
+     data-project-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
+  <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+        progress: "Day 1 of #{build_days.size}", user: current_user %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar", name_box: "B7", formula: project_formula(@project) %>
+
+  <main class="project__sheet">
+    <div class="project__layout">
+      <div class="project__main">
+        <header class="project__header">
+          <div class="project__header-text">
+            <div class="project__day-row">
+              <span class="project__day"><%= set_up ? "Day 1 of #{build_days.size}" : "Day 1 starts now." %></span>
+              <% if set_up %>
+                <%= link_to project_ship_path, class: "project__ship" do %>
+                  <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m226-559 78 33q14-28 29-54t33-52l-56-11-84 84Zm142 83 114 113q42-16 90-49t90-75q70-70 109.5-155.5T806-800q-72-5-158 34.5T492-656q-42 42-75 90t-49 90Zm178-65q-23-23-23-56.5t23-56.5q23-23 57-23t57 23q23 23 23 56.5T660-541q-23 23-57 23t-57-23Zm19 321 84-84-11-56q-26 18-52 32.5T532-299l33 79Zm313-653q19 121-23.5 235.5T708-419l20 99q4 20-2 39t-20 33L538-80l-84-197-171-171-197-84 167-168q14-14 33.5-20t39.5-2l99 20q104-104 218-147t235-24ZM157-321q35-35 85.5-35.5T328-322q35 35 34.5 85.5T327-151q-25 25-83.5 43T82-76q14-103 32-161.5t43-83.5Zm57 56q-10 10-20 36.5T180-175q27-4 53.5-13.5T270-208q12-12 13-29t-11-29q-12-12-29-11.5T214-265Z"/></svg>
+                  <%= @project.ship_in_review ? "In review" : "Ship" %>
+                <% end %>
+              <% end %>
+            </div>
+            <%= render "projects/title", project: @project %>
+            <% unless set_up %><p class="project__meta"><%= project_meta(@project) %></p><% end %>
+          </div>
+          <% if set_up %><%= render "projects/screenshot", project: @project %><% end %>
+        </header>
+
+        <% if set_up %>
+          <details class="project__setup-done" <%= "open" if @step %>>
+            <summary class="project__setup-summary">
+              <%= inline_svg_tag "icons/onboarding/check-circle-filled.svg", class: "icon project__setup-check", aria_hidden: true %>
+              Setup done<% if (left = @project.optional_steps_left).positive? %> · <%= pluralize(left, "optional step") %> left<% end %>
+              <%= inline_svg_tag "icons/toolbar/keyboard-arrow-down.svg", class: "icon project__setup-chevron", aria_hidden: true %>
+            </summary>
+            <%= render "projects/steps", project: @project, step: @step, refresh_hackatime: @refresh_hackatime %>
+          </details>
+
+          <%# Which Hackatime projects your hours come from; Change opens that step again. %>
+          <div class="project__linked">
+            <span class="project__linked-label">Hours from</span>
+            <ul class="project__linked-list" aria-label="Linked Hackatime projects">
+              <% @project.hackatime_projects.each do |name| %><li class="project__linked-project"><%= name %></li><% end %>
+            </ul>
+            <%= link_to "Change", project_path(step: "hackatime_project"), class: "onboarding-text-button project__linked-change",
+                  aria: { label: "Change linked Hackatime projects" } %>
+          </div>
+
+          <%# Your schedule, as one card: the goal (your pace changes here), a cell per build day, and your hours along
+              a track with what each milestone gets you. %>
+          <section class="project__schedule" aria-labelledby="project-schedule-title">
+            <div>
+              <h2 class="project__schedule-title" id="project-schedule-title">Your schedule</h2>
+              <p class="project__schedule-note">
+                <%= pluralize(build_days.size, "session") %> of <%= project_pace_label(@project.pace_minutes) %>.
+                Ship day is <%= project_date(@project.finish_on) %>.
+              </p>
+            </div>
+            <div class="project__plan">
+              <div class="project__goal-cells">
+                <% project_goal(@project).each do |cell| %>
+                  <% content = capture do %>
+                    <span class="project__goal-label">
+                      <%= cell[:label] %>
+                      <% if cell[:pace] %><%= inline_svg_tag "icons/onboarding/edit.svg", class: "icon project__goal-edit", aria_hidden: true %><% end %>
+                    </span>
+                    <span class="project__goal-value"><%= cell[:value] %></span>
+                    <span class="project__goal-note"><%= cell[:note] %></span>
+                  <% end %>
+                  <% if cell[:pace] %>
+                    <%= link_to content, project_path(edit: ("pace" unless @editing_pace)), class: "project__goal-cell",
+                          aria: { label: "Change daily pace", expanded: @editing_pace } %>
+                  <% else %>
+                    <div class="project__goal-cell"><%= content %></div>
+                  <% end %>
+                <% end %>
+              </div>
+              <% if @editing_pace %>
+                <div class="project__paces" role="group" aria-label="Daily pace">
+                  <span class="project__paces-label">Daily pace</span>
+                  <% Project::PACES.each do |minutes| %>
+                    <%= button_to project_pace_label(minutes), project_path, method: :patch, params: { project: { pace_minutes: minutes } },
+                          class: "project__pace", aria: { pressed: minutes == @project.pace_minutes } %>
+                  <% end %>
+                </div>
+              <% end %>
+              <div class="project__plan-body">
+                <ol class="project__days">
+                  <% project_schedule(@project).each do |day| %>
+                    <li class="project__day-cell" data-state="<%= day[:state] %>">
+                      <span class="project__day-date"><%= day[:date] %></span>
+                      <span class="project__day-value"><%= day[:value] %></span>
+                    </li>
+                  <% end %>
+                </ol>
+                <div class="project__track" role="img" aria-label="<%= @project.hours_logged %> hours logged">
+                  <div class="project__track-bar">
+                    <span class="project__track-fill" style="inline-size: <%= project_hours_percent(@project) %>%"></span>
+                    <% project_milestones(@project).each do |milestone| %>
+                      <span class="project__track-tick" style="inset-inline-start: <%= milestone[:at] %>%" <%= "data-reached" if milestone[:reached] %>></span>
+                    <% end %>
+                  </div>
+                  <div class="project__track-labels">
+                    <% project_milestones(@project).each do |milestone| %>
+                      <span class="project__track-label" style="inset-inline-start: <%= milestone[:at] %>%"
+                            <%= "data-reached" if milestone[:reached] %> <%= "data-last" if milestone[:last] %>><%= milestone[:label] %></span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <%= render layout: "projects/focus", locals: { project: @project } do %>
+            <section class="project__today">
+              <div class="project__today-text">
+                <h2 class="project__section-title"><%= project_today(@project) %></h2>
+                <p class="project__today-note">Your first 20 min starts your streak.</p>
+              </div>
+              <button type="button" class="onboarding-button onboarding-button--primary project__start" data-action="focus#start">
+                Start session
+              </button>
+            </section>
+          <% end %>
+        <% else %>
+          <section class="project__setup" aria-labelledby="project-setup-title">
+            <div class="project__setup-head">
+              <h2 class="project__section-title" id="project-setup-title">Set up</h2>
+              <span class="project__setup-count"><%= @project.required_steps_done %> of <%= Project::REQUIRED_STEPS.size %> required</span>
+            </div>
+            <%= render "projects/steps", project: @project, step: @step, refresh_hackatime: @refresh_hackatime %>
+          </section>
+        <% end %>
+      </div>
+
+      <aside class="project__side" aria-label="Clippy">
+        <% if set_up %>
+          <%# Clippy perches on your streak card, saying his piece beside him. %>
+          <div class="project__perch">
+            <div class="project__clippy" data-project-target="clippy" data-perched>
+              <span class="onboarding-mascot__sprite project__sprite" aria-hidden="true" data-project-target="sprite"
+                    style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+            </div>
+            <p class="project__say" role="status"><%= project_clippy_says(@project) %></p>
+          </div>
+          <section class="project__streak" aria-label="Streak">
+            <p class="project__streak-count">
+              <span class="project__streak-number" <%= "data-going" if @project.streak.positive? %>><%= @project.streak %></span>
+              <span class="project__streak-label">day streak</span>
+            </p>
+            <ol class="project__week" aria-label="This week">
+              <% project_streak_week.each do |day| %>
+                <li class="project__week-day" <%= "data-today" if day[:today] %>>
+                  <span class="project__week-letter"><%= day[:letter] %></span><span class="project__week-cell"></span>
+                </li>
+              <% end %>
+            </ol>
+            <p class="project__streak-note">Build 20 min today to start it. 20 min is all a day needs.</p>
+            <ul class="project__rewards">
+              <% project_rewards(@project).each do |reward| %>
+                <li class="project__reward" data-state="<%= reward[:state] %>">
+                  <span class="project__reward-day">Day <%= reward[:day] %></span>
+                  <span class="project__reward-label"><%= reward[:label] %></span>
+                  <span class="project__reward-status"><%= reward[:status] %></span>
+                </li>
+              <% end %>
+            </ul>
+          </section>
+
+          <section class="project__card project__events" aria-labelledby="project-events-title">
+            <h2 class="project__card-title" id="project-events-title">Events</h2>
+            <div class="project__event" data-kind="party">
+              <span class="project__event-date"><%= project_event_date(Program::PLAY_PARTY_ON) %></span>
+              <div class="project__event-text">
+                <h3 class="project__event-title">Play party</h3>
+                <p class="project__event-note"><%= Program::PLAY_PARTY_ON.strftime("%A") %> at 7pm · on stream</p>
+                <p class="project__event-note">
+                  <%= @project.party_queued? ? "We'll play your game live." : "We play everyone's game live. Have something running by then." %>
+                </p>
+                <% if @project.party_queued? %>
+                  <span class="project__party-queued">
+                    <%= inline_svg_tag "icons/onboarding/check-circle.svg", class: "icon", aria_hidden: true %>In the queue
+                  </span>
+                <% else %>
+                  <%= button_to "Add to queue", project_path, method: :patch, params: { project: { party_queued: true } },
+                        class: "project__event-button" %>
+                <% end %>
+              </div>
+            </div>
+            <div class="project__event" data-kind="ship">
+              <span class="project__event-date"><%= project_event_date(@project.finish_on) %></span>
+              <div class="project__event-text">
+                <h3 class="project__event-title">Ship day</h3>
+                <p class="project__event-note">Your deadline. Hit Ship once it's playable.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="project__card project__stairs" aria-labelledby="project-stairs-title">
+            <div class="project__card-head">
+              <h2 class="project__card-title" id="project-stairs-title">Leaderboard</h2>
+              <%= link_to "See all", leaderboard_path, class: "project__card-link" %>
+            </div>
+            <% stairs, stairs_note = leaderboard_stairs(@project) %>
+            <ol class="project__stairs-places">
+              <% stairs.each do |place| %>
+                <li class="project__stair" data-place="<%= place[:place] %>" <%= "data-you" if place[:you] %>>
+                  <span class="leaderboard__avatar" aria-hidden="true"><%= place[:initial] %></span>
+                  <span class="project__stair-name"><%= place[:name] %></span>
+                  <span class="project__stair-hours"><%= place[:hours] %>h</span>
+                  <span class="project__stair-step"><%= place[:label] %></span>
+                </li>
+              <% end %>
+            </ol>
+            <p class="project__stairs-note"><%= stairs_note %></p>
+          </section>
+        <% else %>
+          <p class="project__say" role="status"><%= project_clippy_says(@project) %></p>
+          <div class="project__clippy" data-project-target="clippy">
+            <span class="onboarding-mascot__sprite project__sprite" aria-hidden="true" data-project-target="sprite"
+                  style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+          </div>
+          <p class="project__locked">Streaks and the leaderboard open once you're set up.</p>
+        <% end %>
+      </aside>
+    </div>
+  </main>
+
+  <%= render "onboarding/tabs", current: :project, project_open: true %>
+</div>

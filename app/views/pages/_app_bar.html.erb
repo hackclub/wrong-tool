@@ -1,7 +1,11 @@
 <%# The document's name (renamable), the star and the menu bar. Menu items send menu-bar:command to the
     sheet, like the toolbar's buttons; undo and redo follow the sheet editor (sheet-editor:format).
-    During onboarding the name is the file your answers add up to, and Start building gives way to Log in. %>
+    During onboarding (and on your project) the name is the file your answers add up to, Start building gives way
+    to how far along you are, and once you're signed in, your initial. %>
 <% onboarding = local_assigns.fetch(:onboarding, false) %>
+<% file_name = local_assigns.fetch(:file_name, "untitled_wrong_game") %>
+<% progress = local_assigns.fetch(:progress, "Step 1 of 4") %>
+<% user = local_assigns[:user] %>
 <header class="app-bar" data-controller="<%= "document-title " unless onboarding %>menu-bar"
         data-action="<%= "menu-bar:rename->document-title#rename " unless onboarding %>sheet-editor:format@window->menu-bar#reflect
                      mousedown@window->menu-bar#dismiss keydown@window->menu-bar#shortcut resize@window->menu-bar#close">
@@ -10,7 +14,7 @@
   <div class="app-bar__document">
     <div class="app-bar__title-row">
       <% if onboarding %>
-        <span class="app-bar__title app-bar__title--file" data-onboarding-target="fileName">untitled_wrong_game</span>
+        <span class="app-bar__title app-bar__title--file" data-onboarding-target="fileName"><%= file_name %></span>
         <%= inline_svg_tag "icons/header/star.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
         <%= inline_svg_tag "icons/header/drive-file-move.svg", class: "icon app-bar__status-icon", aria_hidden: true %>
         <%= inline_svg_tag "icons/onboarding/cloud-off.svg", class: "icon app-bar__status-icon onboarding__unsaved-only", aria_hidden: true %>
@@ -55,7 +59,18 @@
     </button>
 
     <% if onboarding %>
-      <span class="app-bar__progress" data-onboarding-target="progress">Step 1 of 4</span>
+      <span class="app-bar__progress" data-onboarding-target="progress"><%= progress %></span>
+      <% if user %>
+        <%# Your account: who you're signed in as, and logging out. %>
+        <button type="button" class="app-bar__avatar" popovertarget="app-bar-account" aria-label="Account: <%= user.name %>">
+          <%= (user.first_name.presence || user.name.to_s)[0]&.upcase %>
+        </button>
+        <div class="app-bar__account" id="app-bar-account" popover>
+          <p class="app-bar__account-name"><%= user.name %></p>
+          <% if user.email.present? %><p class="app-bar__account-email"><%= user.email %></p><% end %>
+          <%= button_to "Log out", logout_path, method: :delete, class: "menu-bar__entry app-bar__logout" %>
+        </div>
+      <% end %>
     <% else %>
       <%= link_to onboarding_path, class: "app-bar__build-button" do %>
         <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>

@@ -1,0 +1,192 @@
+/* The leaderboard: everyone building, as a sheet of rows with you highlighted. */
+@layer sections {
+  .leaderboard {
+    max-inline-size: 960px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 36px 56px 56px;
+  }
+
+  .leaderboard__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .leaderboard__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .leaderboard__note {
+    font: 15px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .leaderboard__sorts {
+    display: flex;
+    padding: 3px;
+    border-radius: 20px;
+    background: var(--grey-100);
+  }
+
+  .leaderboard__sort {
+    block-size: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0 16px;
+    border-radius: 17px;
+    font: 500 14px var(--font-chrome);
+    text-decoration: none;
+
+    &,
+    &:hover {
+      color: var(--text-secondary);
+    }
+
+    &[aria-current="page"] {
+      background: var(--white);
+      color: var(--blue-700);
+    }
+  }
+
+  .leaderboard__table {
+    inline-size: 100%;
+    border: 1px solid var(--border-header);
+    border-collapse: collapse;
+    table-layout: fixed;
+    font: 14px var(--font-cell);
+
+    th {
+      padding: 7px 12px;
+      border-inline-end: 1px solid var(--border-grid);
+      background: var(--grey-75);
+      font: 12px var(--font-cell);
+      color: var(--text-secondary);
+      text-align: start;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-block-start: 1px solid var(--border-grid);
+    }
+
+    th:nth-child(2) {
+      inline-size: 30%;
+    }
+
+    th:nth-child(4) {
+      inline-size: 130px;
+    }
+
+    th:nth-child(5) {
+      inline-size: 100px;
+    }
+
+    tr[data-you] td {
+      background: #e8f0fe;
+    }
+  }
+
+  /* The row numbers, like a sheet's. */
+  .leaderboard__table .leaderboard__rank {
+    inline-size: 44px;
+    padding-inline: 0;
+    border-inline-end: 1px solid var(--border-header);
+    background: var(--grey-75);
+    font: 12px var(--font-mono);
+    color: var(--text-secondary);
+    text-align: center;
+
+    tr[data-you] & {
+      background: var(--blue-100);
+    }
+  }
+
+  .leaderboard__building {
+    color: var(--text-secondary);
+  }
+
+  .leaderboard__table .leaderboard__number {
+    font: 13px var(--font-mono);
+    text-align: end;
+
+    &[data-sorted] {
+      font-weight: 600;
+    }
+  }
+
+  .leaderboard__table th.leaderboard__number {
+    font: 12px var(--font-cell);
+  }
+
+  .leaderboard__builder {
+    min-inline-size: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    [data-you] td:nth-child(2) > & {
+      font-weight: 700;
+    }
+  }
+
+  .leaderboard__avatar {
+    flex: none;
+    inline-size: 24px;
+    block-size: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--blue-700);
+    font: 700 11px var(--font-cell);
+    color: var(--white);
+
+    [data-you] & {
+      background: var(--red);
+    }
+  }
+
+  .leaderboard__shot {
+    flex: none;
+    inline-size: 40px;
+    block-size: 25px;
+    border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--border-grid);
+  }
+
+  .leaderboard__name {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .leaderboard__footnote {
+    font: 13px/1.4 var(--font-cell);
+    color: var(--grey-600);
+
+    a {
+      color: var(--blue-700);
+    }
+  }
+
+  @media (width <= 600px) {
+    .leaderboard {
+      padding: 24px 16px;
+    }
+
+    .leaderboard__table {
+      th:nth-child(3),
+      td:nth-child(3) {
+        display: none;
+      }
+    }
+  }
+}

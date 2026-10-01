@@ -21,14 +21,14 @@ module OnboardingHelper
                    "that runs on checkboxes", "powered by iterative calc" ] },
       { id: "figma", name: "Figma", extension: ".fig",
         phrases: [ "in Figma prototypes", "where frames are rooms", "run on Figma variables", "played in Present mode" ] },
-      { id: "email", name: "Email", extension: ".eml", preposition: "over",
+      { id: "email", name: "Email", extension: ".eml",
         phrases: [ "played over email", "where every reply is a turn", "run by inbox filters", "in your drafts folder" ] },
-      { id: "ssh", name: "SSH", extension: ".sh", preposition: "over",
+      { id: "ssh", name: "SSH", extension: ".sh",
         phrases: [ "over SSH", "in a login shell", "hiding in .bash_profile", "for a bare terminal" ] },
       { id: "shaders", name: "Shaders", extension: ".glsl",
         phrases: [ "in one fragment shader", "where state is pixels", "in a single GLSL file", "running only on the GPU" ] },
       { id: "other", name: "Other", extension: ".???", phrases: [] }
-    ]
+    ].map { |tool| tool.merge(preposition: Project.preposition_for(tool[:id])) }
   end
 
   # A4's answers: minutes a day (with how the chip reads), and when you usually build (with when Clippy checks in).

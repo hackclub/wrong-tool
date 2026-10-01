@@ -1,0 +1,1282 @@
+/* Your project: what you pledged and setting up to build it on the left, then your goal and schedule; Clippy,
+   your streak and the leaderboard on the right. */
+@layer sections {
+  .project__sheet {
+    flex: 1;
+    min-block-size: 0;
+    overflow: auto;
+    background: var(--surface-grid);
+  }
+
+  .project__layout {
+    max-inline-size: 1160px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 288px;
+    gap: 56px;
+    padding: 36px 56px 56px;
+  }
+
+  .project__main {
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .project__section-title {
+    font: 700 17px var(--font-cell);
+  }
+
+  /* What you pledged */
+
+  .project__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+  }
+
+  .project__header-text {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* The name, renamable in place: a button until you click it, then a field outlined like a cell being edited. */
+  .project__title-button {
+    --icon-size: 20px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -4px 0 -4px -8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    text-align: start;
+    cursor: text;
+
+    &:hover {
+      background: #f1f4f9;
+    }
+  }
+
+  .project__title-edit {
+    flex: none;
+    color: var(--grey-500);
+  }
+
+  .project__title-input {
+    inline-size: 100%;
+    margin: -4px 0 -4px -8px;
+    padding: 2px 8px;
+    border: 0;
+    border-radius: 4px;
+    outline: 2px solid var(--blue-600);
+    background: var(--white);
+    color: var(--text-primary);
+  }
+
+  .project__title-error {
+    font: 14px var(--font-cell);
+    color: var(--red-800);
+  }
+
+  /* Your screenshot: a dashed slot until there is one. */
+  .project__shot {
+    flex: none;
+    inline-size: 208px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .project__shot-slot {
+    position: relative;
+    block-size: 130px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px dashed var(--border-header);
+    border-radius: 6px;
+    background: var(--grey-75);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--blue-600);
+    }
+
+    &:focus-within {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 2px;
+    }
+
+    &[data-filled] {
+      border-style: solid;
+      border-color: var(--border-grid);
+    }
+  }
+
+  .project__shot-placeholder {
+    font: 500 14px var(--font-chrome);
+    color: var(--blue-700);
+  }
+
+  .project__shot-image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .project__shot-replace {
+    position: absolute;
+    inset: auto 0 0;
+    padding: 6px;
+    background: rgb(31 31 31 / 70%);
+    font: 500 12px var(--font-chrome);
+    color: var(--white);
+    text-align: center;
+    opacity: 0;
+
+    :is(:hover, :focus-within) > & {
+      opacity: 1;
+    }
+  }
+
+  .project__shot-note,
+  .project__shot-error {
+    font: 12px/1.35 var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__shot-error {
+    color: var(--red-800);
+  }
+
+  .project__day {
+    font: 700 14px var(--font-cell);
+    color: var(--green);
+  }
+
+  .project__title {
+    font: 700 34px/1.1 var(--font-cell);
+    letter-spacing: -1px;
+    text-wrap: balance;
+  }
+
+  .project__meta {
+    font: 15px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  /* Setting up: numbered steps, the one you're on outlined in red. */
+
+  .project__setup {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .project__setup-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-block-end: 10px;
+    margin-block-end: 6px;
+    border-block-end: 1px solid var(--border-grid);
+  }
+
+  .project__setup-count {
+    font: 13px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  .project__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .project__step {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px 22px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+
+    &[data-state="current"] {
+      padding-block: 20px;
+      border-color: var(--red);
+    }
+  }
+
+  .project__step-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font: inherit;
+    color: inherit;
+    text-decoration: none;
+
+    &:is(a) {
+      margin: -4px -8px;
+      padding: 4px 8px;
+      border-radius: 4px;
+
+      &:hover {
+        background: #f1f4f9;
+      }
+    }
+  }
+
+  .project__step-number {
+    --icon-size: 16px;
+
+    flex: none;
+    inline-size: 24px;
+    block-size: 24px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--border-header);
+    border-radius: 50%;
+    background: var(--white);
+    font: 600 12px/1 var(--font-mono);
+    color: var(--grey-500);
+
+    [data-state="current"] & {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    [data-state="done"] & {
+      border-color: var(--green);
+      background: var(--green);
+      color: var(--white);
+    }
+  }
+
+  .project__step-title {
+    flex: 1;
+    min-inline-size: 0;
+    font: 16px var(--font-cell);
+    color: var(--text-primary);
+
+    [data-state="current"] & {
+      font-weight: 700;
+      font-size: 19px;
+    }
+
+    [data-state="done"] & {
+      color: var(--grey-600);
+    }
+
+    [data-state="locked"] & {
+      color: var(--grey-500);
+    }
+  }
+
+  .project__step-note {
+    font: 400 15px var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__step-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-inline-start: 38px;
+  }
+
+  .project__step-warning {
+    font: 700 15px/1.35 var(--font-cell);
+    color: var(--red-800);
+  }
+
+  .project__step-text {
+    max-inline-size: 520px;
+    font: 14px/1.45 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .project__step-hint {
+    font: 13px/1.4 var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__step-button {
+    block-size: 44px;
+    padding: 0 22px;
+    border-radius: 22px;
+    font-size: 15px;
+
+    &.onboarding-text-button {
+      padding: 0 14px;
+      font-size: 14px;
+    }
+  }
+
+  .project__step-actions {
+    align-self: stretch;
+    max-inline-size: 640px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .project__step-form {
+    flex: 1;
+    min-inline-size: 0;
+    max-inline-size: 560px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .project__step-body > & {
+      align-self: stretch;
+    }
+  }
+
+  .project__step-input {
+    flex: 1;
+    min-inline-size: 0;
+    block-size: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border-header);
+    border-radius: 6px;
+    outline: none;
+    font: 14px var(--font-mono);
+    color: var(--text-primary);
+
+    &:focus {
+      border-color: var(--selection);
+      box-shadow: inset 0 0 0 1px var(--selection);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--red-800);
+    }
+  }
+
+  .project__step-select {
+    font-family: var(--font-cell);
+    background: var(--white);
+  }
+
+  .project__step-linked {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .project__linked-remove-form {
+    display: contents;
+  }
+
+  .project__linked-remove {
+    --icon-size: 14px;
+
+    display: grid;
+    place-items: center;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-inline: 4px -6px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--grey-300);
+      color: var(--text-primary);
+    }
+  }
+
+  .project__step-link {
+    color: var(--blue-700);
+  }
+
+  .project__step-error {
+    font: 14px var(--font-cell);
+    color: var(--red-800);
+  }
+
+  .project__step-draft {
+    max-inline-size: 520px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    background: var(--grey-75);
+    font: 14px/1.45 var(--font-cell);
+  }
+
+  /* Once you're set up, the steps fold away behind "Setup done". */
+  .project__setup-done {
+    margin-block: -12px -8px;
+
+    &[open] {
+      margin-block-end: 0;
+    }
+
+    > .project__steps {
+      margin-block-start: 12px;
+    }
+  }
+
+  .project__setup-summary {
+    --icon-size: 20px;
+
+    inline-size: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: 14px var(--font-cell);
+    color: var(--text-secondary);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  .project__setup-check {
+    --icon-size: 18px;
+
+    color: var(--green);
+  }
+
+  .project__setup-chevron {
+    [open] > summary > & {
+      rotate: 180deg;
+    }
+  }
+
+  /* The Hackatime projects your hours come from. */
+  .project__linked {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-block: -12px -8px;
+  }
+
+  .project__linked-label {
+    font: 14px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__linked-list {
+    display: contents;
+    list-style: none;
+  }
+
+  .project__linked-project {
+    block-size: 26px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-radius: 13px;
+    background: var(--grey-100);
+    font: 600 13px var(--font-mono);
+  }
+
+  .project__linked-change {
+    block-size: 30px;
+    padding: 0 10px;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  /* Your schedule card: the goal cells (the pace one you can change), then the days and your hours. */
+
+  .project__plan {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-grid);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .project__plan-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .project__goal-cells {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-block-end: 1px solid var(--border-grid);
+  }
+
+  .project__goal-cell {
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    text-decoration: none;
+
+    & + & {
+      border-inline-start: 1px solid var(--border-grid);
+    }
+
+    &:is(a):hover,
+    &[aria-expanded="true"] {
+      background: var(--blue-50);
+    }
+  }
+
+  .project__goal-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: 12px var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__goal-edit {
+    --icon-size: 14px;
+
+    color: var(--blue-700);
+  }
+
+  .project__goal-value {
+    font: 700 22px/1.1 var(--font-cell);
+    letter-spacing: -0.4px;
+  }
+
+  .project__goal-note {
+    font: 13px var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__paces {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-block-end: 1px solid var(--border-grid);
+    background: var(--grey-75);
+  }
+
+  .project__paces-label {
+    margin-inline-end: 4px;
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__pace {
+    block-size: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border-header);
+    border-radius: 16px;
+    background: var(--white);
+    font: 500 13px var(--font-chrome);
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      border-color: var(--blue-700);
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+  }
+
+  /* Your hours along a track to the last milestone, with what each one gets you. */
+  .project__track {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .project__track-bar {
+    position: relative;
+    block-size: 6px;
+    border-radius: 3px;
+    background: #e8eaed;
+  }
+
+  .project__track-fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: 3px;
+    background: var(--green);
+  }
+
+  .project__track-tick {
+    position: absolute;
+    inset-block-start: -3px;
+    inline-size: 2px;
+    block-size: 12px;
+    margin-inline-start: -2px;
+    background: var(--grey-500);
+
+    &[data-reached] {
+      background: var(--green);
+    }
+  }
+
+  .project__track-labels {
+    position: relative;
+    block-size: 16px;
+  }
+
+  .project__track-label {
+    position: absolute;
+    translate: -50%;
+    font: 12px var(--font-cell);
+    color: var(--grey-600);
+    white-space: nowrap;
+
+    &[data-last] {
+      translate: -100%;
+    }
+
+    &[data-reached] {
+      color: var(--green);
+    }
+  }
+
+  /* Your schedule: a cell per build day, today ringed in blue and ship day in green. */
+
+  .project__schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .project__schedule-title {
+    font: 700 24px/1.1 var(--font-cell);
+    letter-spacing: -0.4px;
+  }
+
+  .project__schedule-note {
+    margin-block-start: 4px;
+    font: 15px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .project__day-cell {
+    inline-size: 44px;
+    block-size: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 4px 5px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px var(--border-grid);
+    color: var(--grey-600);
+
+    &[data-state="today"] {
+      box-shadow: inset 0 0 0 2px var(--blue-600);
+      color: var(--blue-700);
+    }
+
+    &[data-state="ship"] {
+      box-shadow: inset 0 0 0 2px var(--green);
+      color: var(--green);
+    }
+
+    &[data-state="party"] {
+      box-shadow: inset 0 0 0 2px var(--red);
+      color: var(--red-800);
+    }
+  }
+
+  .project__day-date {
+    font: 10px var(--font-cell);
+  }
+
+  .project__day-value {
+    font: 700 12px var(--font-cell);
+    text-align: end;
+  }
+
+  /* Today */
+
+  .project__today {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-block-start: 20px;
+    border-block-start: 1px solid var(--border-grid);
+  }
+
+  .project__today-text {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .project__today-note {
+    font: 14px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__start {
+    block-size: 48px;
+    padding: 0 24px;
+    border-radius: 24px;
+  }
+
+  /* Clippy, your streak and the leaderboard */
+
+  .project__side {
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-block-start: 4px;
+  }
+
+  .project__say {
+    align-self: stretch;
+    padding: 12px 16px;
+    border: 1px solid #e0d68a;
+    border-radius: 10px;
+    background: #fff8c4;
+    font: 500 15px/1.4 var(--font-chrome);
+    text-align: center;
+    text-wrap: pretty;
+  }
+
+  /* Clippy at 1.7× while you set up. */
+  .project__clippy {
+    block-size: 200px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: translate 160ms cubic-bezier(0.3, 1.5, 0.5, 1);
+    }
+
+    &[data-hop] {
+      translate: 0 -14px;
+    }
+
+    &[data-perched] {
+      flex: none;
+      inline-size: 96px;
+      block-size: 84px;
+    }
+  }
+
+  .project__sprite {
+    scale: 1.7;
+    transform-origin: 50% 100%;
+
+    [data-perched] > & {
+      scale: 0.8;
+    }
+  }
+
+  /* Once you're set up he's small, perched on your streak card with his bubble beside him. */
+  .project__perch {
+    position: relative;
+    z-index: 1;
+    align-self: stretch;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    margin-block-end: -26px;
+
+    > .project__say {
+      flex: 1;
+      min-inline-size: 0;
+      margin-block-end: 30px;
+      padding: 9px 12px;
+      border-radius: 10px 10px 10px 2px;
+      font-size: 13px;
+      line-height: 1.35;
+      text-align: start;
+    }
+  }
+
+  .project__locked {
+    font: 13px/1.4 var(--font-cell);
+    color: var(--grey-600);
+    text-align: center;
+    text-wrap: pretty;
+  }
+
+  /* Sidebar cards: your streak, events and the leaderboard */
+
+  .project__streak,
+  .project__card {
+    align-self: stretch;
+    border: 1px solid var(--border-grid);
+    border-radius: 8px;
+  }
+
+  .project__streak {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 20px;
+  }
+
+  .project__card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .project__card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+
+    > .project__card-title {
+      padding: 0;
+    }
+  }
+
+  .project__card-title {
+    padding: 12px 16px 8px;
+    font: 700 15px var(--font-cell);
+  }
+
+  .project__card-link {
+    font: 500 13px var(--font-chrome);
+    color: var(--blue-700);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .project__event {
+    display: flex;
+    gap: 12px;
+    padding: 10px 16px 14px;
+
+    & + & {
+      padding-block-start: 12px;
+      border-block-start: 1px solid var(--border-grid);
+    }
+  }
+
+  /* A calendar page: red for the party, green for ship day. */
+  .project__event-date {
+    flex: none;
+    inline-size: 44px;
+    block-size: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 2px var(--red);
+    color: var(--red-800);
+
+    [data-kind="ship"] > & {
+      box-shadow: inset 0 0 0 2px var(--green);
+      color: var(--green);
+    }
+  }
+
+  .project__event-month {
+    font: 600 10px var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .project__event-day {
+    font: 700 18px/1.1 var(--font-cell);
+  }
+
+  .project__event-text {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .project__event-title {
+    font: 700 14px var(--font-cell);
+  }
+
+  .project__event-note {
+    font: 13px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .project__event-button {
+    margin-block-start: 2px;
+    font: 500 13px var(--font-chrome);
+    color: var(--blue-700);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .project__party-queued {
+    --icon-size: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: 13px var(--font-cell);
+    color: var(--green);
+  }
+
+  /* The top three as stairs, first in the middle and tallest, you on a blue step if you're further down. */
+  .project__stairs-places {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin: 0;
+    padding: 6px 12px 0;
+    border-block-end: 1px solid var(--border-header);
+    list-style: none;
+  }
+
+  .project__stair {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+
+    > .leaderboard__avatar {
+      inline-size: 28px;
+      block-size: 28px;
+      margin-block-end: 5px;
+      font-size: 12px;
+    }
+  }
+
+  .project__stair-name {
+    max-inline-size: 100%;
+    overflow: hidden;
+    font: 12px var(--font-cell);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    [data-you] > & {
+      font-weight: 700;
+    }
+  }
+
+  .project__stair-hours {
+    font: 11px var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  .project__stair-step {
+    align-self: stretch;
+    block-size: 38px;
+    display: flex;
+    justify-content: center;
+    margin-block-start: 6px;
+    padding-block-start: 6px;
+    border-radius: 4px 4px 0 0;
+    background: #e8eaed;
+    font: 700 15px var(--font-cell);
+    color: var(--text-secondary);
+
+    [data-place="1"] > & {
+      block-size: 74px;
+      background: var(--green);
+      color: var(--white);
+    }
+
+    [data-place="2"] > & {
+      block-size: 54px;
+    }
+
+    [data-place="you"] > & {
+      block-size: 24px;
+    }
+
+    [data-you] > & {
+      background: var(--blue-600);
+      color: var(--white);
+    }
+  }
+
+  .project__stairs-note {
+    padding: 10px 16px 12px;
+    font: 12px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__streak-count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .project__streak-number {
+    font: 700 44px/1 var(--font-cell);
+    letter-spacing: -1.5px;
+    color: var(--grey-500);
+
+    &[data-going] {
+      color: var(--green);
+    }
+  }
+
+  .project__streak-label {
+    font: 700 16px var(--font-cell);
+  }
+
+  .project__week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .project__week-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .project__week-letter {
+    font: 10px var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__week-cell {
+    inline-size: 100%;
+    block-size: 22px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px var(--border-grid);
+
+    [data-today] > & {
+      box-shadow: inset 0 0 0 2px var(--blue-600);
+    }
+  }
+
+  .project__streak-note {
+    font: 13px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .project__rewards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 0 0;
+    border-block-start: 1px solid var(--border-grid);
+    list-style: none;
+  }
+
+  .project__reward {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .project__reward-day {
+    flex: none;
+    inline-size: 50px;
+    block-size: 22px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-grid);
+    border-radius: 3px;
+    font: 600 11px var(--font-mono);
+    color: var(--grey-500);
+
+    [data-state="next"] > & {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+    }
+
+    [data-state="earned"] > & {
+      border-color: var(--green);
+      background: var(--green);
+      color: var(--white);
+    }
+  }
+
+  .project__reward-label {
+    flex: 1;
+    min-inline-size: 0;
+    font: 13px/1.3 var(--font-cell);
+    color: var(--grey-600);
+
+    :is([data-state="next"], [data-state="earned"]) > & {
+      color: var(--text-primary);
+    }
+  }
+
+  .project__reward-status {
+    flex: none;
+    font: 12px var(--font-cell);
+    color: var(--grey-500);
+
+    [data-state="next"] > & {
+      color: var(--text-secondary);
+    }
+
+    [data-state="earned"] > & {
+      color: var(--green);
+    }
+  }
+
+  /* Chrome */
+
+  .app-bar__avatar {
+    flex: none;
+    inline-size: 36px;
+    block-size: 36px;
+    display: grid;
+    place-items: center;
+    margin-inline-start: 12px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 0;
+    padding: 0;
+    font: 700 15px var(--font-cell);
+    color: var(--white);
+    cursor: pointer;
+  }
+
+  /* Opens under the avatar, in the top right. */
+  .app-bar__account {
+    position: fixed;
+    inset: 56px 16px auto auto;
+    margin: 0;
+    min-inline-size: 220px;
+    padding: 12px 0 6px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--white);
+    box-shadow: var(--menu-shadow);
+    color: var(--text-primary);
+  }
+
+  .app-bar__account-name,
+  .app-bar__account-email {
+    margin: 0;
+    padding-inline: 12px;
+    font: 14px var(--font-chrome);
+  }
+
+  .app-bar__account-name {
+    font-weight: 500;
+  }
+
+  .app-bar__account-email {
+    color: var(--text-secondary);
+  }
+
+  .app-bar__account form {
+    margin-block-start: 8px;
+    border-block-start: 1px solid var(--menu-hover);
+    padding-block-start: 6px;
+  }
+
+  .app-bar__logout {
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .onboarding__project-tab[aria-disabled="true"] {
+    pointer-events: none;
+  }
+}
+
+/* Phones: Clippy, the streak and the leaderboard go under the rest. */
+@layer sections {
+  @media (width <= 600px) {
+    .project__layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
+      padding: 24px 16px;
+    }
+
+    .project__title {
+      font-size: 26px;
+    }
+
+    .project__header {
+      flex-direction: column;
+    }
+
+    .project__shot {
+      inline-size: 100%;
+    }
+
+    .project__shot-slot {
+      block-size: auto;
+      aspect-ratio: 16 / 10;
+    }
+
+    .project__step {
+      padding-inline: 12px;
+    }
+
+    .project__step-body {
+      padding-inline-start: 0;
+    }
+
+    .project__step-actions,
+    .project__step-form {
+      flex-wrap: wrap;
+    }
+
+    .project__step-input {
+      flex-basis: 100%;
+    }
+
+    .project__goal-cells {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project__goal-cell + .project__goal-cell {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--border-grid);
+    }
+
+
+    .project__today {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}

@@ -1,10 +1,11 @@
-<%# Read-only here: the name box follows the open row and the formula shows what you've answered so far. %>
+<%# Read-only here: the name box follows the open row and the formula shows what you've answered so far (on your
+    project, where setup's at). %>
 <div class="formula-bar">
   <span class="formula-bar__name-box">
-    <span class="formula-bar__name" data-onboarding-target="nameBox">A1</span>
+    <span class="formula-bar__name" data-onboarding-target="nameBox"><%= local_assigns.fetch(:name_box, "A1") %></span>
     <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
   </span>
   <span class="formula-bar__divider"></span>
   <span class="formula-bar__fx">fx</span>
-  <output class="formula-bar__content onboarding__formula" data-onboarding-target="formula">=PICK(platform)</output>
+  <output class="formula-bar__content onboarding__formula" data-onboarding-target="formula"><%= local_assigns.fetch(:formula, "=PICK(platform)") %></output>
 </div>

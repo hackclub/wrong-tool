@@ -1,17 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
+import { Clippy } from "mascot/clippy"
 
 // The onboarding sheet: pick a wrong tool (A1), roll or write an idea (A2), pick a handheld (A3), then commit
 // to a pace and sign the pledge it adds up to (A4). Tapping an answer moves on after a short flash; answered
 // rows fold into cells that reopen them. Answers live in this tab (sessionStorage keeps them across the trip
 // to Hack Club Auth), and the pledge signs itself once you're back.
 const PICK_DELAY = 360
-// The mascot's congratulations: [frame in the sprite strip, how long it shows (ms), sound to start]. It bends
-// into a tick, holds it, waves it and straightens back up, with Clippy's own sounds on the frames it had them.
-const MASCOT_FRAMES = [
-  [ 0, 100, "first" ], [ 1, 10 ], [ 2, 10 ], [ 3, 10, "second" ], [ 4, 10 ], [ 5, 10 ], [ 6, 10 ], [ 7, 10 ], [ 8, 10 ], [ 9, 100 ],
-  [ 10, 100 ], [ 11, 100 ], [ 12, 600 ], [ 13, 100 ], [ 14, 100 ], [ 12, 600 ],
-  [ 15, 100 ], [ 16, 100 ], [ 17, 100 ], [ 18, 100 ], [ 19, 100 ], [ 0, 100 ]
-]
 const ANSWERS_KEY = "wrong-tool:onboarding"
 const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "idea", "ideaTool", "ideaOwn", "ideaSkipped", "prize",
                   "pace", "buildTime", "pledged", "signedOn" ]
@@ -30,13 +24,15 @@ export default class extends Controller {
     "idea", "reel", "article", "dice", "rollLabel", "useIdea", "ownInput", "useOwn",
     "prize", "mascot", "mascotSprite", "mascotSay",
     "commit", "pace", "finishLine", "buildTime",
-    "pledgeIdea", "pledgePreposition", "pledgeTool", "pledgeDate", "accountable", "ink", "signature",
+    "pledgePace", "pledgeEvery", "pledgeIdea", "pledgePreposition", "pledgeTool", "pledgeDate", "accountable", "ink",
+    "signature", "saveError",
     "signIn", "holdFill", "signInLabel", "signHint",
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
   static values = {
     tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object,
-    signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object
+    signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object,
+    projectUrl: String, hasProject: Boolean
   }
 
   connect() {
@@ -51,11 +47,7 @@ export default class extends Controller {
     // A pledge is only signed for whoever's signed in.
     if (!this.signedInValue) this.state.pledged = false
     if (this.state.pledged) this.state.step = 4
-    this.sounds = Object.fromEntries(Object.entries(this.soundsValue).map(([ name, url ]) => {
-      const audio = new Audio(url)
-      audio.preload = "auto"
-      return [ name, audio ]
-    }))
+    this.clippy = new Clippy(this.mascotSpriteTarget, this.soundsValue)
     this.#render()
     this.#askWhoami()
     if (this.signedInValue && takeSigningFlag() && this.#commitReady()) {
@@ -69,6 +61,7 @@ export default class extends Controller {
     clearTimeout(this.pickTimer)
     clearTimeout(this.rollTimer)
     clearTimeout(this.mascotTimer)
+    this.clippy.stop()
     clearTimeout(this.ceremonyTimer)
     clearInterval(this.ceremonyTicker)
     clearInterval(this.holdTicker)
@@ -302,7 +295,8 @@ export default class extends Controller {
       this.#set({ pledged: true, signing: false, signedOn })
       this.#congratulate(`Signed. I'll check in ${this.checkInsValue[this.state.buildTime]} to keep you on track.`)
       this.#showDayOne()
-      return this.#saveAnswers()
+      this.#saveAnswers()
+      return this.saveProject()
     }
 
     this.#set({ signing: false, signTick: 0, signedOn, holdP: 1 })
@@ -317,11 +311,35 @@ export default class extends Controller {
       }
       if (tick > CEREMONY.ticks) {
         clearInterval(this.ceremonyTicker)
-        return this.#set({ signTick: -1 })
+        this.#set({ signTick: -1 })
+        return this.saveProject()
       }
       this.#set({ signTick: tick })
       if (tick === CEREMONY.signed) this.#showDayOne()
     }, CEREMONY.tick)
+  }
+
+  // The signed pledge becomes your project, and off you go to it. (Try again, if it didn't save.)
+  async saveProject() {
+    const s = this.state
+    this.saveErrorTarget.hidden = true
+    const project = { tool: s.tool, tool_name: this.#toolName(), idea: this.#pledgeIdea(), prize: s.prize,
+                      pace_minutes: s.pace, build_time: s.buildTime }
+    try {
+      const response = await fetch(this.projectUrlValue, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json",
+                   "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content },
+        body: JSON.stringify({ project })
+      })
+      if (!response.ok) throw new Error(`Saving the pledge: ${response.status}`)
+      const { location } = await response.json()
+      // Anything Turbo kept of the project from before it existed was the redirect back here.
+      window.Turbo?.cache.clear()
+      window.Turbo ? window.Turbo.visit(location) : window.location.assign(location)
+    } catch {
+      this.saveErrorTarget.hidden = false
+    }
   }
 
   // "Day 1 starts now." can land below the fold on a short screen; bring it up.
@@ -352,46 +370,14 @@ export default class extends Controller {
     return s.idea
   }
 
-  // Clippy, perched on the pledge: plays his congratulations once through, saying `message` if there is one
-  // (it stays up a little after he's done). Another reason to congratulate you starts it over.
+  // Clippy, perched on the pledge, congratulates you, saying `message` if there is one (it stays up a little
+  // after he's done). Another reason to congratulate you starts him over.
   #congratulate(message = "") {
     clearTimeout(this.mascotTimer)
     this.mascotSayTarget.textContent = message
-    if (reducedMotion()) {
-      this.#showMascotFrame(12)
-      this.#play("second")
-      this.mascotTimer = setTimeout(() => this.#quietMascot(), 2500)
-    } else {
-      this.#playMascot(0)
-    }
-  }
-
-  #playMascot(index) {
-    if (index === MASCOT_FRAMES.length) {
-      this.mascotTimer = setTimeout(() => this.#quietMascot(), 1200)
-      return
-    }
-    const [ frame, duration, sound ] = MASCOT_FRAMES[index]
-    this.#showMascotFrame(frame)
-    if (sound) this.#play(sound)
-    this.mascotTimer = setTimeout(() => this.#playMascot(index + 1), duration)
-  }
-
-  #quietMascot() {
-    this.mascotSayTarget.textContent = ""
-    this.#showMascotFrame(0)
-  }
-
-  // From the start each time; a browser that won't play it just stays quiet.
-  #play(name) {
-    const audio = this.sounds[name]
-    if (!audio) return
-    audio.currentTime = 0
-    audio.play().catch(() => {})
-  }
-
-  #showMascotFrame(frame) {
-    this.mascotSpriteTarget.style.setProperty("--frame", frame)
+    this.clippy.congratulate(() => {
+      this.mascotTimer = setTimeout(() => { this.mascotSayTarget.textContent = "" }, 1200)
+    })
   }
 
   #after(delay, callback) {
@@ -473,7 +459,7 @@ export default class extends Controller {
     this.nameBoxTarget.textContent = `A${s.step}`
     this.formulaTarget.textContent = this.#formula(toolName, finish)
     this.element.toggleAttribute("data-saved", s.pledged)
-    this.projectTabTarget.setAttribute("aria-disabled", !s.pledged)
+    this.projectTabTarget.setAttribute("aria-disabled", !(s.pledged || this.hasProjectValue))
   }
 
   #formula(toolName, finish) {
@@ -556,6 +542,8 @@ export default class extends Controller {
     this.pledgePrepositionTarget.textContent = tool?.preposition ?? "in"
     fill(this.pledgeToolTarget, toolName || "the wrong tool")
     fill(this.pledgeDateTarget, finish && shortDate(finish), "\u2003\u2003\u2003")
+    fill(this.pledgePaceTarget, this.paceTargets.find(input => Number(input.value) === s.pace)?.dataset.label, "\u2003\u2003\u2003")
+    this.pledgeEveryTarget.textContent = s.buildTime === "weekends" ? "every weekend day" : "every day"
     const checkIn = this.checkInsValue[s.buildTime]
     this.accountableTarget.textContent = `Clippy will check in${checkIn ? ` ${checkIn}` : ""} to keep you on track.`
 

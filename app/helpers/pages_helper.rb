@@ -5,11 +5,11 @@ module PagesHelper
   end
 
   def hours_per_reward
-    10
+    Program::HOURS_PER_REWARD
   end
 
   def program_dates
-    Date.new(2026, 10, 2)..Date.new(2026, 10, 16)
+    Program::DATES
   end
 
   # "oct 2", as the dates read on the sheet.

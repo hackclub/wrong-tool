@@ -1,0 +1,455 @@
+/* Shipping your project: a page over the whole sheet, the form on the left and how it'll look on the right, with
+   what it still needs and Ship it along the bottom. */
+@layer sections {
+  .ship {
+    --red-800: #c62828;
+
+    block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    color: var(--text-primary);
+  }
+
+  .ship__bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    border-block-end: 1px solid var(--border-grid);
+    background: var(--surface-chrome);
+  }
+
+  .ship__back {
+    --icon-size: 24px;
+
+    inline-size: 40px;
+    block-size: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--icon-color);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .ship__heading {
+    font: 500 18px var(--font-chrome);
+  }
+
+  .ship__formula {
+    min-inline-size: 0;
+    overflow: hidden;
+    font: 14px var(--font-mono);
+    color: var(--text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ship__form {
+    flex: 1;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ship__body {
+    flex: 1;
+    min-block-size: 0;
+    overflow: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 440px;
+    gap: 40px;
+    padding: 32px 40px;
+  }
+
+  .ship__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .ship__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ship__label-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ship__label {
+    font: 700 14px var(--font-cell);
+  }
+
+  .ship__label--hall {
+    padding-block-start: 10px;
+  }
+
+  .ship__count {
+    font: 13px var(--font-cell);
+    color: var(--grey-600);
+
+    &[data-enough] {
+      color: var(--green);
+    }
+  }
+
+  .ship__input {
+    block-size: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border-header);
+    border-radius: 6px;
+    outline: none;
+    background: var(--white);
+    font: 16px var(--font-cell);
+    color: var(--text-primary);
+
+    &:focus {
+      border-color: var(--selection);
+      box-shadow: inset 0 0 0 1px var(--selection);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--red-800);
+    }
+  }
+
+  .ship__input--mono {
+    font: 14px var(--font-mono);
+  }
+
+  .ship__textarea {
+    block-size: 132px;
+    padding-block: 12px;
+    font: 15px/1.45 var(--font-cell);
+    resize: vertical;
+  }
+
+  .ship__pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .ship__hackatime {
+    --icon-size: 20px;
+
+    block-size: 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    border: 1px solid var(--border-grid);
+    border-radius: 6px;
+    background: var(--grey-75);
+  }
+
+  .ship__hackatime-check {
+    color: var(--green);
+  }
+
+  .ship__hackatime-name {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    font: 14px var(--font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ship__hackatime-hours {
+    font: 700 14px var(--font-cell);
+  }
+
+  .ship__hint {
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .ship__link {
+    color: var(--blue-700);
+  }
+
+  .ship__error {
+    font: 13px var(--font-cell);
+    color: var(--red-800);
+  }
+
+  /* The screenshot, the check that it's real, and the Hall of Wrong card */
+
+  .ship__side {
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ship__shot {
+    block-size: 248px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px dashed var(--border-header);
+    border-radius: 8px;
+    background: var(--grey-75);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--blue-600);
+    }
+
+    &:focus-within {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 2px;
+    }
+
+    &:has(.ship__shot-image:not([hidden])) {
+      border-style: solid;
+      border-color: var(--border-grid);
+    }
+  }
+
+  .ship__shot-image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .ship__shot-placeholder {
+    font: 500 14px var(--font-chrome);
+    color: var(--blue-700);
+  }
+
+  .ship__confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-grid);
+    border-radius: 6px;
+    font: 14px/1.4 var(--font-cell);
+    text-wrap: pretty;
+    cursor: pointer;
+
+    &:has(:checked) {
+      border-color: var(--green);
+      background: var(--green-50);
+    }
+  }
+
+  .ship__confirm-box {
+    flex: none;
+    inline-size: 18px;
+    block-size: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--green);
+  }
+
+  .ship__hall {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--blue-100);
+    border-radius: 6px;
+    background: #e8f0fe;
+  }
+
+  .ship__hall-cell {
+    flex: none;
+    inline-size: 36px;
+    block-size: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    background: var(--blue-600);
+    font: 600 13px var(--font-mono);
+    color: var(--white);
+  }
+
+  .ship__hall-text {
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ship__hall-title {
+    overflow: hidden;
+    font: 700 15px var(--font-cell);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ship__hall-meta {
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  /* What it still needs, and Ship it */
+
+  .ship__footer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 40px;
+    border-block-start: 1px solid var(--border-grid);
+  }
+
+  .ship__missing {
+    flex: 1;
+    min-inline-size: 0;
+    font: 14px var(--font-cell);
+    color: var(--text-secondary);
+
+    &[data-ready] {
+      color: var(--green);
+    }
+  }
+
+  .ship__text-button {
+    block-size: 48px;
+    padding: 0 18px;
+    border-radius: 24px;
+    font-size: 15px;
+    text-decoration: none;
+  }
+
+  .ship__submit {
+    --icon-size: 22px;
+
+    block-size: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 26px 0 20px;
+    border-radius: 24px;
+    background: var(--green);
+    font: 500 16px var(--font-chrome);
+    color: var(--white);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--green-dark);
+    }
+
+    &:disabled {
+      background: var(--grey-400);
+      cursor: not-allowed;
+    }
+  }
+
+  /* Shipped */
+
+  .ship__done {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .ship__done-title {
+    font: 700 34px/1.1 var(--font-cell);
+    letter-spacing: -1px;
+  }
+
+  .ship__done-text {
+    max-inline-size: 460px;
+    font: 16px/1.45 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .ship__done-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding-block-start: 8px;
+  }
+
+  .ship__button {
+    block-size: 48px;
+    border-radius: 24px;
+  }
+
+  /* The Ship button on your project, by the day */
+  .project__day-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .project__ship {
+    --icon-size: 18px;
+
+    block-size: 30px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px 0 10px;
+    border: 1.5px solid var(--green);
+    border-radius: 15px;
+    background: var(--white);
+    font: 500 14px var(--font-chrome);
+    color: var(--green);
+    text-decoration: none;
+
+    &:hover {
+      background: var(--green-50);
+      color: var(--green);
+    }
+  }
+
+  @media (width <= 600px) {
+    .ship__bar {
+      padding: 8px 12px;
+    }
+
+    .ship__formula {
+      display: none;
+    }
+
+    .ship__body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+      padding: 20px 16px;
+    }
+
+    .ship__pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ship__shot {
+      block-size: auto;
+      aspect-ratio: 16 / 10;
+    }
+
+    .ship__footer {
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px;
+    }
+
+    .ship__missing {
+      flex-basis: 100%;
+    }
+
+    .ship__submit {
+      margin-inline-start: auto;
+    }
+  }
+}

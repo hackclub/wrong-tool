@@ -1,6 +1,8 @@
 # Someone signed in with Hack Club Auth. hca_id is their HCA subject (ident!…); everything else is copied
 # from HCA's claims each time they sign in, so it stays current.
 class User < ApplicationRecord
+  has_one :project, dependent: :destroy
+
   validates :hca_id, presence: true, uniqueness: true
 
   def self.from_omniauth(auth)

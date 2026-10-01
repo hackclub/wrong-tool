@@ -43,7 +43,9 @@
       <div class="onboarding-pledge__header">Pledge</div>
       <div class="onboarding-pledge__body">
         <blockquote class="onboarding-pledge__text">
-          I'll ship <span class="onboarding-pledge__blank" data-onboarding-target="pledgeIdea"></span>
+          I'll build <span class="onboarding-pledge__blank" data-onboarding-target="pledgePace"></span>
+          <span data-onboarding-target="pledgeEvery">every day</span>
+          and ship <span class="onboarding-pledge__blank" data-onboarding-target="pledgeIdea"></span>
           <span data-onboarding-target="pledgePreposition">in</span> <span class="onboarding-pledge__blank" data-onboarding-target="pledgeTool"></span>
           by <span class="onboarding-pledge__blank" data-onboarding-target="pledgeDate"></span>.
         </blockquote>
@@ -77,11 +79,17 @@
       <% end %>
     </div>
 
+    <%# Signed: the pledge is saved as your project, and you're taken to it. This shows while that happens (or
+        if it doesn't). %>
     <div class="onboarding-commit__signed" role="status">
       <h3 class="onboarding-commit__title">Day 1 starts now.</h3>
-      <a href="#" class="onboarding-button onboarding-button--primary">
+      <%= link_to project_path, class: "onboarding-button onboarding-button--primary", data: { turbo_prefetch: false } do %>
         Open my project<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
-      </a>
+      <% end %>
+      <p class="onboarding-commit__error" role="alert" data-onboarding-target="saveError" hidden>
+        Couldn't save your pledge.
+        <button type="button" class="onboarding-text-button" data-action="onboarding#saveProject">Try again</button>
+      </p>
     </div>
   </div>
 </div>

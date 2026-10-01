@@ -39,11 +39,13 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_button "Hold to sign with Hack Club", disabled: true
     assert_selector ".onboarding-commit__sign-hint", text: "Answer both to sign."
     assert_selector ".onboarding-pledge__signature", visible: :hidden
-    assert_selector ".onboarding-pledge__text", text: /I'll ship an? #{Regexp.escape(genre)}/
+    assert_selector ".onboarding-pledge__text", text: /and ship an? #{Regexp.escape(genre)}/
+    assert_selector ".onboarding-pledge__text", text: "every day and ship"
     assert_selector ".onboarding-pledge__text", text: "over SSH by"
     assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in to keep you on track."
 
     find(".onboarding-chip", text: "45 min").click
+    assert_selector ".onboarding-pledge__text", text: "I'll build 45 min every day"
     assert_selector ".onboarding-commit__finish", text: /\AYou'd finish by [A-Z][a-z]{2} \d+\.\z/
     assert_selector ".onboarding-commit__sign-hint", text: "Pick a time first."
     assert_selector ".formula-bar__content", text: /\A=SHIP\("#{Regexp.escape(genre)}","SSH",DATE\(\d+,\d+\)\)\z/
@@ -67,13 +69,17 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".onboarding-commit[data-pledged]"
     assert_selector ".onboarding-pledge__name", exact_text: "Heidi"
     assert_selector ".onboarding-mascot__bubble", text: "Signed. I'll check in every evening to keep you on track."
-    assert_selector ".onboarding-commit__title", text: "Day 1 starts now."
     assert_selector ".formula-bar__content", text: /→ TRUE\z/
-    assert_selector ".onboarding-row[data-state=done]", text: "SSH"
-    assert_selector ".onboarding-row[data-state=done]", text: "Miyoo Mini Plus"
     assert_selector ".app-bar__progress", exact_text: "Day 1"
-    assert_selector ".onboarding__project-tab[aria-disabled=false]"
-    assert User.exists?(hca_id: "ident!heidi")
+
+    # Then the pledge is saved as your project, and that's where you land.
+    assert_current_path project_path, wait: 5
+    project = User.find_by!(hca_id: "ident!heidi").project
+    assert_equal [ "ssh", "SSH", "Miyoo Mini Plus", 45, "evening" ],
+                 [ project.tool, project.tool_name, ProjectsHelper::PRIZE_NAMES[project.prize], project.pace_minutes, project.build_time ]
+    assert_selector "h1", text: /\AAn? #{Regexp.escape(genre)} over SSH\z/
+    assert_selector ".project__day", text: "Day 1 starts now."
+    assert_selector ".sheet-tab[aria-current=page]", text: "My project"
   end
 
   test "Other asks for the tool's name" do
@@ -106,11 +112,12 @@ class OnboardingTest < ApplicationSystemTestCase
     click_on "Skip for now"
     click_on "RG35XX Pro"
 
-    assert_selector ".onboarding-pledge__text", text: "I'll ship something cursed in Figma"
+    assert_selector ".onboarding-pledge__text", text: "and ship something cursed in Figma"
     find(".onboarding-chip", text: "3 hrs").click
     weekdays = find(".onboarding-commit__finish").text
     find(".onboarding-chip", text: "weekends").click
     assert_not_equal weekdays, find(".onboarding-commit__finish").text
+    assert_selector ".onboarding-pledge__text", text: "I'll build 3 hrs every weekend day"
     assert_selector ".formula-bar__content", text: /\A=SHIP\("something cursed","Figma",DATE/
   end
 
@@ -136,6 +143,7 @@ class OnboardingTest < ApplicationSystemTestCase
       assert_selector ".onboarding-commit[data-pledged]"
       assert_selector ".onboarding-pledge__name", exact_text: "Heidi"
       assert_selector ".onboarding-mascot__bubble", text: "Signed. I'll check in late at night to keep you on track."
+      assert_current_path project_path, wait: 5
     end
   end
 

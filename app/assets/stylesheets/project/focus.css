@@ -1,0 +1,393 @@
+/* A focus session: over the whole page, a dark sheet with the round's clock in the middle, Clippy at a keyboard
+   bobbing to the music, and Wrong Tool Radio along the bottom. */
+@layer sections {
+  .focus {
+    --focus-bg: #14181f;
+    --focus-line: #1d232b;
+    --focus-panel: #232932;
+    --focus-border: #3c4350;
+    --focus-text: #e8eaed;
+    --focus-muted: #9aa0a6;
+    --focus-blue: #8ab4f8;
+
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--focus-bg);
+    background-image: linear-gradient(var(--focus-line) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--focus-line) 1px, transparent 1px);
+    background-size: 100px 24px;
+    font-family: var(--font-chrome);
+    color: var(--focus-text);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .focus__bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 28px;
+  }
+
+  .focus__dot {
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 50%;
+    background: #34a853;
+    box-shadow: 0 0 0 4px rgb(52 168 83 / 20%);
+  }
+
+  .focus__tracking {
+    font: 500 14px var(--font-chrome);
+  }
+
+  .focus__tracked {
+    font: 14px var(--font-mono);
+    color: var(--focus-muted);
+  }
+
+  .focus__exit {
+    --icon-size: 20px;
+
+    block-size: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: auto;
+    padding: 0 16px 0 12px;
+    border: 1px solid var(--focus-border);
+    border-radius: 20px;
+    background: var(--focus-bg);
+    font: 500 14px var(--font-chrome);
+    color: var(--focus-text);
+    cursor: pointer;
+
+    &:hover {
+      background: #1f252e;
+    }
+  }
+
+  .focus__center {
+    flex: 1;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 0 16px;
+    text-align: center;
+  }
+
+  .focus__label {
+    font: 600 13px var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--focus-blue);
+  }
+
+  .focus__title {
+    font: 500 22px var(--font-chrome);
+    text-wrap: balance;
+  }
+
+  /* Clippy at a little keyboard, with a note either side that rises on alternate beats. */
+  .focus__desk {
+    position: relative;
+    inline-size: 320px;
+    max-inline-size: 100%;
+    block-size: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .focus__note {
+    position: absolute;
+    inset-block-start: 44px;
+    font: 30px/1 var(--font-chrome);
+    color: var(--focus-blue);
+    opacity: 0;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: translate 260ms ease-out, opacity 260ms ease-out;
+    }
+
+    [data-music] & {
+      opacity: 0.2;
+    }
+
+    [data-music] &[data-up] {
+      translate: 0 -24px;
+      opacity: 1;
+    }
+  }
+
+  .focus__note--left {
+    inset-inline-start: 22px;
+  }
+
+  .focus__note--right {
+    inset-inline-end: 26px;
+    font-size: 24px;
+    color: var(--red);
+  }
+
+  .focus__clippy {
+    margin-block-end: -6px;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: translate 140ms cubic-bezier(0.3, 1.5, 0.5, 1);
+    }
+
+    &[data-bob] {
+      translate: 0 -8px;
+    }
+  }
+
+  .focus__sprite {
+    display: block;
+    scale: 1.4;
+    transform-origin: 50% 100%;
+  }
+
+  .focus__keys {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(11, 12px);
+    gap: 3px;
+    padding: 7px 10px;
+    border: 1px solid var(--focus-border);
+    border-radius: 8px;
+    background: var(--focus-panel);
+    box-shadow: 0 6px 16px rgb(0 0 0 / 40%);
+
+    span {
+      block-size: 9px;
+      border-radius: 2px;
+      background: var(--focus-border);
+      transition: background 90ms;
+
+      &[data-pressed] {
+        background: var(--focus-blue);
+      }
+    }
+  }
+
+  .focus__clock {
+    font: 600 112px/1 var(--font-mono);
+    letter-spacing: -0.03em;
+    color: var(--white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .focus__progress {
+    inline-size: 420px;
+    max-inline-size: 100%;
+    block-size: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: #2b313b;
+  }
+
+  .focus__progress-fill {
+    block-size: 100%;
+    background: var(--red);
+    transition: inline-size 900ms linear;
+
+    &[data-break] {
+      background: #34a853;
+    }
+  }
+
+  .focus__note-text {
+    max-inline-size: 420px;
+    font: 14px/1.4 var(--font-chrome);
+    color: var(--focus-muted);
+    text-wrap: pretty;
+  }
+
+  .focus__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding-block-start: 6px;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .focus__primary,
+  .focus__outlined,
+  .focus__text-button {
+    block-size: 48px;
+    padding: 0 20px;
+    border-radius: 24px;
+    font: 500 15px var(--font-chrome);
+    cursor: pointer;
+  }
+
+  .focus__primary {
+    padding-inline: 24px;
+    background: var(--red);
+    font-size: 16px;
+    color: var(--white);
+
+    &:hover {
+      background: var(--red-hover, #d42f46);
+    }
+  }
+
+  .focus__outlined {
+    border: 1px solid var(--focus-border);
+    color: var(--focus-text);
+
+    &:hover {
+      background: #1f252e;
+    }
+  }
+
+  .focus__text-button {
+    padding-inline: 18px;
+    color: var(--focus-blue);
+
+    &:hover {
+      background: #1f252e;
+    }
+  }
+
+  /* Wrong Tool Radio */
+  .focus__radio {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 28px;
+    border-block-start: 1px solid #262c35;
+    background: #181d24;
+  }
+
+  .focus__track-tag {
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    font: 600 14px var(--font-mono);
+    color: var(--white);
+  }
+
+  .focus__track {
+    flex: none;
+    inline-size: 300px;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .focus__track-name {
+    font: 500 15px var(--font-chrome);
+  }
+
+  .focus__track-number {
+    font: 13px var(--font-chrome);
+    color: var(--focus-muted);
+  }
+
+  .focus__equalizer {
+    flex: 1;
+    min-inline-size: 0;
+    block-size: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+
+    span {
+      inline-size: 4px;
+      block-size: 3px;
+      border-radius: 2px;
+      background: var(--focus-blue);
+
+      &:nth-child(5n + 1) {
+        background: var(--red);
+      }
+    }
+  }
+
+  .focus__play,
+  .focus__next {
+    --icon-size: 26px;
+
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .focus__play {
+    background: var(--focus-text);
+    color: var(--focus-bg);
+
+    &:hover {
+      background: var(--white);
+    }
+
+    .focus__pause-icon,
+    &[aria-pressed="true"] .focus__play-icon {
+      display: none;
+    }
+
+    &[aria-pressed="true"] .focus__pause-icon {
+      display: block;
+    }
+  }
+
+  .focus__next {
+    color: var(--focus-text);
+
+    &:hover {
+      background: #262c35;
+    }
+  }
+
+  @media (width <= 600px) {
+    .focus__bar {
+      flex-wrap: wrap;
+      padding: 12px 16px;
+    }
+
+    .focus__clock {
+      font-size: 72px;
+    }
+
+    .focus__radio {
+      gap: 10px;
+      padding: 10px 16px;
+    }
+
+    .focus__track {
+      flex: 1;
+      inline-size: auto;
+    }
+
+    .focus__equalizer {
+      display: none;
+    }
+  }
+}

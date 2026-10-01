@@ -19,6 +19,13 @@ end
 OmniAuth.config.test_mode = true
 Rails.application.config.x.hack_club_auth_whoami_url = nil
 
+# Nobody asks the real Hackatime either: these are the projects each Slack ID has logged time on.
+Hackatime.stubbed_projects = {
+  "U0ORPHEUS" => [ Hackatime::Project.new("rhythm-game", 5400), Hackatime::Project.new("beat-sheet-art", 900),
+                   Hackatime::Project.new("dotfiles", 11_160) ],
+  "U0HEIDI" => [ Hackatime::Project.new("heidis-game", 600) ]
+}
+
 module HackClubAuthHelpers
   def mock_hack_club_auth(uid: "ident!heidi", email: "heidi@hackclub.com", name: "Heidi Hakkuun", first_name: "Heidi",
                           slack_id: "U0HEIDI", verification_status: "verified", ysws_eligible: true)

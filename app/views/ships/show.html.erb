@@ -1,0 +1,112 @@
+<% content_for :title, "Ship · #{@project.title} · Wrong Tool" %>
+
+<%# Shipping your project, over the whole sheet: the form (with what it still needs and how it'll look in the Hall of
+    Wrong), then once it's in, that it's in review. %>
+<div class="ship" data-controller="project"
+     data-project-clippy-value="<%= flash[:clippy] %>"
+     data-project-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
+  <header class="ship__bar">
+    <%= link_to project_path, class: "ship__back", aria: { label: "Back to project" } do %>
+      <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/></svg>
+    <% end %>
+    <h1 class="ship__heading">Ship your project</h1>
+    <span class="ship__formula">=SHIP(<%= project_file_name(@project) %>)</span>
+  </header>
+
+  <% if @ship.persisted? %>
+    <main class="ship__done">
+      <div class="project__clippy" data-project-target="clippy">
+        <span class="onboarding-mascot__sprite project__sprite" aria-hidden="true" data-project-target="sprite"
+              style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+      </div>
+      <h2 class="ship__done-title">Shipped.</h2>
+      <p class="ship__done-text"><%= @ship.title %> is in review. You'll hear in #wrong-tool when it's live in the Hall of Wrong.</p>
+      <div class="ship__done-actions">
+        <%= link_to "See the Hall of Wrong", hall_path, class: "onboarding-button onboarding-button--primary ship__button" %>
+        <%= link_to "Back to project", project_path, class: "onboarding-text-button ship__text-button" %>
+      </div>
+    </main>
+  <% else %>
+    <% screenshot = @project.screenshot if @project.screenshot.attached? && @project.screenshot.blob.persisted? %>
+    <%= form_with model: @ship, url: project_ship_path, method: :post, multipart: true, class: "ship__form",
+          data: { controller: "ship", ship_description_min_value: Ship::DESCRIPTION_MIN, ship_has_screenshot_value: screenshot.present?,
+                  action: "input->ship#check change->ship#check" } do |form| %>
+      <div class="ship__body">
+        <div class="ship__fields">
+          <%= render "ships/field", form:, ship: @ship, attribute: :title, label: "Title" do %>
+            <%= form.text_field :title, maxlength: 80, required: true, class: "ship__input ship__input--title",
+                  data: { ship_target: "title" }, aria: { invalid: @ship.errors[:title].any? } %>
+          <% end %>
+          <%= render "ships/field", form:, ship: @ship, attribute: :description, label: "Description",
+                count: true do %>
+            <%= form.text_area :description, required: true, rows: 6, class: "ship__input ship__textarea",
+                  placeholder: "What is it, how do you play, and what made the wrong tool fun or painful?",
+                  data: { ship_target: "description" }, aria: { invalid: @ship.errors[:description].any? } %>
+          <% end %>
+          <div class="ship__pair">
+            <%= render "ships/field", form:, ship: @ship, attribute: :repo_url, label: "Repo URL" do %>
+              <%= form.text_field :repo_url, required: true, placeholder: "github.com/you/your-project", spellcheck: false,
+                    class: "ship__input ship__input--mono", data: { ship_target: "repo" }, aria: { invalid: @ship.errors[:repo_url].any? } %>
+            <% end %>
+            <%= render "ships/field", form:, ship: @ship, attribute: :demo_url, label: "Demo URL" do %>
+              <%= form.text_field :demo_url, required: true, placeholder: "Link anyone can open and play", spellcheck: false,
+                    class: "ship__input ship__input--mono", data: { ship_target: "demo" }, aria: { invalid: @ship.errors[:demo_url].any? } %>
+            <% end %>
+          </div>
+          <div class="ship__field">
+            <span class="ship__label">Hackatime project</span>
+            <div class="ship__hackatime">
+              <%= inline_svg_tag "icons/onboarding/check-circle-filled.svg", class: "icon ship__hackatime-check", aria_hidden: true %>
+              <span class="ship__hackatime-name"><%= @project.hackatime_projects.join(", ") %></span>
+              <span class="ship__hackatime-hours"><%= @project.hours_logged %> hrs</span>
+            </div>
+            <span class="ship__hint">
+              Linked during setup. <%= link_to "Change it", project_path(step: "hackatime_project"), class: "ship__link" %> from the setup steps.
+            </span>
+          </div>
+        </div>
+
+        <div class="ship__side">
+          <span class="ship__label" id="ship-screenshot-label">Screenshot</span>
+          <label class="ship__shot" aria-labelledby="ship-screenshot-label">
+            <img class="ship__shot-image" alt="" data-ship-target="preview" <%= "hidden" unless screenshot %>
+                 <% if screenshot %>src="<%= url_for(screenshot) %>"<% end %>>
+            <span class="ship__shot-placeholder" data-ship-target="placeholder" <%= "hidden" if screenshot %>>Drop a screenshot of it running</span>
+            <%= form.file_field :screenshot, accept: Project::SCREENSHOT_TYPES.join(","), class: "visually-hidden",
+                  data: { ship_target: "file", action: "ship#preview" } %>
+          </label>
+          <% if @ship.errors[:screenshot].any? %>
+            <span class="ship__error" role="alert"><%= @ship.errors.full_messages_for(:screenshot).first %></span>
+          <% end %>
+          <label class="ship__confirm">
+            <%= form.check_box :screenshot_shows_game, { class: "ship__confirm-box", data: { ship_target: "confirm" } }, "1", "0" %>
+            <span>It shows the game running inside <%= @project.tool_name %>, not a mockup.</span>
+          </label>
+          <% if @ship.errors[:screenshot_shows_game].any? %>
+            <span class="ship__error" role="alert"><%= @ship.errors.full_messages_for(:screenshot_shows_game).first %></span>
+          <% end %>
+
+          <span class="ship__label ship__label--hall">In the Hall of Wrong</span>
+          <div class="ship__hall">
+            <span class="ship__hall-cell">B7</span>
+            <span class="ship__hall-text">
+              <span class="ship__hall-title" data-ship-target="previewTitle"><%= @ship.title.presence || "Untitled" %></span>
+              <span class="ship__hall-meta">
+                <%= current_user.first_name.presence || current_user.name %> · built in <%= @project.tool_name %> · <%= @project.hours_logged %> hrs
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="ship__footer">
+        <p class="ship__missing" data-ship-target="missing" aria-live="polite"></p>
+        <%= link_to "Keep building", project_path, class: "onboarding-text-button ship__text-button" %>
+        <%= form.button class: "ship__submit", data: { ship_target: "submit" } do %>
+          <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m226-559 78 33q14-28 29-54t33-52l-56-11-84 84Zm142 83 114 113q42-16 90-49t90-75q70-70 109.5-155.5T806-800q-72-5-158 34.5T492-656q-42 42-75 90t-49 90Zm178-65q-23-23-23-56.5t23-56.5q23-23 57-23t57 23q23 23 23 56.5T660-541q-23 23-57 23t-57-23Zm19 321 84-84-11-56q-26 18-52 32.5T532-299l33 79Zm313-653q19 121-23.5 235.5T708-419l20 99q4 20-2 39t-20 33L538-80l-84-197-171-171-197-84 167-168q14-14 33.5-20t39.5-2l99 20q104-104 218-147t235-24ZM157-321q35-35 85.5-35.5T328-322q35 35 34.5 85.5T327-151q-25 25-83.5 43T82-76q14-103 32-161.5t43-83.5Zm57 56q-10 10-20 36.5T180-175q27-4 53.5-13.5T270-208q12-12 13-29t-11-29q-12-12-29-11.5T214-265Z"/></svg>
+          Ship it
+        <% end %>
+      </footer>
+    <% end %>
+  <% end %>
+</div>

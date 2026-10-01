@@ -1,0 +1,66 @@
+<%# locals: (project:) %>
+<%# A focus session, over the whole page once you start one: the round and its clock, Clippy at the keyboard with
+    music notes on the beat, and Wrong Tool Radio along the bottom. Hackatime logs the time; this only keeps you to it. %>
+<div class="focus-session" data-controller="focus"
+     data-focus-minutes-value="<%= project.pace_minutes %>" data-focus-title-value="<%= project.title %>"
+     data-focus-hours-logged-value="<%= project.hours_logged %>" data-focus-hours-goal-value="<%= hours_per_reward %>"
+     data-focus-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>"
+     data-action="keydown@window->focus#key">
+  <%= yield %>
+
+  <div class="focus" role="dialog" aria-modal="true" aria-label="Focus session" data-focus-target="overlay" hidden>
+    <header class="focus__bar">
+      <span class="focus__dot" aria-hidden="true"></span>
+      <span class="focus__tracking">Hackatime is tracking</span>
+      <span class="focus__tracked" data-focus-target="tracked"></span>
+      <button type="button" class="focus__exit" data-action="focus#exit">
+        <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+        Exit focus
+      </button>
+    </header>
+
+    <main class="focus__center">
+      <span class="focus__label" data-focus-target="label" aria-live="polite"></span>
+      <h2 class="focus__title" data-focus-target="title"></h2>
+      <div class="focus__desk" aria-hidden="true">
+        <span class="focus__note focus__note--left" data-focus-target="noteLeft">♪</span>
+        <span class="focus__note focus__note--right" data-focus-target="noteRight">♫</span>
+        <div class="focus__clippy" data-focus-target="clippy">
+          <span class="onboarding-mascot__sprite focus__sprite" data-focus-target="sprite"
+                style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+        </div>
+        <div class="focus__keys" data-focus-target="keys"></div>
+      </div>
+      <span class="focus__clock" data-focus-target="clock" role="timer"></span>
+      <div class="focus__progress"><div class="focus__progress-fill" data-focus-target="bar"></div></div>
+      <p class="focus__note-text" data-focus-target="note"></p>
+      <div class="focus__actions" data-focus-target="live">
+        <button type="button" class="focus__primary" data-focus-target="toggle" data-action="focus#toggle">
+          <span data-focus-target="toggleLabel">Pause</span>
+        </button>
+        <button type="button" class="focus__text-button" data-focus-target="end" data-action="focus#end">End session</button>
+      </div>
+      <div class="focus__actions" data-focus-target="done" hidden>
+        <button type="button" class="focus__primary" data-action="focus#again">Another round</button>
+        <button type="button" class="focus__outlined" data-action="focus#takeBreak">Take a 5 min break</button>
+        <button type="button" class="focus__text-button" data-action="focus#exit">Back to project</button>
+      </div>
+    </main>
+
+    <footer class="focus__radio">
+      <span class="focus__track-tag" data-focus-target="trackTag"></span>
+      <span class="focus__track">
+        <span class="focus__track-name" data-focus-target="trackName"></span>
+        <span class="focus__track-number">Wrong Tool Radio · <span data-focus-target="trackNumber"></span></span>
+      </span>
+      <span class="focus__equalizer" data-focus-target="equalizer" aria-hidden="true"></span>
+      <button type="button" class="focus__play" data-focus-target="music" data-action="focus#music">
+        <svg class="icon focus__play-icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="M320-200v-560l440 280-440 280Z"/></svg>
+        <svg class="icon focus__pause-icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="M560-200v-560h160v560H560Zm-320 0v-560h160v560H240Z"/></svg>
+      </button>
+      <button type="button" class="focus__next" aria-label="Next track" data-action="focus#nextTrack">
+        <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="M660-240v-480h80v480h-80Zm-440 0v-480l360 240-360 240Z"/></svg>
+      </button>
+    </footer>
+  </div>
+</div>

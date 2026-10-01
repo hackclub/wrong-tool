@@ -1,0 +1,124 @@
+/* The Hall of Wrong: a sheet of every wrong tool, red where nothing's shipped yet. */
+@layer sections {
+  .hall {
+    max-inline-size: 960px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 36px 56px 56px;
+  }
+
+  .hall__nothing {
+    color: var(--red-800);
+  }
+
+  .hall__table {
+    inline-size: 100%;
+    border: 1px solid var(--border-header);
+    border-collapse: collapse;
+    table-layout: fixed;
+    font: 14px var(--font-cell);
+
+    th {
+      padding: 7px 12px;
+      border-inline-end: 1px solid var(--border-grid);
+      background: var(--grey-75);
+      font: 12px var(--font-cell);
+      color: var(--text-secondary);
+      text-align: start;
+    }
+
+    th:nth-child(2) {
+      inline-size: 180px;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-block-start: 1px solid var(--border-grid);
+    }
+
+    tr[data-you] td {
+      background: #e8f0fe;
+    }
+  }
+
+  /* The row numbers, like a sheet's. */
+  .hall__table .hall__rank {
+    inline-size: 44px;
+    padding-inline: 0;
+    border-inline-end: 1px solid var(--border-header);
+    background: var(--grey-75);
+    font: 12px var(--font-mono);
+    color: var(--text-secondary);
+    text-align: center;
+
+    tr[data-you] & {
+      background: var(--blue-100);
+    }
+  }
+
+  .hall__table .hall__shipped {
+    inline-size: 90px;
+    font: 600 13px var(--font-mono);
+    text-align: end;
+
+    [data-empty] & {
+      color: var(--red-800);
+    }
+  }
+
+  .hall__table th.hall__shipped {
+    font: 12px var(--font-cell);
+  }
+
+  .hall__tool {
+    [data-you] & {
+      font-weight: 700;
+    }
+  }
+
+  .hall__games {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-inline-size: 0;
+  }
+
+  .hall__games-text {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    [data-empty] & {
+      color: var(--red-800);
+    }
+  }
+
+  .hall__mine {
+    flex: none;
+    font: 700 13px var(--font-cell);
+    color: var(--blue-700);
+  }
+
+  @media (width <= 600px) {
+    .hall {
+      padding: 24px 16px;
+    }
+
+    .hall__table th:nth-child(2) {
+      inline-size: 110px;
+    }
+
+    .hall__games-text {
+      white-space: normal;
+    }
+
+    .hall__games {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+  }
+}

@@ -1,0 +1,57 @@
+<% content_for :title, "Hall of Wrong · Wrong Tool" %>
+<% rows = hall_of_wrong(you: @project) %>
+<% summary, nothing_yet = hall_of_wrong_summary(rows) %>
+
+<%# Every wrong tool, as a sheet: how many games have shipped in it and which. Tools nobody's shipped in yet are red,
+    and the one you're building in is highlighted. %>
+<div class="spreadsheet onboarding project" data-saved>
+  <% if @project %>
+    <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+          progress: "Day 1 of #{@project.build_days.size}", user: current_user %>
+  <% else %>
+    <%= render "pages/app_bar" %>
+  <% end %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar", name_box: "C1", formula: "=COUNTIF(games, tool)  →  #{rows.sum { |row| row[:shipped] }}" %>
+
+  <main class="project__sheet">
+    <div class="hall">
+      <header class="leaderboard__heading">
+        <h1 class="project__title">Hall of Wrong</h1>
+        <p class="leaderboard__note">
+          <%= summary %>
+          <% if nothing_yet %><span class="hall__nothing"><%= nothing_yet %></span><% end %>
+        </p>
+      </header>
+
+      <table class="hall__table">
+        <thead>
+          <tr>
+            <th class="hall__rank" scope="col"><span class="visually-hidden">Rank</span></th>
+            <th scope="col">Tool</th>
+            <th class="hall__shipped" scope="col">Shipped</th>
+            <th scope="col">Games</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each.with_index(1) do |row, rank| %>
+            <tr <%= "data-you" if row[:mine] %> <%= "data-empty" if row[:shipped].zero? %>>
+              <td class="hall__rank"><%= rank %></td>
+              <td class="hall__tool"><%= row[:tool] %></td>
+              <td class="hall__shipped"><%= row[:shipped] %></td>
+              <td>
+                <span class="hall__games">
+                  <span class="hall__games-text"><%= row[:games] %></span>
+                  <% if row[:mine] %><span class="hall__mine">You're building here</span><% end %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="leaderboard__footnote">Public at <%= link_to hall_url.delete_prefix("http://").delete_prefix("https://"), hall_url %>.</p>
+    </div>
+  </main>
+
+  <%= render "onboarding/tabs", current: :hall, project_open: @project.present? %>
+</div>

@@ -5,6 +5,11 @@ Rails.application.routes.draw do
 
   root "pages#home"
   get "start" => "onboarding#show", as: :onboarding
+  resource :project, only: %i[show create update] do
+    resource :ship, only: %i[show create]
+  end
+  resource :leaderboard, only: :show
+  get "hall" => "halls#show", as: :hall
 
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.
   get "auth/:provider/callback" => "sessions#create", as: :auth_callback

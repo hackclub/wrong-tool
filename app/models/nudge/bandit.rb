@@ -1,0 +1,118 @@
+# PSEUDO CODE (see Nudge).
+#
+# Thompson sampling over how Clippy frames a nudge, learned separately per bucket ("behind/slack"). Each arm is a
+# Beta(successes, failures) guess at how often it gets someone building; we draw from each guess and send the
+# highest draw, so arms we're unsure about still get tried.
+class Nudge::Bandit
+  # Which arms make sense in each state. A streak message to someone with no streak is a wasted send.
+  ARMS = {
+    "zero_hours" => %w[pledge tiny_step social dramatic],
+    "on_pace" => %w[streak progress pledge],
+    "behind" => %w[progress tiny_step pledge social],
+    "lapsed" => %w[tiny_step dramatic social pledge]
+  }.freeze
+
+  # What the holdout gets instead: our best guess, never learned. Comparing against them is how we know the bandit
+  # helps at all.
+  HOLDOUT_ARMS = { "zero_hours" => "pledge", "on_pace" => "pledge", "behind" => "progress", "lapsed" => "tiny_step" }.freeze
+  HOLDOUT_SHARE = 0.1
+
+  # The first two days pick uniformly, so every arm has data before the bandit starts leaning.
+  EXPLORE_UNTIL = Program::DATES.begin + 2
+  # How much each bucket borrows from how the arm does everywhere else, so a new bucket doesn't start cold.
+  POOLED_WEIGHT = 0.2
+  # Thompson sampling has no closed-form propensity, so we estimate it by drawing this many times.
+  DRAWS = 1_000
+
+  def self.nudge_for(context)
+    bandit = new(context.bucket)
+    arm, propensity, holdout = bandit.pick(context)
+    return unless arm
+    context.user.nudges.new(kind: "bandit", bucket: context.bucket, arm:, propensity:, holdout:, channel: context.channel)
+  end
+
+  # Same people every time, from their id.
+  def self.holdout?(user)
+    Digest::SHA256.hexdigest("wrong-tool-holdout-#{user.id}").to_i(16) % 100 < HOLDOUT_SHARE * 100
+  end
+
+  attr_reader :bucket
+
+  def initialize(bucket)
+    @bucket = bucket
+  end
+
+  def state
+    bucket.split("/").first
+  end
+
+  # Returns [arm, propensity, holdout], or nil when no arm fits right now.
+  def pick(context)
+    return [ HOLDOUT_ARMS.fetch(state), 1.0, true ] if self.class.holdout?(context.user)
+
+    arms = available_arms(context)
+    return if arms.empty?
+    return [ arms.sample, 1.0 / arms.size, false ] if context.today < EXPLORE_UNTIL
+
+    winner = draw(arms)
+    propensity = DRAWS.times.count { draw(arms) == winner }.fdiv(DRAWS)
+    [ winner, propensity, false ]
+  end
+
+  # Arms for this state that this person can actually get: streak copy needs a streak, social needs peers, and
+  # dramatic Clippy is capped.
+  def available_arms(context)
+    vars = context.vars
+    ARMS.fetch(state).select do |arm|
+      case arm
+      when "streak" then vars.key?(:streak)
+      when "social" then Nudge::Copy.renderable?(arm, vars)
+      when "dramatic" then context.dramatic_left?
+      else true
+      end
+    end
+  end
+
+  def draw(arms)
+    arms.max_by { |arm| beta_sample(*posterior(arm)) }
+  end
+
+  # Beta(1, 1) to start, plus this bucket's results, plus a little of every other bucket's. An opt-out counts as
+  # several failures.
+  def posterior(arm)
+    own = results(Nudge.bandit.scored.where(holdout: false, bucket:, arm:))
+    pooled = results(Nudge.bandit.scored.where(holdout: false, arm:).where.not(bucket:))
+    [ 1 + own[:successes] + POOLED_WEIGHT * pooled[:successes], 1 + own[:failures] + POOLED_WEIGHT * pooled[:failures] ]
+  end
+
+  def results(nudges)
+    counts = nudges.group(:reward).count
+    {
+      successes: counts.fetch(1, 0),
+      failures: counts.fetch(0, 0) + counts.fetch(Nudge::OPT_OUT_PENALTY, 0) * Nudge::OPT_OUT_PENALTY.abs
+    }
+  end
+
+  private
+    # Beta(a, b) from two gammas.
+    def beta_sample(a, b)
+      x = gamma_sample(a)
+      x / (x + gamma_sample(b))
+    end
+
+    # Marsaglia–Tsang. Our shapes are always ≥ 1.
+    def gamma_sample(shape)
+      d = shape - 1.0 / 3
+      c = 1 / Math.sqrt(9 * d)
+      loop do
+        x = normal_sample
+        v = (1 + c * x)**3
+        next if v <= 0
+        return d * v if Math.log(rand) < 0.5 * x**2 + d - d * v + d * Math.log(v)
+      end
+    end
+
+    def normal_sample
+      Math.sqrt(-2 * Math.log(1 - rand)) * Math.cos(2 * Math::PI * rand)
+    end
+end

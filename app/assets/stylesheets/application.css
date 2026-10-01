@@ -7,6 +7,7 @@
  *   components/  small reusable pieces (icon, ...)
  *   sheet/       the spreadsheet chrome: app bar, toolbar, formula bar, grid, tabs
  *   onboarding/  the Start building flow, drawn over the same chrome (in the sections layer)
+ *   project/     your project, the sheet onboarding unlocks (also the sections layer)
  *   sections/    what each sheet tab shows: which cells go where
  */
 @layer reset, tokens, base, components, sheet, sections;

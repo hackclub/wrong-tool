@@ -1,12 +1,31 @@
-<%# "My project" stays locked until you've signed in. %>
+<%# Onboarding and your project, as two sheets, the leaderboard once you have a project, and the Hall of Wrong. "My project" stays
+    locked until there is one (during onboarding, until you've signed the pledge). It isn't prefetched: before the
+    pledge is saved, that would only fetch the redirect back here, and Turbo would serve it when onboarding goes to
+    the project. %>
+<% current = local_assigns.fetch(:current, :onboarding) %>
+<% project_open = local_assigns.fetch(:project_open, false) %>
 <nav class="sheet-tabs" aria-label="Sheets">
   <button type="button" class="sheet-tabs__round-button" aria-label="Add sheet"><%= inline_svg_tag "icons/add.svg", class: "icon", aria_hidden: true %></button>
   <button type="button" class="sheet-tabs__round-button sheet-tabs__round-button--menu" aria-label="All sheets"><%= inline_svg_tag "icons/sheet_tabs/menu.svg", class: "icon", aria_hidden: true %></button>
 
-  <span class="sheet-tab" aria-current="page">Onboarding<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
-  <span class="sheet-tab onboarding__project-tab" aria-disabled="true" data-onboarding-target="projectTab">
+  <%= link_to onboarding_path, class: "sheet-tab", aria: { current: ("page" if current == :onboarding) } do %>
+    Onboarding<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+  <% end %>
+  <%= link_to project_path, class: "sheet-tab onboarding__project-tab",
+        aria: { current: ("page" if current == :project), disabled: !project_open },
+        data: { onboarding_target: ("projectTab" if current == :onboarding), turbo_prefetch: false } do %>
     <%= inline_svg_tag "icons/onboarding/lock.svg", class: "icon onboarding__unsaved-only", aria_hidden: true %>
     <%= inline_svg_tag "icons/onboarding/lock-open.svg", class: "icon onboarding__saved-only", aria_hidden: true %>
     My project<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
-  </span>
+  <% end %>
+  <% if current != :onboarding && project_open %>
+    <%= link_to leaderboard_path, class: "sheet-tab", aria: { current: ("page" if current == :leaderboard) } do %>
+      Leaderboard<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
+  <% end %>
+  <% if current != :onboarding %>
+    <%= link_to hall_path, class: "sheet-tab", aria: { current: ("page" if current == :hall) } do %>
+      Hall of Wrong<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
+  <% end %>
 </nav>

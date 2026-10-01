@@ -10,6 +10,8 @@
      data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :name, :full) }.to_json %>"
      data-onboarding-hours-value="<%= hours_per_reward %>"
      data-onboarding-signed-in-value="<%= signed_in? %>"
+     data-onboarding-project-url-value="<%= project_path %>"
+     data-onboarding-has-project-value="<%= current_user&.project.present? %>"
      data-onboarding-name-value="<%= current_user&.first_name.presence || current_user&.name %>"
      data-onboarding-whoami-url-value="<%= Rails.configuration.x.hack_club_auth_whoami_url unless signed_in? %>"
      data-onboarding-check-ins-value="<%= onboarding_build_times.to_h.to_json %>"
@@ -34,5 +36,5 @@
     </div>
   </div>
 
-  <%= render "onboarding/tabs" %>
+  <%= render "onboarding/tabs", project_open: current_user&.project.present? %>
 </div>

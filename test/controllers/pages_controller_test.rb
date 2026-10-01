@@ -17,4 +17,20 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=apple-touch-icon][href='/apple-touch-icon.png'][sizes='180x180']"
     assert_select "meta[name=apple-mobile-web-app-title][content='wrong tool']"
   end
+
+  test "signed in, the landing page sends you to onboarding, or your project once you've pledged" do
+    sign_in_as(mock_hack_club_auth)
+    get root_path
+    assert_redirected_to onboarding_path
+
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+    get root_path
+    assert_redirected_to project_path
+  end
+
+  private
+    def sign_in_as(_auth)
+      post "/auth/hackclub"
+      follow_redirect!
+    end
 end

@@ -1,0 +1,9 @@
+orpheus:
+  user: orpheus
+  tool: spreadsheet
+  tool_name: Spreadsheet
+  idea: a rhythm game
+  prize: miyoo
+  pace_minutes: 45
+  build_time: evening
+  signed_on: 2026-09-30

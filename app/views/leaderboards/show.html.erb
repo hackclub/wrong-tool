@@ -1,0 +1,64 @@
+<% content_for :title, "Leaderboard · Wrong Tool" %>
+<% rows = leaderboard(@project, sort: @sort) %>
+<% you = rows.find { |row| row[:you] } %>
+
+<%# Everyone building, ranked by hours this week or by streak, as a sheet: you're highlighted, and the name box is
+    your row. %>
+<div class="spreadsheet onboarding project" data-saved>
+  <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+        progress: "Day 1 of #{@project.build_days.size}", user: current_user %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar", name_box: "A#{you[:rank] + 1}",
+        formula: "=RANK(you, #{@sort == "streak" ? "streak" : "week_hours"})  →  #{you[:off] ? "#N/A" : you[:rank]}" %>
+
+  <main class="project__sheet">
+    <div class="leaderboard">
+      <header class="leaderboard__header">
+        <div class="leaderboard__heading">
+          <h1 class="project__title">Leaderboard</h1>
+          <p class="leaderboard__note"><%= @sort == "streak" ? "Longest streaks right now." : "Most hours built this week." %></p>
+        </div>
+        <nav class="leaderboard__sorts" aria-label="Sort by">
+          <%= link_to "Hours this week", leaderboard_path, class: "leaderboard__sort", aria: { current: ("page" if @sort == "week") } %>
+          <%= link_to "Streak", leaderboard_path(sort: "streak"), class: "leaderboard__sort", aria: { current: ("page" if @sort == "streak") } %>
+        </nav>
+      </header>
+
+      <table class="leaderboard__table">
+        <thead>
+          <tr>
+            <th class="leaderboard__rank" scope="col"><span class="visually-hidden">Rank</span></th>
+            <th scope="col">Builder</th>
+            <th scope="col">Building</th>
+            <th class="leaderboard__number" scope="col" <%= "data-sorted" if @sort == "week" %>>Hours this week</th>
+            <th class="leaderboard__number" scope="col" <%= "data-sorted" if @sort == "streak" %>>Streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr <%= "data-you" if row[:you] %>>
+              <td class="leaderboard__rank"><%= row[:rank] %></td>
+              <td>
+                <span class="leaderboard__builder">
+                  <span class="leaderboard__avatar" aria-hidden="true"><%= row[:initial] %></span>
+                  <span class="leaderboard__name"><%= row[:name] %></span>
+                </span>
+              </td>
+              <td class="leaderboard__building">
+                <span class="leaderboard__builder">
+                  <% if row[:screenshot] %><%= image_tag url_for(row[:screenshot]), alt: "", class: "leaderboard__shot" %><% end %>
+                  <span class="leaderboard__name"><%= row[:building] %></span>
+                </span>
+              </td>
+              <td class="leaderboard__number" <%= "data-sorted" if @sort == "week" %>><%= row[:off] ? "—" : "#{row[:hours]} hrs" %></td>
+              <td class="leaderboard__number" <%= "data-sorted" if @sort == "streak" %>><%= row[:off] ? "—" : pluralize(row[:streak], "day") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="leaderboard__footnote">Hours come from Hackatime, counting only linked projects. Week resets Monday.</p>
+    </div>
+  </main>
+
+  <%= render "onboarding/tabs", current: :leaderboard, project_open: true %>
+</div>
