@@ -156,11 +156,13 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".app-bar__build-button"
   end
 
-  test "the Onboarding tab goes back to onboarding, where My project is open" do
+  test "once you're done with onboarding, its tab goes" do
     sign_in_and_open_project
-    click_on "Onboarding"
+    assert_no_selector ".sheet-tab", text: "Onboarding"
+    assert_equal [ "My project", "Leaderboard", "Hall of Wrong" ], all(".sheet-tab").map(&:text)
 
-    assert_current_path onboarding_path
+    visit onboarding_path
+    assert_selector ".sheet-tab[aria-current=page]", text: "Onboarding"
     assert_selector ".onboarding__project-tab[aria-disabled=false]"
   end
 

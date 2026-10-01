@@ -1,5 +1,6 @@
 <%# Onboarding and your project, as two sheets, the leaderboard once you have a project, and the Hall of Wrong. "My project" stays
-    locked until there is one (during onboarding, until you've signed the pledge). It isn't prefetched: before the
+    locked until there is one (during onboarding, until you've signed the pledge); once there is, you're done with
+    onboarding and its tab goes, except while you're on it. It isn't prefetched: before the
     pledge is saved, that would only fetch the redirect back here, and Turbo would serve it when onboarding goes to
     the project. %>
 <% current = local_assigns.fetch(:current, :onboarding) %>
@@ -8,8 +9,10 @@
   <button type="button" class="sheet-tabs__round-button" aria-label="Add sheet"><%= inline_svg_tag "icons/add.svg", class: "icon", aria_hidden: true %></button>
   <button type="button" class="sheet-tabs__round-button sheet-tabs__round-button--menu" aria-label="All sheets"><%= inline_svg_tag "icons/sheet_tabs/menu.svg", class: "icon", aria_hidden: true %></button>
 
-  <%= link_to onboarding_path, class: "sheet-tab", aria: { current: ("page" if current == :onboarding) } do %>
-    Onboarding<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+  <% if current == :onboarding || !project_open %>
+    <%= link_to onboarding_path, class: "sheet-tab", aria: { current: ("page" if current == :onboarding) } do %>
+      Onboarding<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
   <% end %>
   <%= link_to project_path, class: "sheet-tab onboarding__project-tab",
         aria: { current: ("page" if current == :project), disabled: !project_open },

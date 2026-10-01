@@ -10,6 +10,7 @@ class HallsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-empty]", 5
     assert_select "tr", text: /Spreadsheet.*1 person building one/m
     assert_select ".hall__mine", count: 0
+    assert_select ".sheet-tab", /Onboarding/
   end
 
   test "signed in, the tool you're building in is yours" do
@@ -21,5 +22,6 @@ class HallsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-you] .hall__tool", "Spreadsheet"
     assert_select "tr[data-you] .hall__mine", "You're building here"
     assert_select ".sheet-tab[aria-current=page]", /Hall of Wrong/
+    assert_select ".sheet-tab", text: /Onboarding/, count: 0
   end
 end
