@@ -50,9 +50,11 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
 
   test "ticking off the last required setup step has Clippy congratulate you" do
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
-    patch project_path, params: { project: { tracker: "hackatime" } }
+    mock_hackatime
+    post "/auth/hackatime"
+    follow_redirect!
     assert_equal "hop", flash[:clippy]
-    patch project_path, params: { project: { link_hackatime_project: "rhythm-game" } }
+    patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game" ] } }
     patch project_path, params: { project: { slack_joined: true } }
 
     assert_redirected_to project_path
@@ -61,7 +63,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project__say", "All set. 20 min today starts your streak."
     assert_select ".formula-bar__content", /TRUE/
     assert_select ".project__setup-summary", /Setup done · 2 optional steps left/
-    assert_equal [ "0 of 10 hrs", "45 min", "Oct 15" ], css_select(".project__goal-value").map(&:text)
+    assert_equal [ "1.5 of 10 hrs", "45 min", "Oct 15" ], css_select(".project__goal-value").map(&:text)
     assert_equal [ "5 hrs · shoutout", "10 hrs · handheld", "20 hrs · +$85" ], css_select(".project__track-label").map(&:text)
     assert_select ".project__day-cell[data-state=party]", /Party/
     assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
@@ -73,7 +75,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "adding your game to the play party queue" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     patch project_path, params: { project: { party_queued: true } }
     follow_redirect!
@@ -82,28 +85,61 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project__event[data-kind=party]", /We'll play your game live/
   end
 
-  test "the Hackatime project dropdown lists your Hackatime projects, and only those can be linked" do
-    projects(:orpheus).update!(tracker: "hackatime")
+  test "the Hackatime projects dropdown lists your Hackatime projects to tick, and only those can be linked" do
+    link_hackatime(users(:orpheus))
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     get project_path
 
-    assert_equal [ "Pick a project", "rhythm-game · 1.5 hrs", "beat-sheet-art · 0.3 hrs", "dotfiles · 3.1 hrs" ],
-                 css_select("select#project_link_hackatime_project option").map(&:text)
+    assert_select ".project__step-text", /Only time from Sep 25 on counts/
+    assert_equal [ "rhythm-game", "beat-sheet-art", "dotfiles" ], css_select(".project__picker-name").map(&:text)
+    assert_equal [ "1.5 hrs", "0.3 hrs", "3.1 hrs" ], css_select(".project__picker-note").map(&:text)
+    assert_select ".project__picker-box[checked]", count: 0
+    assert_select "button[disabled]", "Pick a project"
 
-    patch project_path, params: { project: { link_hackatime_project: "someone-elses-game" } }
+    patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game", "dotfiles" ] } }
+    follow_redirect!
+    assert_equal [ "rhythm-game", "dotfiles" ], projects(:orpheus).reload.hackatime_projects
+
+    get project_path(step: "hackatime_project")
+    assert_equal %w[rhythm-game dotfiles], css_select(".project__picker-box[checked]").map { |box| box["value"] }
+    assert_select ".project__picker-value", "rhythm-game, dotfiles"
+    assert_select "button", "Link 2 projects"
+
+    patch project_path, params: { project: { hackatime_project_names: [ "" ] } }
+    assert_response :unprocessable_entity
+    assert_select ".project__step-error", /need one picked/
+
+    patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game", "someone-elses-game" ] } }
     assert_response :unprocessable_entity
     assert_select ".project__step[data-state=current] .project__step-error", /don't include someone-elses-game on Hackatime/
-    assert_empty projects(:orpheus).reload.hackatime_projects
+    assert_equal [ "rhythm-game", "dotfiles" ], projects(:orpheus).reload.hackatime_projects
   end
 
-  test "someone Hackatime doesn't know is told how to fix it" do
-    users(:orpheus).update!(slack_id: "U0NOBODY")
-    projects(:orpheus).update!(tracker: "hackatime")
-    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0NOBODY"))
+  test "when Hackatime stops accepting your token, you're asked to link it again" do
+    users(:orpheus).update!(hackatime_uid: "9999", hackatime_access_token: "revoked")
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     get project_path
 
-    assert_select ".project__step-error", /Hackatime doesn't know you yet/
-    assert_select "select#project_link_hackatime_project", count: 0
+    assert_select ".project__step-error", /Hackatime stopped letting us in/
+    assert_select "form[action='/auth/hackatime'] button", "Link Hackatime again"
+    assert_select ".project__picker", count: 0
+  end
+
+  test "your hours come from your linked Hackatime projects, and the pomodoro can ask for them" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game", "dotfiles" ], slack_joined: true)
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+
+    get hours_project_path(refresh: 1)
+    assert_response :success
+    assert_equal [ 4.6, "4.6 of 10 hrs", true ], response.parsed_body.values_at("hours", "label", "tracking")
+
+    get project_path
+    assert_select ".project__goal-value", "4.6 of 10 hrs"
+    assert_select ".project__length input[checked]" do |inputs|
+      assert_equal "25", inputs.first["value"]
+    end
+    assert_select ".project__start", /Start pomodoro/
   end
 
   test "a step you can still do opens when you pick it" do
@@ -116,7 +152,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "once you're set up, you can change your daily pace" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     get project_path(edit: "pace")
@@ -128,7 +165,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "renaming your project and adding a screenshot" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
 
@@ -143,7 +181,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a screenshot that isn't an image says so" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     patch project_path, params: { project: { screenshot: fixture_file_upload("notes.txt", "text/plain") } }

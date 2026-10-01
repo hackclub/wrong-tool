@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_181000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -48,7 +48,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_170000) do
     t.integer "pace_minutes", null: false
     t.string "build_time", null: false
     t.date "signed_on", null: false
-    t.string "tracker"
     t.boolean "slack_joined", default: false, null: false
     t.string "repo_url"
     t.boolean "idea_posted", default: false, null: false
@@ -86,6 +85,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_170000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "first_name"
+    t.string "hackatime_uid"
+    t.text "hackatime_access_token"
+    t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
 

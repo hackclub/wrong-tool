@@ -5,11 +5,11 @@ import { Clippy } from "mascot/clippy"
 // form ticks it off here; Clippy hops for each step and congratulates you once setup's done.
 export default class extends Controller {
   static targets = [ "clippy", "sprite" ]
-  static values = { clippy: String, sounds: Object }
+  static values = { clippy: String, mood: String, sounds: Object }
 
   connect() {
     this.clippy = new Clippy(this.spriteTarget, this.soundsValue)
-    if (this.clippyValue === "congratulate") this.clippy.congratulate()
+    this.clippy.feel(this.moodValue || "idle", { first: this.clippyValue === "congratulate" ? "Congratulate" : null })
     if (this.clippyValue) this.#hop()
   }
 

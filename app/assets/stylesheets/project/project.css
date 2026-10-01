@@ -320,6 +320,7 @@
     &.onboarding-text-button {
       padding: 0 14px;
       font-size: 14px;
+      text-decoration: none;
     }
   }
 
@@ -370,35 +371,144 @@
     background: var(--white);
   }
 
-  .project__step-linked {
+  /* The Hackatime projects dropdown: a field with what's ticked, opening on a checklist of your projects. */
+  .project__picker-form {
+    align-self: stretch;
+    max-inline-size: 520px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 0;
-    padding: 0;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .project__picker-trigger {
+    --icon-size: 24px;
+
+    block-size: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px 0 14px;
+    border: 1px solid var(--border-header);
+    border-radius: 6px;
+    background: var(--white);
+    cursor: pointer;
     list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible,
+    [open] > & {
+      border-color: var(--selection);
+      box-shadow: inset 0 0 0 1px var(--selection);
+      outline: none;
+    }
   }
 
-  .project__linked-remove-form {
-    display: contents;
+  .project__picker-value {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    font: 600 14px var(--font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .project__linked-remove {
-    --icon-size: 14px;
+  .project__picker-arrow {
+    color: var(--icon-color);
 
-    display: grid;
-    place-items: center;
-    inline-size: 20px;
-    block-size: 20px;
-    margin-inline: 4px -6px;
-    border-radius: 50%;
-    color: var(--text-secondary);
+    [open] > summary > & {
+      rotate: 180deg;
+    }
+  }
+
+  /* Opens in place, pushing the button down, so Link is always there to press. */
+  .project__picker-list {
+    margin-block-start: 4px;
+    max-block-size: 300px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border: 1px solid var(--border-grid);
+    border-radius: 6px;
+    background: var(--white);
+    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 30%), 0 2px 6px 2px rgb(60 64 67 / 15%);
+  }
+
+  .project__picker-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
     cursor: pointer;
 
-    &:hover {
-      background: var(--grey-300);
-      color: var(--text-primary);
+    & + & {
+      border-block-start: 1px solid var(--border-grid);
     }
+
+    &:hover {
+      background: #f1f4f9;
+    }
+
+    &:has(:checked) {
+      background: #f1f6fe;
+    }
+  }
+
+  /* A checkbox like the design's: grey outline, blue with a white tick when on. */
+  .project__picker-box {
+    flex: none;
+    inline-size: 18px;
+    block-size: 18px;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--grey-500);
+    border-radius: 3px;
+    background: var(--white);
+    appearance: none;
+    cursor: pointer;
+
+    &::after {
+      content: "";
+      inline-size: 5px;
+      block-size: 9px;
+      margin-block-start: -2px;
+      border: solid var(--white);
+      border-width: 0 2px 2px 0;
+      rotate: 45deg;
+      opacity: 0;
+    }
+
+    &:checked {
+      border-color: var(--blue-700);
+      background: var(--blue-700);
+
+      &::after {
+        opacity: 1;
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 2px;
+    }
+  }
+
+  .project__picker-name {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    font: 600 14px var(--font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .project__picker-note {
+    flex: none;
+    font: 13px var(--font-cell);
+    color: var(--grey-600);
   }
 
   .project__step-link {
@@ -736,6 +846,57 @@
   .project__today-note {
     font: 14px var(--font-cell);
     color: var(--text-secondary);
+  }
+
+  /* A pomodoro: how long to lock in for, then start. */
+  .project__pomodoro {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .project__lengths {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .project__lengths-label {
+    margin-inline-end: 2px;
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__length {
+    block-size: 30px;
+    display: grid;
+    place-items: center;
+    padding: 0 12px;
+    border: 1px solid var(--border-header);
+    border-radius: 15px;
+    background: var(--white);
+    font: 500 13px var(--font-chrome);
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &:hover {
+      background: #f1f4f9;
+    }
+
+    &:has(:checked) {
+      border-color: var(--blue-700);
+      background: var(--blue-50);
+      color: var(--blue-700);
+    }
+
+    &:has(:focus-visible) {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 2px;
+    }
   }
 
   .project__start {
@@ -1277,6 +1438,14 @@
     .project__today {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .project__pomodoro {
+      align-items: stretch;
+    }
+
+    .project__lengths {
+      justify-content: flex-start;
     }
   }
 }

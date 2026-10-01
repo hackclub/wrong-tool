@@ -9,7 +9,8 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     get project_ship_path
     assert_redirected_to project_path
 
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     get project_ship_path
     assert_response :success
     assert_select "input#ship_title[value='A rhythm game in Spreadsheet']"
@@ -17,7 +18,8 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shipping, then it's in review" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_as_orpheus
 
     post project_ship_path, params: { ship: ship_params }
@@ -35,7 +37,8 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "what a ship's missing says so" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_as_orpheus
     post project_ship_path, params: { ship: ship_params.merge(description: "short", screenshot_shows_game: "0") }
 

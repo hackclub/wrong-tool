@@ -3,7 +3,15 @@
 class User < ApplicationRecord
   has_one :project, dependent: :destroy
 
+  # Linking Hackatime gives us their Hackatime ID and a token that reads their projects and hours.
+  encrypts :hackatime_access_token
+
   validates :hca_id, presence: true, uniqueness: true
+  validates :hackatime_uid, uniqueness: { message: "is already linked to someone else here" }, allow_nil: true
+
+  def hackatime_linked?
+    hackatime_uid.present? && hackatime_access_token.present?
+  end
 
   def self.from_omniauth(auth)
     claims = auth.extra.raw_info.to_h.with_indifferent_access

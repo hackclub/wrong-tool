@@ -41,6 +41,11 @@
     border-radius: 50%;
     background: #34a853;
     box-shadow: 0 0 0 4px rgb(52 168 83 / 20%);
+
+    &[data-off] {
+      background: var(--focus-muted);
+      box-shadow: none;
+    }
   }
 
   .focus__tracking {
@@ -50,6 +55,43 @@
   .focus__tracked {
     font: 14px var(--font-mono);
     color: var(--focus-muted);
+  }
+
+  /* Refresh: spins while it asks Hackatime, red when it couldn't. */
+  .focus__sync {
+    --icon-size: 18px;
+
+    inline-size: 30px;
+    block-size: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--focus-muted);
+    cursor: pointer;
+
+    &:hover {
+      background: #1f252e;
+      color: var(--focus-text);
+    }
+
+    &[data-syncing] .icon {
+      animation: focus-spin 800ms linear infinite;
+    }
+
+    &[data-failed] {
+      color: var(--red);
+    }
+  }
+
+  .focus__synced {
+    font: 12px var(--font-chrome);
+    color: var(--focus-muted);
+  }
+
+  @keyframes focus-spin {
+    to {
+      rotate: -360deg;
+    }
   }
 
   .focus__exit {
@@ -212,6 +254,10 @@
     font: 14px/1.4 var(--font-chrome);
     color: var(--focus-muted);
     text-wrap: pretty;
+
+    &[hidden] {
+      display: none;
+    }
   }
 
   .focus__actions {

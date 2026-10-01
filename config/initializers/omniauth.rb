@@ -3,6 +3,17 @@
 # Register the app at https://auth.hackclub.com/developer/apps with the redirect URI below, then set the
 # client ID and secret in credentials (hack_club_auth: client_id, client_secret) or the environment.
 hack_club_auth = ->(key) { Rails.application.credentials.dig(:hack_club_auth, key) || ENV["HACK_CLUB_AUTH_#{key.upcase}"] }
+# Linking Hackatime, over OAuth2 (like Stardance does): register the app on Hackatime with the redirect URI
+# <this site>/auth/hackatime/callback, then set hackatime: client_id, client_secret (or HACKATIME_CLIENT_ID/SECRET).
+hackatime = ->(key) { Rails.application.credentials.dig(:hackatime, key) || ENV["HACKATIME_#{key.upcase}"] }
+
+# OmniAuth's OAuth2 callback URL carries the request's query string along, so it'd stop matching the redirect URI
+# registered with Hackatime (and the token exchange would fail). Send just the path.
+OmniAuth::Strategies::OAuth2.class_eval do
+  def callback_url
+    full_host + callback_path
+  end
+end
 
 Rails.application.config.middleware.use OmniAuth::Builder do
   provider :openid_connect,
@@ -16,6 +27,16 @@ Rails.application.config.middleware.use OmniAuth::Builder do
       identifier: hack_club_auth.(:client_id),
       secret: hack_club_auth.(:client_secret),
       redirect_uri: hack_club_auth.(:redirect_uri) || "http://localhost:3000/auth/hackclub/callback"
+    }
+
+  # Not a way to sign in: once you're signed in, it links your Hackatime (see HackatimeLinksController).
+  provider :oauth2, hackatime.(:client_id), hackatime.(:client_secret),
+    name: :hackatime,
+    scope: "profile read",
+    client_options: {
+      site: ENV.fetch("HACKATIME_URL", "https://hackatime.hackclub.com"),
+      authorize_url: "/oauth/authorize",
+      token_url: "/oauth/token"
     }
 end
 

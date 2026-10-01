@@ -9,6 +9,10 @@ class SessionsController < ApplicationController
   end
 
   def failure
+    if params[:strategy] == "hackatime"
+      return redirect_to project_path, alert: "Couldn't link Hackatime (#{params[:message].to_s.humanize.downcase}). Try again."
+    end
+
     redirect_to onboarding_path, alert: "Couldn't sign you in with Hack Club (#{params[:message].to_s.humanize.downcase})."
   end
 

@@ -36,8 +36,7 @@
       <%# Clippy sits on the card: he hops when you answer, congratulates you on your prize and on signing. %>
       <div class="onboarding-mascot" data-onboarding-target="mascot">
         <p class="onboarding-mascot__bubble" role="status" data-onboarding-target="mascotSay"></p>
-        <span class="onboarding-mascot__sprite" aria-hidden="true" data-onboarding-target="mascotSprite"
-              style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+        <%= clippy_sprite_tag(data: { onboarding_target: "mascotSprite" }) %>
       </div>
 
       <div class="onboarding-pledge__header">Pledge</div>

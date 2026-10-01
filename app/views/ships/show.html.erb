@@ -4,6 +4,7 @@
     Wrong), then once it's in, that it's in review. %>
 <div class="ship" data-controller="project"
      data-project-clippy-value="<%= flash[:clippy] %>"
+     data-project-mood-value="<%= "happy" %>"
      data-project-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
   <header class="ship__bar">
     <%= link_to project_path, class: "ship__back", aria: { label: "Back to project" } do %>
@@ -16,8 +17,7 @@
   <% if @ship.persisted? %>
     <main class="ship__done">
       <div class="project__clippy" data-project-target="clippy">
-        <span class="onboarding-mascot__sprite project__sprite" aria-hidden="true" data-project-target="sprite"
-              style="background-image: url(<%= image_path "mascot/clippy-congratulate.webp" %>)"></span>
+        <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
       </div>
       <h2 class="ship__done-title">Shipped.</h2>
       <p class="ship__done-text"><%= @ship.title %> is in review. You'll hear in #wrong-tool when it's live in the Hall of Wrong.</p>
@@ -58,7 +58,7 @@
             <div class="ship__hackatime">
               <%= inline_svg_tag "icons/onboarding/check-circle-filled.svg", class: "icon ship__hackatime-check", aria_hidden: true %>
               <span class="ship__hackatime-name"><%= @project.hackatime_projects.join(", ") %></span>
-              <span class="ship__hackatime-hours"><%= @project.hours_logged %> hrs</span>
+              <span class="ship__hackatime-hours"><%= project_hours(@project.hours_logged) %> hrs</span>
             </div>
             <span class="ship__hint">
               Linked during setup. <%= link_to "Change it", project_path(step: "hackatime_project"), class: "ship__link" %> from the setup steps.
@@ -92,7 +92,7 @@
             <span class="ship__hall-text">
               <span class="ship__hall-title" data-ship-target="previewTitle"><%= @ship.title.presence || "Untitled" %></span>
               <span class="ship__hall-meta">
-                <%= current_user.first_name.presence || current_user.name %> · built in <%= @project.tool_name %> · <%= @project.hours_logged %> hrs
+                <%= current_user.first_name.presence || current_user.name %> · built in <%= @project.tool_name %> · <%= project_hours(@project.hours_logged) %> hrs
               </span>
             </span>
           </div>

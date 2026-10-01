@@ -3,7 +3,7 @@
 <% if (how = project_hackatime_how(project)) %>
   <p class="project__step-text"><%= how %></p>
 <% end %>
-<%# Opens Hackatime to set up in a new tab, and ticks it off here. %>
-<%= button_to "Link Hackatime", project_path, method: :patch, params: { project: { tracker: "hackatime" } },
-      class: "onboarding-button onboarding-button--primary project__step-button",
-      form: { data: { action: "submit->project#open" } }, data: { url: hackatime_url } %>
+<%= render "projects/hackatime_link_button", label: "Link Hackatime" %>
+<% if flash[:alert] %>
+  <p class="project__step-error" role="alert"><%= flash[:alert] %></p>
+<% end %>

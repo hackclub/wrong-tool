@@ -5,7 +5,6 @@ class Project < ApplicationRecord
   PRIZES = %w[rg35xx miyoo].freeze
   PACES = [ 20, 45, 60, 120, 180 ].freeze
   BUILD_TIMES = [ "after school", "evening", "late night", "weekends" ].freeze
-  TRACKERS = %w[hackatime].freeze
 
   # Tools you'd play a game "over" rather than "in".
   OVER = %w[email ssh].freeze
@@ -29,11 +28,10 @@ class Project < ApplicationRecord
   validates :prize, inclusion: { in: PRIZES }
   validates :pace_minutes, inclusion: { in: PACES }
   validates :build_time, inclusion: { in: BUILD_TIMES }
-  validates :tracker, inclusion: { in: TRACKERS }, allow_nil: true
   validates :tool_name, :idea, :signed_on, presence: true
   validates :name, length: { maximum: 80 }
   validate :screenshot_is_an_image
-  validate :linking_a_hackatime_project_you_have
+  validate :picking_hackatime_projects_you_have
   validates :repo_url, format: { with: %r{\Ahttps?://\S+\z}, message: "should be a link, like https://github.com/you/game" },
                        allow_blank: true
 
@@ -75,7 +73,7 @@ class Project < ApplicationRecord
 
   def step_done?(step)
     case step
-    when "hackatime" then tracker.present?
+    when "hackatime" then hackatime_linked?
     when "hackatime_project" then hackatime_projects.any?
     when "slack" then slack_joined?
     when "repo" then (repo_url.present? && errors[:repo_url].none?) || repo_later?
@@ -85,7 +83,7 @@ class Project < ApplicationRecord
 
   # The Hackatime project needs Hackatime linked first.
   def step_locked?(step)
-    step == "hackatime_project" && tracker.blank?
+    step == "hackatime_project" && !hackatime_linked?
   end
 
   # Steps you can still open: anything not done, the Hackatime projects (to change which are linked) and the repo
@@ -109,24 +107,38 @@ class Project < ApplicationRecord
 
   # Hours count once Hackatime knows which project this is.
   def tracking?
-    tracker.present? && hackatime_projects.any?
+    hackatime_linked? && hackatime_projects.any?
+  end
+
+  # Linking Hackatime is yours, not the project's: it's who you are on Hackatime.
+  def hackatime_linked?
+    user.hackatime_linked?
   end
 
   # The Hackatime projects you can link: the ones Hackatime says you've logged time on. Set before linking one.
   attr_accessor :available_hackatime_projects
 
-  # Linking one more Hackatime project, picked from the ones you have.
-  def link_hackatime_project=(name)
-    @linking_hackatime_project = name.to_s.strip
-    self.hackatime_projects = hackatime_projects + [ @linking_hackatime_project ]
+  # The Hackatime projects you ticked: these become the linked ones. Any you hadn't linked before have to be
+  # ones Hackatime has.
+  def hackatime_project_names=(names)
+    names = Array(names).map { |name| name.to_s.strip }.compact_blank.uniq
+    @picked_hackatime_projects = names
+    self.hackatime_projects = names
   end
 
-  def unlink_hackatime_project=(name)
-    self.hackatime_projects = hackatime_projects - [ name.to_s ]
+  # Hours on your linked Hackatime projects since Hackatime time started counting (Program::HACKATIME_START), to a
+  # tenth. Nothing if Hackatime isn't linked or can't be reached right now. `refresh` asks Hackatime again.
+  def hours_logged(refresh: false)
+    @hours_logged = nil if refresh
+    @hours_logged ||= begin
+      seconds = tracking? ? Hackatime.projects(user, refresh:).select { |project| hackatime_projects.include?(project.name) }.sum(&:seconds) : 0
+      (seconds / 3600.0).round(1)
+    rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
+      0
+    end
   end
 
-  # Hours and streaks come from Hackatime, which isn't wired up yet: until it is, nobody's logged anything.
-  def hours_logged = 0
+  # Weekly hours and streaks aren't wired up to Hackatime yet: until they are, they're nothing.
   def hours_this_week = 0
   def streak = 0
 
@@ -156,14 +168,12 @@ class Project < ApplicationRecord
   end
 
   private
-    def linking_a_hackatime_project_you_have
-      return if @linking_hackatime_project.nil?
+    def picking_hackatime_projects_you_have
+      return if @picked_hackatime_projects.nil?
+      return errors.add(:hackatime_projects, "need one picked") if @picked_hackatime_projects.empty?
 
-      if @linking_hackatime_project.blank?
-        errors.add(:hackatime_projects, "need one picked")
-      elsif !available_hackatime_projects.to_a.map(&:name).include?(@linking_hackatime_project)
-        errors.add(:hackatime_projects, "don't include #{@linking_hackatime_project} on Hackatime")
-      end
+      unknown = @picked_hackatime_projects - hackatime_projects_was.to_a - available_hackatime_projects.to_a.map(&:name)
+      errors.add(:hackatime_projects, "don't include #{unknown.to_sentence} on Hackatime") if unknown.any?
     end
 
     def screenshot_is_an_image

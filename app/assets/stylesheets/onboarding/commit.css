@@ -267,15 +267,17 @@
     }
   }
 
-  /* One 124×93 frame of the sprite strip at a time; the controller steps --frame. */
+  /* One 124×93 frame of Clippy's sprite sheet at a time; mascot/clippy.js sets which (--frame-x, --frame-y). */
   .onboarding-mascot__sprite {
-    --frame: 0;
+    --frame-x: 0;
+    --frame-y: 0;
 
     flex: none;
+    display: block;
     inline-size: 124px;
     block-size: 93px;
     background-repeat: no-repeat;
-    background-position: calc(var(--frame) * -124px) 0;
+    background-position: calc(var(--frame-x) * -124px) calc(var(--frame-y) * -93px);
   }
 
   /* Signing: a wide button you hold down. A darker red fills it from the left; the controller sets how far. */

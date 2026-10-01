@@ -33,7 +33,8 @@ class ProjectTest < ActiveSupport::TestCase
     assert_equal 0, project.required_steps_done
     assert project.step_locked?("hackatime_project")
 
-    project.assign_attributes(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ])
+    link_hackatime(project.user)
+    project.hackatime_projects = [ "rhythm-game" ]
     assert project.tracking?
     assert_not project.step_locked?("hackatime_project")
     assert_not project.set_up?
@@ -68,22 +69,27 @@ class ProjectTest < ActiveSupport::TestCase
     assert project.valid?
   end
 
-  test "linking a Hackatime project takes one you have, and unlinking takes it back off" do
+  test "the ticked Hackatime projects are the linked ones, and new ones have to be on Hackatime" do
     project = projects(:orpheus)
-    project.available_hackatime_projects = Hackatime.projects("U0ORPHEUS")
-    project.link_hackatime_project = "rhythm-game"
+    link_hackatime(project.user)
+    project.available_hackatime_projects = Hackatime.projects(project.user)
+    project.hackatime_project_names = [ "rhythm-game", "", "dotfiles", "rhythm-game" ]
     assert project.valid?
-    assert_equal [ "rhythm-game" ], project.hackatime_projects
+    assert_equal [ "rhythm-game", "dotfiles" ], project.hackatime_projects
+    project.save!
 
-    project.link_hackatime_project = "not-mine"
+    project.hackatime_project_names = [ "dotfiles", "not-mine" ]
     assert_not project.valid?
     assert_equal [ "Hackatime projects don't include not-mine on Hackatime" ], project.errors.full_messages
 
-    project.unlink_hackatime_project = "not-mine"
-    project.unlink_hackatime_project = "rhythm-game"
-    assert_empty project.hackatime_projects
+    project.available_hackatime_projects = []
+    project.hackatime_project_names = [ "dotfiles" ]
+    assert project.valid?, "ones already linked stay linkable, even once Hackatime stops listing them"
 
-    project.tracker = "hackatime"
+    project.hackatime_project_names = []
+    assert_not project.valid?
+
+    link_hackatime(project.user)
     project.hackatime_projects = [ "rhythm-game" ]
     assert project.step_done?("hackatime_project")
     assert project.step_open?("hackatime_project")
@@ -91,10 +97,10 @@ class ProjectTest < ActiveSupport::TestCase
 
   test "only takes the answers onboarding offers" do
     project = projects(:orpheus)
-    project.assign_attributes(tool: "notepad", prize: "switch", pace_minutes: 5, build_time: "never", tracker: "stopwatch",
+    project.assign_attributes(tool: "notepad", prize: "switch", pace_minutes: 5, build_time: "never",
                               repo_url: "my repo")
 
     assert_not project.valid?
-    assert_equal %i[tool prize pace_minutes build_time tracker repo_url].sort, project.errors.attribute_names.sort
+    assert_equal %i[tool prize pace_minutes build_time repo_url].sort, project.errors.attribute_names.sort
   end
 end

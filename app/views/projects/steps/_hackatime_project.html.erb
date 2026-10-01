@@ -1,43 +1,47 @@
 <%# locals: (project:, refresh: false) %>
-<%# Pick which of your Hackatime projects this build is, from a dropdown of the ones Hackatime knows you've worked on.
-    The linked ones show above it, each removable; link another for time spent across more than one. %>
+<%# Which of your Hackatime projects this build is: a dropdown of them all, each with a checkbox, the linked ones
+    ticked. Tick more for time spent across more than one. %>
 <% choices = project_hackatime_choices(project, refresh:) %>
 <p class="project__step-text">
-  Which Hackatime project is this build? Only time from <%= project_date(project.signed_on) %> on counts.
+  Which Hackatime project is this build? Only time from <%= project_date(Program::HACKATIME_START) %> on counts.
 </p>
-<% if project.hackatime_projects.any? %>
-  <ul class="project__step-linked" aria-label="Linked Hackatime projects">
-    <% project.hackatime_projects.each do |name| %>
-      <li class="project__linked-project">
-        <%= name %>
-        <%= button_to project_path, method: :patch, params: { project: { unlink_hackatime_project: name } },
-              class: "project__linked-remove", form: { class: "project__linked-remove-form" }, aria: { label: "Unlink #{name}" } do %>
-          <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-        <% end %>
-      </li>
-    <% end %>
-  </ul>
-<% end %>
 <% if choices[:problem] %>
   <p class="project__step-error" role="alert"><%= choices[:problem] %></p>
-<% elsif choices[:projects].any? %>
-  <%= form_with model: project, url: project_path, method: :patch, class: "project__step-form" do |form| %>
-    <%= form.label :link_hackatime_project, "Hackatime project", class: "visually-hidden" %>
-    <%= form.select :link_hackatime_project,
-          choices[:projects].map { |hackatime| [ project_hackatime_option(hackatime), hackatime.name ] },
-          { prompt: project.hackatime_projects.any? ? "Add another project" : "Pick a project", selected: nil },
-          required: true, class: "project__step-input project__step-select",
-          aria: { invalid: project.errors[:hackatime_projects].any? } %>
-    <%= form.button project.hackatime_projects.any? ? "Add" : "Link project",
-          class: "onboarding-button onboarding-button--primary project__step-button" %>
-  <% end %>
-<% elsif project.hackatime_projects.none? %>
+  <% if choices[:relink] %><%= render "projects/hackatime_link_button", label: "Link Hackatime again" %><% end %>
+<% elsif choices[:projects].none? %>
   <p class="project__step-error" role="alert">No projects on Hackatime yet.</p>
+<% else %>
+  <% linked = choices[:projects].select { |choice| choice[:linked] } %>
+  <%= form_with model: project, url: project_path, method: :patch, class: "project__picker-form",
+        data: { controller: "hackatime-picker", action: "change->hackatime-picker#update click@window->hackatime-picker#close" } do |form| %>
+    <%= hidden_field_tag "project[hackatime_project_names][]", "", id: nil %>
+    <details class="project__picker" data-hackatime-picker-target="dropdown" <%= "open" if linked.none? %>>
+      <summary class="project__picker-trigger" aria-label="Hackatime projects">
+        <span class="project__picker-value" data-hackatime-picker-target="summary"
+              data-placeholder="Pick your Hackatime projects"><%= linked.map { |choice| choice[:name] }.join(", ").presence || "Pick your Hackatime projects" %></span>
+        <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon project__picker-arrow", aria_hidden: true %>
+      </summary>
+      <div class="project__picker-list" role="group" aria-label="Your Hackatime projects">
+        <% choices[:projects].each do |choice| %>
+          <label class="project__picker-option">
+            <input type="checkbox" name="project[hackatime_project_names][]" value="<%= choice[:name] %>"
+                   class="project__picker-box" <%= "checked" if choice[:linked] %>>
+            <span class="project__picker-name"><%= choice[:name] %></span>
+            <span class="project__picker-note"><%= choice[:note] %></span>
+          </label>
+        <% end %>
+      </div>
+    </details>
+    <div class="project__step-actions">
+      <%= form.button project_hackatime_link_label(linked.size), class: "onboarding-button onboarding-button--primary project__step-button",
+            disabled: linked.none?, data: { hackatime_picker_target: "submit" } %>
+      <%= link_to "Refresh", project_path(step: "hackatime_project", refresh: 1), class: "onboarding-text-button project__step-button" %>
+    </div>
+  <% end %>
 <% end %>
 <% if project.errors[:hackatime_projects].any? %>
   <p class="project__step-error" role="alert"><%= project.errors.full_messages_for(:hackatime_projects).first %></p>
 <% end %>
 <p class="project__step-hint">
-  Don't see it? Log a minute of time on it with Hackatime, then
-  <%= link_to "refresh", project_path(step: "hackatime_project", refresh: 1), class: "project__step-link" %>.
+  <%= project.code_tool? ? "Don't see it? Write a line of code with the extension on, then refresh." : "Don't see it? Log a minute of time on it with Hackatime, then refresh." %>
 </p>

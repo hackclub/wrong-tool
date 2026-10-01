@@ -3,7 +3,8 @@ require "test_helper"
 class ShipTest < ActiveSupport::TestCase
   setup do
     @project = projects(:orpheus)
-    @project.update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(@project.user)
+    @project.update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
   end
 
   test "shipping keeps what you submitted, and makes it your project's name and repo" do

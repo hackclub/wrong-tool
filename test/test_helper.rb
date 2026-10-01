@@ -19,11 +19,13 @@ end
 OmniAuth.config.test_mode = true
 Rails.application.config.x.hack_club_auth_whoami_url = nil
 
-# Nobody asks the real Hackatime either: these are the projects each Slack ID has logged time on.
+# Nobody asks the real Hackatime either: who each token belongs to, and the projects each Hackatime user has
+# logged time on.
+Hackatime.stubbed_users = { "token-orpheus" => "1001", "token-heidi" => "1002" }
 Hackatime.stubbed_projects = {
-  "U0ORPHEUS" => [ Hackatime::Project.new("rhythm-game", 5400), Hackatime::Project.new("beat-sheet-art", 900),
-                   Hackatime::Project.new("dotfiles", 11_160) ],
-  "U0HEIDI" => [ Hackatime::Project.new("heidis-game", 600) ]
+  "1001" => [ Hackatime::Project.new("rhythm-game", 5400), Hackatime::Project.new("beat-sheet-art", 900),
+              Hackatime::Project.new("dotfiles", 11_160) ],
+  "1002" => [ Hackatime::Project.new("heidis-game", 600) ]
 }
 
 module HackClubAuthHelpers
@@ -37,4 +39,17 @@ module HackClubAuthHelpers
   end
 end
 
+module HackatimeHelpers
+  # Linking Hackatime goes straight to the callback with this token.
+  def mock_hackatime(token: "token-orpheus")
+    OmniAuth.config.mock_auth[:hackatime] = OmniAuth::AuthHash.new(provider: "hackatime", uid: nil, credentials: { token: })
+  end
+
+  # As if they'd already linked Hackatime.
+  def link_hackatime(user, token: "token-#{user.first_name.downcase}")
+    user.update!(hackatime_uid: Hackatime.stubbed_users.fetch(token), hackatime_access_token: token)
+  end
+end
+
 ActiveSupport::TestCase.include HackClubAuthHelpers
+ActiveSupport::TestCase.include HackatimeHelpers

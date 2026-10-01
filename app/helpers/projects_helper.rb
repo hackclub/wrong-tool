@@ -16,6 +16,16 @@ module ProjectsHelper
     PRIZE_NAMES.fetch(project.prize)
   end
 
+  # "1.5 of 10 hrs"
+  def project_hours_label(project, hours = project.hours_logged)
+    "#{project_hours(hours)} of #{hours_per_reward} hrs"
+  end
+
+  # 1.5, or 2 rather than 2.0
+  def project_hours(hours)
+    hours.to_s.delete_suffix(".0")
+  end
+
   # "Oct 15"
   def project_date(date)
     date.strftime("%b %-d")
@@ -44,19 +54,23 @@ module ProjectsHelper
     end
   end
 
-  # Your Hackatime projects you haven't linked yet, for the dropdown, or why there aren't any to show.
+  # Your Hackatime projects for the dropdown, the linked ones ticked (including any Hackatime no longer lists, so
+  # they can be unticked), or why there aren't any to show.
   def project_hackatime_choices(project, refresh: false)
-    projects = Hackatime.projects(project.user.slack_id, refresh:)
-    { projects: projects.reject { |hackatime| project.hackatime_projects.include?(hackatime.name) } }
-  rescue Hackatime::NotFound
-    { projects: [], problem: "Hackatime doesn't know you yet. Sign in to Hackatime with your Hack Club Slack, then refresh." }
+    projects = Hackatime.projects(project.user, refresh:)
+    missing = project.hackatime_projects - projects.map(&:name)
+    choices = missing.map { |name| { name:, note: "not on Hackatime now", linked: true } } +
+      projects.map { |hackatime| { name: hackatime.name, note: "#{hackatime.hours.to_s.delete_suffix(".0")} hrs", linked: project.hackatime_projects.include?(hackatime.name) } }
+    { projects: choices }
+  rescue Hackatime::NotLinked, Hackatime::Expired
+    { projects: [], problem: "Hackatime stopped letting us in.", relink: true }
   rescue Hackatime::Unavailable
     { projects: [], problem: "Couldn't reach Hackatime just now. Try refreshing." }
   end
 
-  # "harbor · 214.7 hrs"
-  def project_hackatime_option(hackatime)
-    "#{hackatime.name} · #{hackatime.hours.to_s.delete_suffix(".0")} hrs"
+  # "Link project", "Link 2 projects", or "Pick a project" with none ticked.
+  def project_hackatime_link_label(count)
+    count.zero? ? "Pick a project" : "Link #{count == 1 ? "project" : "#{count} projects"}"
   end
 
   # The setup steps as the page shows them. The one you're on (the step you picked, if you can still do it, or the
@@ -74,10 +88,19 @@ module ProjectsHelper
 
   # What Clippy says while you set up, and after.
   def project_clippy_says(project)
-    if !project.tracker then "Nothing's linked yet, so your hours won't count."
+    if !project.hackatime_linked? then "Nothing's linked yet, so your hours won't count."
     elsif project.hackatime_projects.none? then "Hackatime's linked. Which project is yours?"
     elsif !project.slack_joined? then "Hours count now. Join #wrong-tool and you're set."
     else "All set. 20 min today starts your streak."
+    end
+  end
+
+  # How Clippy feels about where you're at (a mood in mascot/clippy.js).
+  def project_clippy_mood(project)
+    if !project.hackatime_linked? then "attention"
+    elsif project.hackatime_projects.none? then "thinking"
+    elsif !project.slack_joined? then "explaining"
+    else "happy"
     end
   end
 
@@ -95,7 +118,7 @@ module ProjectsHelper
   # Hours logged, your daily pace (which you can change) and when you ship.
   def project_goal(project)
     [
-      { label: "Logged", value: "#{project.hours_logged} of #{hours_per_reward} hrs", note: "for the #{project_prize_name(project)}" },
+      { label: "Logged", value: project_hours_label(project), note: "for the #{project_prize_name(project)}" },
       { label: "Daily pace", value: project_pace_label(project.pace_minutes), note: BUILD_TIME_LABELS.fetch(project.build_time),
         pace: true },
       { label: "Ship by", value: project_date(project.finish_on), note: "if you keep pace" }

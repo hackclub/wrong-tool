@@ -3,6 +3,7 @@ require "application_system_test_case"
 class ProjectTest < ApplicationSystemTestCase
   setup do
     mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS", first_name: "Orpheus")
+    mock_hackatime
     visit onboarding_path
   end
 
@@ -16,7 +17,9 @@ class ProjectTest < ApplicationSystemTestCase
 
     assert_selector ".project__say", text: "Hackatime's linked. Which project is yours?"
     assert_selector ".project__step[data-state=done]", text: "Hackatime linked"
-    select "rhythm-game · 1.5 hrs", from: "Hackatime project"
+    assert_button "Pick a project", disabled: true
+    check "rhythm-game"
+    assert_selector ".project__picker-value", text: "rhythm-game"
     click_on "Link project"
 
     assert_selector ".project__step[data-state=done]", text: "Linked to rhythm-game"
@@ -36,7 +39,8 @@ class ProjectTest < ApplicationSystemTestCase
   end
 
   test "renaming your project in place, and adding a screenshot" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_and_open_project
 
@@ -55,27 +59,33 @@ class ProjectTest < ApplicationSystemTestCase
   end
 
   test "seeing which Hackatime projects are linked, and changing them" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_and_open_project
     assert_selector ".project__linked-project", text: "rhythm-game"
 
     within(".project__linked") { click_on "Change" }
-    assert_no_selector "option", text: "rhythm-game", visible: :all # already linked
-    select "beat-sheet-art · 0.3 hrs", from: "Hackatime project"
-    click_on "Add"
+    find(".project__picker-trigger", text: "rhythm-game").click
+    assert_checked_field "rhythm-game"
+    check "beat-sheet-art"
+    assert_selector ".project__picker-value", text: "rhythm-game, beat-sheet-art"
+    click_on "Link 2 projects"
 
     assert_selector ".project__linked .project__linked-project", count: 2
     assert_equal [ "rhythm-game", "beat-sheet-art" ], all(".project__linked .project__linked-project").map(&:text)
 
     within(".project__linked") { click_on "Change" }
-    find("button[aria-label='Unlink rhythm-game']").click
+    find(".project__picker-trigger").click
+    uncheck "rhythm-game"
+    click_on "Link project"
     assert_selector ".project__linked .project__linked-project", count: 1
     assert_selector ".project__linked", text: "beat-sheet-art"
   end
 
   test "the leaderboard ranks everyone set up, and you" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_and_open_project
     click_on "See all"
@@ -93,7 +103,8 @@ class ProjectTest < ApplicationSystemTestCase
   end
 
   test "shipping: the form says what it still needs, then it's in review" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_and_open_project
     find(".project__ship").click
 
@@ -118,33 +129,44 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".project__ship", text: "In review"
   end
 
-  test "a focus session: a round of your pace, pause, end it, then back to the project" do
-    projects(:orpheus).update!(tracker: "hackatime", hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+  test "a pomodoro: lock in for as long as you pick, pause, end it, then back to the project" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_and_open_project
-    click_on "Start session"
+    assert_checked_field "25 min", visible: :all
+    find(".project__length", text: "15 min").click
+    click_on "Start pomodoro"
 
-    assert_selector ".focus__label", text: "FOCUS · ROUND 1"
-    assert_selector ".focus__clock", text: /\A(45:00|44:5\d)\z/
+    assert_selector ".focus__label", text: "LOCKED IN · ROUND 1"
+    assert_selector ".focus__clock", text: /\A(15:00|14:5\d)\z/
     assert_selector ".focus__title", text: "A rhythm game in Spreadsheet"
-    assert_selector ".focus__track-name", text: "#REF! in the rain"
+    assert_selector ".focus__tracked", text: "1.5 of 10 hrs"
+    assert_selector ".focus__synced", text: "just now"
+    assert_no_selector ".focus__note-text"
+    assert_selector ".focus__track-name", text: "Morning Coffee"
+    find("button[aria-label='Refresh hours from Hackatime']").click
+    assert_selector ".focus__synced", text: "just now"
     click_on "Pause"
     assert_selector ".focus__label", text: "PAUSED · ROUND 1"
     click_on "Resume"
-    click_on "End session"
+    click_on "End pomodoro"
 
-    assert_selector ".focus__label", text: "SESSION DONE"
+    assert_selector ".focus__label", text: "POMODORO DONE"
     assert_selector ".focus__title", text: "Short one. Every minute counts."
     click_on "Take a 5 min break"
     assert_selector ".focus__label", text: "BREAK"
     assert_selector ".focus__clock", text: /\A(05:00|04:5\d)\z/
     click_on "Skip break"
-    assert_selector ".focus__label", text: "FOCUS · ROUND 2"
+    assert_selector ".focus__label", text: "LOCKED IN · ROUND 2"
     find("button[aria-label='Next track']").click
-    assert_selector ".focus__track-name", text: "Merge conflict lullaby"
+    assert_selector ".focus__track-name", text: "Glad To Be Stuck Inside"
 
-    click_on "Exit focus"
+    click_on "Exit"
     assert_no_selector ".focus"
     assert_selector ".project__title", text: "A rhythm game in Spreadsheet"
+
+    visit project_path
+    assert_checked_field "15 min", visible: :all # remembered
   end
 
   test "the avatar opens your account, where you can log out" do
