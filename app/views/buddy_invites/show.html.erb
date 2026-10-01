@@ -1,0 +1,75 @@
+<% content_for :title, "#{buddy_name(@inviter)} wants to build with you · Wrong Tool" %>
+<% mine = @project == @inviter %>
+<% can_accept = !mine && @inviter.buddy.nil? && @project&.buddy.nil? %>
+
+<%# Someone's buddy invite: who they are and what they're building, what a pair earns, and accepting. %>
+<div class="spreadsheet onboarding project" data-saved>
+  <% if @project %>
+    <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+          progress: "Day #{@project.day_number} of #{@project.build_days.size}", user: current_user %>
+  <% else %>
+    <%= render "pages/app_bar" %>
+  <% end %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar", name_box: "B4",
+        formula: "=BUDDY(#{buddy_name(@inviter).downcase}, you)  →  #{mine ? "#REF!" : "#PENDING"}" %>
+
+  <main class="project__sheet">
+    <div class="buddy-invited">
+      <section class="buddy-invited__card" aria-labelledby="buddy-invited-title">
+        <div>
+          <h1 class="buddy-invited__title" id="buddy-invited-title">
+            <%= mine ? "This is your own invite link." : "#{buddy_name(@inviter)} wants to build with you." %>
+          </h1>
+          <p class="leaderboard__note">
+            You each build your own game in your own wrong tool. Log <%= pair_weekly_hours %>h a week each and you keep a
+            streak together.
+          </p>
+        </div>
+
+        <div class="buddy-invited__project">
+          <% if (shot = @inviter.screenshot).attached? && shot.blob.persisted? %>
+            <%= image_tag url_for(shot), alt: "Screenshot of #{@inviter.title}", class: "buddy-invited__shot" %>
+          <% end %>
+          <div class="buddy-invited__about">
+            <span class="buddy-face buddy-face--large" aria-hidden="true"><%= buddy_initial(@inviter) %></span>
+            <span class="buddy-card__who">
+              <span class="buddy-card__title"><%= @inviter.title %></span>
+              <span class="buddy-card__note">Day <%= @inviter.day_number %> · <%= project_hours(@inviter.hours_logged) %>h logged</span>
+            </span>
+            <span class="buddy-invited__tool"><%= @inviter.tool_name.upcase %></span>
+          </div>
+        </div>
+
+        <div class="buddy-invited__get">
+          <h2 class="buddy-invited__get-title">You both get</h2>
+          <% pair_rewards.each do |reward| %>
+            <div class="buddy-invited__reward">
+              <span class="buddy-invited__reward-key"><%= reward[:label] %></span><span><%= reward[:reward] %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <% if flash[:alert] %><p class="project__step-error" role="alert"><%= flash[:alert] %></p><% end %>
+        <% if !mine && !can_accept %>
+          <p class="project__step-error" role="alert">
+            <%= @project&.buddy ? "You already have a buddy." : "#{buddy_name(@inviter)} already has a buddy." %>
+          </p>
+        <% end %>
+
+        <div class="buddy-invited__actions">
+          <%= link_to "Not now", @project ? project_path : root_path, class: "onboarding-text-button ship__text-button" %>
+          <% if mine %>
+            <%= link_to "Go to Buddy", buddy_path, class: "onboarding-button onboarding-button--primary project__step-button" %>
+          <% elsif can_accept %>
+            <%= button_to "Build anyway", buddy_invite_path(@inviter.buddy_code), class: "onboarding-button onboarding-button--primary project__step-button",
+                  form: { data: { turbo: false } } %>
+          <% end %>
+        </div>
+      </section>
+      <p class="buddy-sticky">Note on B4: you don't need to pick the same tool. Please don't.</p>
+    </div>
+  </main>
+
+  <% if @project %><%= render "onboarding/tabs", current: :buddy, project_open: true %><% end %>
+</div>

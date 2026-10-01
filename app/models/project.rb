@@ -17,6 +17,8 @@ class Project < ApplicationRecord
 
   belongs_to :user
   has_many :ships, dependent: :destroy
+  has_one :pair_as_first, class_name: "Pair", foreign_key: :first_project_id, dependent: :destroy, inverse_of: :first_project
+  has_one :pair_as_second, class_name: "Pair", foreign_key: :second_project_id, dependent: :destroy, inverse_of: :second_project
   # Shows on the leaderboard and your ship post.
   has_one_attached :screenshot
 
@@ -61,13 +63,18 @@ class Project < ApplicationRecord
     build_days.last
   end
 
+  # Which day of building it is: 1 on the first, counting up from there.
+  def day_number(today: Date.current)
+    [ (today - build_days.first).to_i + 1, 1 ].max
+  end
+
   def code_tool?
     CODE.include?(tool)
   end
 
   # Setting up, in order: link Hackatime, then which Hackatime project this is, join the Slack channel, add a repo
   # (or say you'll add it before you ship) and post your idea (or skip it).
-  SETUP_STEPS = %w[hackatime hackatime_project slack repo idea].freeze
+  SETUP_STEPS = %w[hackatime hackatime_project slack repo idea buddy].freeze
   # You're set up once your hours count and you're in the channel; the repo and your idea post can wait.
   REQUIRED_STEPS = SETUP_STEPS.first(3).freeze
 
@@ -78,6 +85,7 @@ class Project < ApplicationRecord
     when "slack" then slack_joined?
     when "repo" then (repo_url.present? && errors[:repo_url].none?) || repo_later?
     when "idea" then idea_posted? || idea_skipped?
+    when "buddy" then buddy.present? || buddy_invited? || buddy_skipped?
     end
   end
 
@@ -90,7 +98,7 @@ class Project < ApplicationRecord
   # while it's only promised for later.
   def step_open?(step)
     SETUP_STEPS.include?(step) && !step_locked?(step) &&
-      (!step_done?(step) || step == "hackatime_project" || (step == "repo" && repo_url.blank?))
+      (!step_done?(step) || step == "hackatime_project" || (step == "repo" && repo_url.blank?) || (step == "buddy" && buddy.nil?))
   end
 
   def required_steps_done
@@ -108,6 +116,32 @@ class Project < ApplicationRecord
   # Hours count once Hackatime knows which project this is.
   def tracking?
     hackatime_linked? && hackatime_projects.any?
+  end
+
+  def pair
+    pair_as_first || pair_as_second
+  end
+
+  # Who you're building alongside, if anyone.
+  def buddy
+    pair&.buddy_of(self)
+  end
+
+  # Your invite link's code (/b/<code>): your first name if it's free, made unique if not. Made the first time
+  # it's asked for.
+  def buddy_code!
+    return buddy_code if buddy_code.present?
+
+    base = user.first_name.to_s.parameterize.presence || "buddy"
+    code = base
+    code = "#{base}-#{SecureRandom.alphanumeric(4).downcase}" while Project.exists?(buddy_code: code)
+    update_column(:buddy_code, code) # just the code: whatever else is mid-edit (and maybe invalid) isn't saved
+    code
+  end
+
+  # Pairs you up with another project, if neither of you has a buddy yet. Returns the pair: saved, or with why not.
+  def pair_with(other)
+    Pair.create(first_project: other, second_project: self, started_on: Date.current)
   end
 
   # Linking Hackatime is yours, not the project's: it's who you are on Hackatime.

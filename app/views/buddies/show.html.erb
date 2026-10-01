@@ -1,0 +1,98 @@
+<% content_for :title, "Buddy · Wrong Tool" %>
+<% buddy = @buddy %>
+
+<%# The Buddy tab: how building with a buddy works and your invite link, or once you're paired, the two of you. %>
+<div class="spreadsheet onboarding project" data-saved>
+  <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+        progress: buddy ? "Pair streak · Week 1" : "No buddy yet", user: current_user %>
+  <%= render "pages/toolbar" %>
+  <%= render "onboarding/formula_bar", name_box: buddy ? "L2" : "A1",
+        formula: buddy ? "=BUDDY(you, #{buddy_name(buddy).downcase})  →  TRUE" : "=BUDDY(you, ?)  →  #N/A" %>
+
+  <main class="project__sheet">
+    <% if buddy %>
+      <div class="buddy-pair">
+        <div class="buddy-pair__main">
+          <header class="buddy-pair__header">
+            <div class="buddy-pair__who">
+              <span class="buddy-card__faces buddy-card__faces--large" aria-hidden="true">
+                <span class="buddy-face" data-you><%= buddy_initial(@project) %></span><span class="buddy-face"><%= buddy_initial(buddy) %></span>
+              </span>
+              <h1 class="project__title">You + <%= buddy_name(buddy) %></h1>
+              <p class="leaderboard__note"><%= @project.title %> · <%= buddy.title %></p>
+            </div>
+            <div class="buddy-pair__streak">
+              <span class="buddy-pair__streak-label">Pair streak</span>
+              <span class="buddy-pair__streak-value">Week 1</span>
+              <span class="buddy-pair__streak-note">Week 1: #PENDING</span>
+            </div>
+          </header>
+          <p class="buddy-pair__soon">Your hours this week, side by side, land here next.</p>
+        </div>
+
+        <aside class="buddy-pair__side">
+          <section class="project__card buddy-card">
+            <div class="buddy-card__head">
+              <span class="buddy-face buddy-face--large" aria-hidden="true"><%= buddy_initial(buddy) %></span>
+              <span class="buddy-card__who">
+                <span class="buddy-card__title"><%= buddy_name(buddy) %></span>
+                <span class="buddy-card__note"><%= buddy.title %> · Day <%= buddy.day_number %></span>
+              </span>
+            </div>
+            <% if (shot = buddy.screenshot).attached? && shot.blob.persisted? %>
+              <%= image_tag url_for(shot), alt: "Screenshot of #{buddy.title}", class: "buddy-card__shot" %>
+            <% end %>
+          </section>
+
+          <section class="project__card buddy-card" aria-labelledby="pair-rewards-title">
+            <h2 class="project__card-title" id="pair-rewards-title">Pair rewards</h2>
+            <% pair_rewards.each do |reward| %>
+              <div class="buddy-reward" data-state="<%= reward[:state] %>">
+                <span class="buddy-reward__text"><span class="buddy-reward__key"><%= reward[:label].upcase %></span><%= reward[:reward] %></span>
+                <span class="buddy-reward__status"><%= reward[:status] == "Earned" ? "TRUE" : reward[:weeks] ? "#{reward[:weeks]} WK LEFT" : "#PENDING" %></span>
+              </div>
+            <% end %>
+            <p class="buddy-card__fine buddy-card__fine--padded">Both of you get these. A pair week counts when you both log <%= pair_weekly_hours %>h.</p>
+          </section>
+        </aside>
+      </div>
+    <% else %>
+      <div class="buddy-invite">
+        <header class="leaderboard__heading">
+          <h1 class="project__title">Build with a buddy</h1>
+          <p class="leaderboard__note">Two people, two different games, one streak. You keep each other going.</p>
+        </header>
+
+        <div class="buddy-rules" role="table" aria-label="How it works">
+          <% [ [ "A", "=AND(you≥#{pair_weekly_hours}h, them≥#{pair_weekly_hours}h)", "Both log #{pair_weekly_hours}h a week", "That's a pair week. Stack them into a pair streak." ],
+               [ "B", "=SWAP(builds)", "Playtest each other", "Once a week, play their build for 5 minutes and leave notes." ],
+               [ "C", "=CARRY(them)", "Cover a bad week", "If they fall short, your extra hours can save the streak. Once a month." ] ].each do |column, formula, title, text| %>
+            <div class="buddy-rules__cell" role="cell">
+              <span class="buddy-rules__column" aria-hidden="true"><%= column %></span>
+              <span class="buddy-rules__formula"><%= formula %></span>
+              <span class="buddy-rules__title"><%= title %></span>
+              <span class="buddy-rules__text"><%= text %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="buddy-invite__ways">
+          <section class="buddy-invite__way">
+            <h2 class="project__section-title">Invite a friend</h2>
+            <p class="project__step-text">They sign up from your link and you're paired. A different tool is better. You'll learn more.</p>
+            <%= render "buddies/invite_link", project: @project, mark_invited: true %>
+          </section>
+          <section class="buddy-invite__way">
+            <h2 class="project__section-title">Match me with someone</h2>
+            <p class="project__step-text">Someone at your pace building in a different tool.</p>
+            <p class="buddy-pair__soon">Matching opens soon. Invite a friend in the meantime.</p>
+          </section>
+        </div>
+
+        <p class="buddy-sticky">Note on A1: rewards only unlock when you both log. A link on its own earns nothing.</p>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "onboarding/tabs", current: :buddy, project_open: true %>
+</div>

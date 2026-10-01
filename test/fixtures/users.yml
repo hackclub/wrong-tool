@@ -6,3 +6,12 @@ orpheus:
   slack_id: U0ORPHEUS
   verification_status: verified
   ysws_eligible: true
+
+ana:
+  hca_id: ident!ana
+  email: ana@hackclub.com
+  name: Ana Lovelace
+  first_name: Ana
+  slack_id: U0ANA
+  verification_status: verified
+  ysws_eligible: true

@@ -62,7 +62,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select ".project__say", "All set. 20 min today starts your streak."
     assert_select ".formula-bar__content", /TRUE/
-    assert_select ".project__setup-summary", /Setup done · 2 optional steps left/
+    assert_select ".project__setup-summary", /Setup done · 3 optional steps left/
     assert_equal [ "1.5 of 10 hrs", "45 min", "Oct 15" ], css_select(".project__goal-value").map(&:text)
     assert_equal [ "5 hrs · shoutout", "10 hrs · handheld", "20 hrs · +$85" ], css_select(".project__track-label").map(&:text)
     assert_select ".project__day-cell[data-state=party]", /Party/

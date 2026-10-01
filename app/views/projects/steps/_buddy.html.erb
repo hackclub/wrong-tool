@@ -1,0 +1,12 @@
+<%# locals: (project:) %>
+<p class="project__step-text">
+  Pair up with a friend. You each build your own game, both log <%= pair_weekly_hours %>h a week, and keep a pair
+  streak. Rewards unlock for both of you.
+</p>
+<%= render "buddies/invite_link", project:, mark_invited: true %>
+<div class="project__step-actions">
+  <% unless project.buddy_skipped? || project.buddy_invited? %>
+    <%= button_to "Skip", project_path, method: :patch, params: { project: { buddy_skipped: true } },
+          class: "onboarding-text-button project__step-button" %>
+  <% end %>
+</div>

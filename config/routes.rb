@@ -10,6 +10,15 @@ Rails.application.routes.draw do
     get :hours
   end
   resource :leaderboard, only: :show
+  resource :buddy, only: :show do
+    # A pomodoro together: start one, see how it's going (polled), and join your buddy's.
+    resource :pomodoro, only: %i[show create], controller: "buddy_pomodoros" do
+      post :join
+    end
+  end
+  # Someone's buddy invite: see who wants to build with you, and accept.
+  get "b/:code" => "buddy_invites#show", as: :buddy_invite
+  post "b/:code" => "buddy_invites#accept"
   get "hall" => "halls#show", as: :hall
 
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.

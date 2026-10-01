@@ -7,6 +7,9 @@ const KEYS = 22
 // Hackatime's checked this often while you're locked in (and whenever you hit refresh).
 const SYNC_EVERY = 3 * 60 * 1000
 const LENGTH_KEY = "wrong-tool:pomodoro-minutes"
+// Looking for a pomodoro your buddy started (on your project page), and who's in once you're in one together.
+const BUDDY_WATCH_EVERY = 20 * 1000
+const TOGETHER_POLL_EVERY = 10 * 1000
 
 // A pomodoro: lock in for as long as you picked, over the whole page, with Wrong Tool Radio playing and Clippy at
 // the keyboard, typing along while you work, idling when you pause and putting his feet up on a break. Your
@@ -15,8 +18,8 @@ const LENGTH_KEY = "wrong-tool:pomodoro-minutes"
 export default class extends Controller {
   static targets = [ "overlay", "label", "title", "clock", "bar", "note", "toggle", "toggleLabel", "end", "live", "done",
                      "tracked", "sync", "synced", "clippy", "sprite", "keys", "noteLeft", "noteRight", "trackTag",
-                     "trackName", "trackNumber", "equalizer", "music", "length" ]
-  static values = { title: String, hoursUrl: String, tracks: Object, sounds: Object }
+                     "trackName", "trackNumber", "equalizer", "music", "length", "together", "buddyLive", "buddyLiveText" ]
+  static values = { title: String, hoursUrl: String, tracks: Object, sounds: Object, buddyUrl: String, buddyName: String }
 
   connect() {
     this.clippy = new Clippy(this.spriteTarget, this.soundsValue)
@@ -26,11 +29,14 @@ export default class extends Controller {
     const saved = read(LENGTH_KEY)
     const remembered = this.lengthTargets.find((input) => input.value === saved)
     if (remembered) remembered.checked = true
+    // With a buddy, keep an eye out for a pomodoro they start, to join.
+    if (this.buddyUrlValue) this.watcher = setInterval(() => this.#checkBuddy(), BUDDY_WATCH_EVERY)
   }
 
   disconnect() {
     this.#stop()
     this.clippy.stop()
+    clearInterval(this.watcher)
   }
 
   get minutes() {
@@ -41,7 +47,34 @@ export default class extends Controller {
     write(LENGTH_KEY, String(this.minutes))
   }
 
+  // On your own.
   start() {
+    this.together = false
+    this.#open()
+  }
+
+  // A pomodoro your buddy can join: started on the server, so you both count down to the same end.
+  async startWithBuddy() {
+    const status = await this.#buddyRequest("POST", this.buddyUrlValue, { minutes: this.minutes })
+    if (status?.live) this.#openTogether(status)
+  }
+
+  async joinBuddy() {
+    const status = await this.#buddyRequest("POST", `${this.buddyUrlValue}/join`)
+    if (status?.live) this.#openTogether(status)
+    else this.buddyLiveTarget.hidden = true
+  }
+
+  #openTogether(status) {
+    this.together = true
+    this.buddyLiveTarget.hidden = true
+    const left = Math.max(1, Math.round((Date.parse(status.ends_at) - Date.parse(status.now)) / 1000))
+    this.#open({ left, total: status.minutes * 60 })
+    this.#showTogether(status)
+    this.togetherPoll = setInterval(() => this.#checkBuddy(), TOGETHER_POLL_EVERY)
+  }
+
+  #open(timing) {
     this.#stop()
     this.overlayTarget.hidden = false
     try {
@@ -53,7 +86,7 @@ export default class extends Controller {
       this.radio = null // no Web Audio: the timer still works
     }
     this.session = { round: 1, built: 0 }
-    this.#round()
+    this.#round(timing)
     this.ticker = setInterval(() => this.#tick(), 1000)
     this.syncer = setInterval(() => this.syncHours(), SYNC_EVERY)
     this.syncHours()
@@ -74,6 +107,7 @@ export default class extends Controller {
   }
 
   again() {
+    if (this.together) return this.startWithBuddy()
     this.session.built = 0
     this.#round()
   }
@@ -127,12 +161,13 @@ export default class extends Controller {
     }
   }
 
-  // A round of focus, as long as you picked. The first is round 1; every one after counts up.
-  #round() {
+  // A round of focus, as long as you picked (or what's left of one with your buddy). The first is round 1; every one
+  // after counts up.
+  #round({ left, total } = {}) {
     const seconds = this.minutes * 60
     if (this.started) this.session.round += 1
     this.started = true
-    Object.assign(this.session, { phase: "focus", left: seconds, total: seconds, running: true })
+    Object.assign(this.session, { phase: "focus", left: left ?? seconds, total: total ?? seconds, running: true })
     this.#feel()
     this.#render()
   }
@@ -188,7 +223,8 @@ export default class extends Controller {
     const playing = Boolean(this.radio?.playing)
     if (this.radio) this.track = this.radio.track
 
-    this.labelTarget.textContent = done ? "Pomodoro done" : onBreak ? "Break" : `${running ? "Locked in" : "Paused"} · round ${round}`
+    const lockedIn = this.together ? `Locked in with ${this.buddyNameValue}` : "Locked in"
+    this.labelTarget.textContent = done ? "Pomodoro done" : onBreak ? "Break" : `${running ? lockedIn : "Paused"} · round ${round}`
     this.titleTarget.textContent = done ? (built < 60 ? "Short one. Every minute counts." : `Nice. ${Math.round(built / 60)} min of building.`)
       : onBreak ? "Stand up. Drink some water." : this.titleValue
     this.clockTarget.textContent = clock(done ? built : left)
@@ -221,9 +257,43 @@ export default class extends Controller {
     this.syncedTarget.textContent = minutes < 1 ? "just now" : `${minutes} min ago`
   }
 
+  // How your buddy's pomodoro is going: whether there's one to join, or (in one together) whether they're in.
+  async #checkBuddy() {
+    const status = await this.#buddyRequest("GET", this.buddyUrlValue)
+    if (!status) return
+    if (this.together && !this.overlayTarget.hidden) return this.#showTogether(status)
+
+    const waiting = status.live && !status.you_in
+    this.buddyLiveTarget.hidden = !waiting
+    if (waiting) this.buddyLiveTextTarget.textContent = `${status.buddy} started a ${status.minutes}-min pomodoro. Join in.`
+  }
+
+  #showTogether(status) {
+    const name = status.buddy || this.buddyNameValue
+    this.togetherTarget.hidden = false
+    this.togetherTarget.toggleAttribute("data-in", Boolean(status.live && status.buddy_in))
+    this.togetherTarget.textContent = !status.live ? `with ${name} · done` : status.buddy_in ? `with ${name} · in` : `waiting for ${name}`
+  }
+
+  async #buddyRequest(method, url, body) {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+                   "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content },
+        body: body ? JSON.stringify(body) : undefined
+      })
+      return await response.json()
+    } catch {
+      return null
+    }
+  }
+
   #stop() {
     clearInterval(this.ticker)
     clearInterval(this.syncer)
+    clearInterval(this.togetherPoll)
+    if (this.hasTogetherTarget) this.togetherTarget.hidden = true
     cancelAnimationFrame(this.frame)
     this.radio?.close()
     this.radio = null

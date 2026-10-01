@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_181000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -39,6 +39,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_181000) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "buddy_pomodoros", force: :cascade do |t|
+    t.integer "pair_id", null: false
+    t.integer "started_by_id", null: false
+    t.integer "minutes", null: false
+    t.datetime "started_at", null: false
+    t.datetime "joined_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pair_id"], name: "index_buddy_pomodoros_on_pair_id"
+    t.index ["started_by_id"], name: "index_buddy_pomodoros_on_started_by_id"
+  end
+
+  create_table "pairs", force: :cascade do |t|
+    t.integer "first_project_id", null: false
+    t.integer "second_project_id", null: false
+    t.date "started_on", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["first_project_id"], name: "index_pairs_on_first_project_id", unique: true
+    t.index ["second_project_id"], name: "index_pairs_on_second_project_id", unique: true
+  end
+
   create_table "projects", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "tool", null: false
@@ -58,6 +80,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_181000) do
     t.boolean "idea_skipped", default: false, null: false
     t.boolean "party_queued", default: false, null: false
     t.string "name"
+    t.string "buddy_code"
+    t.boolean "buddy_invited", default: false, null: false
+    t.boolean "buddy_skipped", default: false, null: false
+    t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
   end
 
@@ -93,6 +119,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_181000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "buddy_pomodoros", "pairs"
+  add_foreign_key "buddy_pomodoros", "projects", column: "started_by_id"
+  add_foreign_key "pairs", "projects", column: "first_project_id"
+  add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
   add_foreign_key "ships", "projects"
 end

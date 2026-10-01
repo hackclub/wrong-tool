@@ -126,20 +126,32 @@
                 <h2 class="project__section-title"><%= project_today(@project) %></h2>
                 <p class="project__today-note">Your first 20 min starts your streak.</p>
               </div>
+              <%# How long to lock in for, then start: on your own, or with your buddy. %>
               <div class="project__pomodoro">
                 <div class="project__lengths" role="radiogroup" aria-label="Lock in for">
-                  <span class="project__lengths-label">Lock in for</span>
                   <% [ 15, 25, 45, 60, 90 ].each do |minutes| %>
                     <label class="project__length">
                       <input type="radio" name="pomodoro_minutes" value="<%= minutes %>" class="visually-hidden"
                              data-focus-target="length" data-action="focus#pickLength" <%= "checked" if minutes == 25 %>>
-                      <%= minutes %> min
+                      <%= minutes %>
                     </label>
                   <% end %>
+                  <span class="project__lengths-unit">min</span>
                 </div>
-                <button type="button" class="onboarding-button onboarding-button--primary project__start" data-action="focus#start">
-                  Start pomodoro
-                </button>
+                <div class="project__start-buttons">
+                  <% if (buddy = @project.buddy) %>
+                    <button type="button" class="project__start-buddy" data-action="focus#startWithBuddy">
+                      <span class="buddy-card__faces" aria-hidden="true">
+                        <span class="buddy-face" data-you><%= buddy_initial(@project) %></span><span class="buddy-face"><%= buddy_initial(buddy) %></span>
+                      </span>
+                      With <%= buddy_name(buddy) %>
+                    </button>
+                  <% end %>
+                  <button type="button" class="onboarding-button onboarding-button--primary project__start" data-action="focus#start">
+                    <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="M320-200v-560l440 280-440 280Z"/></svg>
+                    Start pomodoro
+                  </button>
+                </div>
               </div>
             </section>
           <% end %>
@@ -163,77 +175,93 @@
             </div>
             <p class="project__say" role="status"><%= project_clippy_says(@project) %></p>
           </div>
-          <section class="project__streak" aria-label="Streak">
-            <p class="project__streak-count">
-              <span class="project__streak-number" <%= "data-going" if @project.streak.positive? %>><%= @project.streak %></span>
-              <span class="project__streak-label">day streak</span>
-            </p>
-            <ol class="project__week" aria-label="This week">
-              <% project_streak_week.each do |day| %>
-                <li class="project__week-day" <%= "data-today" if day[:today] %>>
-                  <span class="project__week-letter"><%= day[:letter] %></span><span class="project__week-cell"></span>
-                </li>
-              <% end %>
-            </ol>
-            <p class="project__streak-note">Build 20 min today to start it. 20 min is all a day needs.</p>
-            <ul class="project__rewards">
-              <% project_rewards(@project).each do |reward| %>
-                <li class="project__reward" data-state="<%= reward[:state] %>">
-                  <span class="project__reward-day">Day <%= reward[:day] %></span>
-                  <span class="project__reward-label"><%= reward[:label] %></span>
-                  <span class="project__reward-status"><%= reward[:status] %></span>
-                </li>
-              <% end %>
-            </ul>
-          </section>
-
-          <section class="project__card project__events" aria-labelledby="project-events-title">
-            <h2 class="project__card-title" id="project-events-title">Events</h2>
-            <div class="project__event" data-kind="party">
-              <span class="project__event-date"><%= project_event_date(Program::PLAY_PARTY_ON) %></span>
-              <div class="project__event-text">
-                <h3 class="project__event-title">Play party</h3>
-                <p class="project__event-note"><%= Program::PLAY_PARTY_ON.strftime("%A") %> at 7pm · on stream</p>
-                <p class="project__event-note">
-                  <%= @project.party_queued? ? "We'll play your game live." : "We play everyone's game live. Have something running by then." %>
-                </p>
-                <% if @project.party_queued? %>
-                  <span class="project__party-queued">
-                    <%= inline_svg_tag "icons/onboarding/check-circle.svg", class: "icon", aria_hidden: true %>In the queue
-                  </span>
-                <% else %>
-                  <%= button_to "Add to queue", project_path, method: :patch, params: { project: { party_queued: true } },
-                        class: "project__event-button" %>
+          <%# The rest, one card open at a time: the others fold into a row each, with what's in them at a glance. %>
+          <% sections = project_side_sections(@project) %>
+          <div class="project__sections" data-controller="side-sections"
+               data-side-sections-urgent-value="<%= sections[:buddy][:dot] %>">
+            <%= render layout: "projects/side_section", locals: sections[:streak] do %>
+            <section class="project__streak" aria-label="Streak">
+              <p class="project__streak-count">
+                <span class="project__streak-number" <%= "data-going" if @project.streak.positive? %>><%= @project.streak %></span>
+                <span class="project__streak-label">day streak</span>
+              </p>
+              <ol class="project__week" aria-label="This week">
+                <% project_streak_week.each do |day| %>
+                  <li class="project__week-day" <%= "data-today" if day[:today] %>>
+                    <span class="project__week-letter"><%= day[:letter] %></span><span class="project__week-cell"></span>
+                  </li>
                 <% end %>
-              </div>
-            </div>
-            <div class="project__event" data-kind="ship">
-              <span class="project__event-date"><%= project_event_date(@project.finish_on) %></span>
-              <div class="project__event-text">
-                <h3 class="project__event-title">Ship day</h3>
-                <p class="project__event-note">Your deadline. Hit Ship once it's playable.</p>
-              </div>
-            </div>
-          </section>
+              </ol>
+              <p class="project__streak-note">Build 20 min today to start it. 20 min is all a day needs.</p>
+              <ul class="project__rewards">
+                <% project_rewards(@project).each do |reward| %>
+                  <li class="project__reward" data-state="<%= reward[:state] %>">
+                    <span class="project__reward-day">Day <%= reward[:day] %></span>
+                    <span class="project__reward-label"><%= reward[:label] %></span>
+                    <span class="project__reward-status"><%= reward[:status] %></span>
+                  </li>
+                <% end %>
+              </ul>
+            </section>
+            <% end %>
 
-          <section class="project__card project__stairs" aria-labelledby="project-stairs-title">
-            <div class="project__card-head">
-              <h2 class="project__card-title" id="project-stairs-title">Leaderboard</h2>
-              <%= link_to "See all", leaderboard_path, class: "project__card-link" %>
-            </div>
-            <% stairs, stairs_note = leaderboard_stairs(@project) %>
-            <ol class="project__stairs-places">
-              <% stairs.each do |place| %>
-                <li class="project__stair" data-place="<%= place[:place] %>" <%= "data-you" if place[:you] %>>
-                  <span class="leaderboard__avatar" aria-hidden="true"><%= place[:initial] %></span>
-                  <span class="project__stair-name"><%= place[:name] %></span>
-                  <span class="project__stair-hours"><%= place[:hours] %>h</span>
-                  <span class="project__stair-step"><%= place[:label] %></span>
-                </li>
-              <% end %>
-            </ol>
-            <p class="project__stairs-note"><%= stairs_note %></p>
-          </section>
+
+            <%= render layout: "projects/side_section", locals: sections[:buddy] do %>
+              <%= render "buddies/card", project: @project %>
+            <% end %>
+
+            <%= render layout: "projects/side_section", locals: sections[:events] do %>
+            <section class="project__card project__events" aria-labelledby="project-events-title">
+              <h2 class="project__card-title" id="project-events-title">Events</h2>
+              <div class="project__event" data-kind="party">
+                <span class="project__event-date"><%= project_event_date(Program::PLAY_PARTY_ON) %></span>
+                <div class="project__event-text">
+                  <h3 class="project__event-title">Play party</h3>
+                  <p class="project__event-note"><%= Program::PLAY_PARTY_ON.strftime("%A") %> at 7pm · on stream</p>
+                  <p class="project__event-note">
+                    <%= @project.party_queued? ? "We'll play your game live." : "We play everyone's game live. Have something running by then." %>
+                  </p>
+                  <% if @project.party_queued? %>
+                    <span class="project__party-queued">
+                      <%= inline_svg_tag "icons/onboarding/check-circle.svg", class: "icon", aria_hidden: true %>In the queue
+                    </span>
+                  <% else %>
+                    <%= button_to "Add to queue", project_path, method: :patch, params: { project: { party_queued: true } },
+                          class: "project__event-button" %>
+                  <% end %>
+                </div>
+              </div>
+              <div class="project__event" data-kind="ship">
+                <span class="project__event-date"><%= project_event_date(@project.finish_on) %></span>
+                <div class="project__event-text">
+                  <h3 class="project__event-title">Ship day</h3>
+                  <p class="project__event-note">Your deadline. Hit Ship once it's playable.</p>
+                </div>
+              </div>
+            </section>
+            <% end %>
+
+            <%= render layout: "projects/side_section", locals: sections[:leaderboard] do %>
+            <section class="project__card project__stairs" aria-labelledby="project-stairs-title">
+              <div class="project__card-head">
+                <h2 class="project__card-title" id="project-stairs-title">Leaderboard</h2>
+                <%= link_to "See all", leaderboard_path, class: "project__card-link" %>
+              </div>
+              <% stairs, stairs_note = leaderboard_stairs(@project) %>
+              <ol class="project__stairs-places">
+                <% stairs.each do |place| %>
+                  <li class="project__stair" data-place="<%= place[:place] %>" <%= "data-you" if place[:you] %>>
+                    <span class="leaderboard__avatar" aria-hidden="true"><%= place[:initial] %></span>
+                    <span class="project__stair-name"><%= place[:name] %></span>
+                    <span class="project__stair-hours"><%= place[:hours] %>h</span>
+                    <span class="project__stair-step"><%= place[:label] %></span>
+                  </li>
+                <% end %>
+              </ol>
+              <p class="project__stairs-note"><%= stairs_note %></p>
+            </section>
+            <% end %>
+          </div>
         <% else %>
           <p class="project__say" role="status"><%= project_clippy_says(@project) %></p>
           <div class="project__clippy" data-project-target="clippy">

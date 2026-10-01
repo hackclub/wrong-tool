@@ -28,12 +28,17 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".formula-bar__content", text: "→ TRUE"
     assert_selector ".project__say", text: "All set. 20 min today starts your streak."
     assert_selector ".project__streak-number", text: "0"
-    find(".project__setup-summary", text: "Setup done · 2 optional steps left").click
+    find(".project__setup-summary", text: "Setup done · 3 optional steps left").click
     click_on "Later"
-    find(".project__setup-summary", text: "Setup done · 1 optional step left").click
+    find(".project__setup-summary", text: "Setup done · 2 optional steps left").click
     click_on "Post"
+    find(".project__setup-summary", text: "Setup done · 1 optional step left").click
+    within(".project__step[data-state=current]") { click_on "Skip" }
     assert_selector ".project__setup-summary", exact_text: "Setup done"
 
+    assert_selector ".side-section[open][data-section=streak]"
+    find(".side-section__row", text: "Play party").click
+    assert_no_selector ".side-section[open][data-section=streak]"
     click_on "Add to queue"
     assert_selector ".project__party-queued", text: "In the queue"
   end
@@ -88,6 +93,7 @@ class ProjectTest < ApplicationSystemTestCase
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
                                idea_posted: true)
     sign_in_and_open_project
+    find(".side-section__row", text: "Leaderboard").click
     click_on "See all"
 
     assert_current_path leaderboard_path
@@ -133,8 +139,8 @@ class ProjectTest < ApplicationSystemTestCase
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
     sign_in_and_open_project
-    assert_checked_field "25 min", visible: :all
-    find(".project__length", text: "15 min").click
+    assert_checked_field "25", visible: :all
+    find(".project__length", text: "15").click
     click_on "Start pomodoro"
 
     assert_selector ".focus__label", text: "LOCKED IN · ROUND 1"
@@ -166,7 +172,35 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".project__title", text: "A rhythm game in Spreadsheet"
 
     visit project_path
-    assert_checked_field "15 min", visible: :all # remembered
+    assert_checked_field "15", visible: :all # remembered
+  end
+
+  test "a pomodoro with your buddy: one starts, the other joins, and you count down together" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    users(:ana).update!(hackatime_uid: "1003", hackatime_access_token: "token-ana")
+    projects(:ana).update!(hackatime_projects: [ "pong" ], slack_joined: true)
+    projects(:orpheus).pair_with(projects(:ana))
+
+    sign_in_and_open_project
+    find(".project__length", text: "45").click
+    click_on "With Ana"
+    assert_selector ".focus__label", text: "LOCKED IN WITH ANA · ROUND 1"
+    assert_selector ".focus__together", text: "waiting for Ana"
+    assert_selector ".focus__clock", text: /\A(45:00|44:5\d)\z/
+
+    using_session(:ana) do
+      mock_hack_club_auth(uid: users(:ana).hca_id, slack_id: "U0ANA", first_name: "Ana", name: "Ana Lovelace")
+      visit onboarding_path
+      execute_script('const f=document.createElement("form");f.method="post";f.action="/auth/hackclub";document.body.append(f);f.submit()')
+      assert_current_path onboarding_path
+      visit project_path
+      assert_selector ".project__buddy-live", text: "Orpheus started a 45-min pomodoro. Join in."
+      click_on "Join"
+      assert_selector ".focus__label", text: "LOCKED IN WITH ORPHEUS · ROUND 1"
+      assert_selector ".focus__together", text: "with Orpheus · in"
+      assert_selector ".focus__clock", text: /\A44:[0-5]\d\z/
+    end
   end
 
   test "the avatar opens your account, where you can log out" do
@@ -181,7 +215,7 @@ class ProjectTest < ApplicationSystemTestCase
   test "once you're done with onboarding, its tab goes" do
     sign_in_and_open_project
     assert_no_selector ".sheet-tab", text: "Onboarding"
-    assert_equal [ "My project", "Leaderboard", "Hall of Wrong" ], all(".sheet-tab").map(&:text)
+    assert_equal [ "My project", "Buddy", "Leaderboard", "Hall of Wrong" ], all(".sheet-tab").map(&:text)
 
     visit onboarding_path
     assert_selector ".sheet-tab[aria-current=page]", text: "Onboarding"

@@ -22,6 +22,10 @@
     My project<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
   <% end %>
   <% if current != :onboarding && project_open %>
+    <%= link_to buddy_path, class: "sheet-tab", aria: { current: ("page" if current == :buddy) } do %>
+      Buddy<% if current_user&.project&.buddy %><span class="sheet-tab__count" aria-label="1 buddy">1</span><% end %>
+      <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
     <%= link_to leaderboard_path, class: "sheet-tab", aria: { current: ("page" if current == :leaderboard) } do %>
       Leaderboard<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>

@@ -41,9 +41,9 @@ class ProjectTest < ActiveSupport::TestCase
 
     project.slack_joined = true
     assert project.set_up?
-    assert_equal 2, project.optional_steps_left
+    assert_equal 3, project.optional_steps_left
 
-    project.assign_attributes(repo_later: true, idea_skipped: true)
+    project.assign_attributes(repo_later: true, idea_skipped: true, buddy_skipped: true)
     assert_equal 0, project.optional_steps_left
     assert project.step_open?("repo"), "a repo put off till later can still be added"
     assert_not project.step_open?("idea")

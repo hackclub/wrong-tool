@@ -829,7 +829,7 @@
 
   .project__today {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 16px;
     padding-block-start: 20px;
     border-block-start: 1px solid var(--border-grid);
@@ -848,61 +848,93 @@
     color: var(--text-secondary);
   }
 
-  /* A pomodoro: how long to lock in for, then start. */
+  /* A pomodoro: a segmented picker for how long, then start (on your own, or with your buddy). */
   .project__pomodoro {
-    flex: none;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .project__lengths {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-  }
-
-  .project__lengths-label {
-    margin-inline-end: 2px;
-    font: 13px var(--font-cell);
-    color: var(--text-secondary);
+    padding: 3px;
+    border-radius: 20px;
+    background: var(--grey-100);
   }
 
   .project__length {
-    block-size: 30px;
+    min-inline-size: 40px;
+    block-size: 34px;
     display: grid;
     place-items: center;
-    padding: 0 12px;
-    border: 1px solid var(--border-header);
-    border-radius: 15px;
-    background: var(--white);
-    font: 500 13px var(--font-chrome);
+    padding: 0 10px;
+    border-radius: 17px;
+    font: 500 14px var(--font-chrome);
     color: var(--text-secondary);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+
+    &:has(:checked) {
+      background: var(--white);
+      box-shadow: 0 1px 2px rgb(60 64 67 / 25%);
+      color: var(--blue-700);
+    }
+
+    &:has(:focus-visible) {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 1px;
+    }
+  }
+
+  .project__lengths-unit {
+    padding: 0 12px 0 6px;
+    font: 13px var(--font-cell);
+    color: var(--grey-600);
+  }
+
+  .project__start-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .project__start-buddy {
+    block-size: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px 0 12px;
+    border: 1px solid var(--border-control);
+    border-radius: 22px;
+    background: var(--white);
+    font: 500 15px var(--font-chrome);
+    color: var(--text-primary);
     cursor: pointer;
 
     &:hover {
       background: #f1f4f9;
     }
 
-    &:has(:checked) {
-      border-color: var(--blue-700);
-      background: var(--blue-50);
-      color: var(--blue-700);
-    }
-
-    &:has(:focus-visible) {
-      outline: 2px solid var(--blue-600);
-      outline-offset: 2px;
+    .buddy-face {
+      inline-size: 28px;
+      block-size: 28px;
+      font-size: 12px;
     }
   }
 
   .project__start {
-    block-size: 48px;
-    padding: 0 24px;
-    border-radius: 24px;
+    --icon-size: 22px;
+
+    block-size: 44px;
+    padding: 0 22px 0 16px;
+    border-radius: 22px;
+    font-size: 15px;
   }
 
   /* Clippy, your streak and the leaderboard */
@@ -1440,12 +1472,118 @@
       align-items: stretch;
     }
 
-    .project__pomodoro {
-      align-items: stretch;
+    .project__start-buttons {
+      flex: 1 0 100%;
+
+      > * {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+/* The sidebar once you're set up: one card open, the rest folded into rows. */
+@layer sections {
+  .project__sections {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .side-section {
+    display: flex;
+    flex-direction: column;
+
+    &[open] > .side-section__row {
+      display: none;
     }
 
-    .project__lengths {
-      justify-content: flex-start;
+    > .project__streak,
+    > .project__card {
+      align-self: stretch;
     }
+  }
+
+  .side-section__row {
+    --icon-size: 20px;
+
+    block-size: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px 0 14px;
+    border: 1px solid var(--border-grid);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover {
+      background: #f1f4f9;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-600);
+      outline-offset: 2px;
+    }
+  }
+
+  .side-section__icon {
+    flex: none;
+    color: var(--icon-color);
+  }
+
+  .side-section__label {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    font: 14px var(--font-cell);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .side-section__dot {
+    flex: none;
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  .side-section__value {
+    flex: none;
+    font: 600 13px var(--font-mono);
+    color: var(--text-primary);
+
+    &[data-tone="good"] {
+      color: var(--green);
+    }
+
+    &[data-tone="quiet"] {
+      color: var(--grey-600);
+    }
+
+    &[data-tone="pending"] {
+      color: #b06000;
+    }
+
+    &[data-tone="link"] {
+      color: var(--blue-700);
+    }
+
+    &[data-tone="party"] {
+      color: var(--red-800);
+    }
+  }
+
+  .side-section__chevron {
+    flex: none;
+    color: var(--grey-600);
   }
 }

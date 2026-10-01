@@ -23,7 +23,7 @@ class ProjectsController < ApplicationController
 
     project = current_user.project || current_user.build_project
     if project.update(pledge_params.merge(signed_on: Date.current))
-      render json: { location: project_path }, status: :created
+      render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path }, status: :created
     else
       render json: { errors: project.errors.full_messages }, status: :unprocessable_entity
     end
@@ -44,6 +44,13 @@ class ProjectsController < ApplicationController
   end
 
   private
+    # Someone followed a buddy invite before they had a project (BuddyInvitesController): now they do, pair them.
+    def accept_pending_buddy_invite(project)
+      code = session.delete(:buddy_code)
+      inviter = Project.find_by(buddy_code: code) if code
+      inviter && project.pair_with(inviter).persisted?
+    end
+
     def require_project
       @project = current_user&.project
       redirect_to onboarding_path unless @project
@@ -61,6 +68,6 @@ class ProjectsController < ApplicationController
 
     def setup_params
       params.expect(project: [ :name, :screenshot, :slack_joined, :repo_url, :repo_later, :idea_posted, :idea_skipped,
-                               :pace_minutes, :party_queued, hackatime_project_names: [] ])
+                               :pace_minutes, :party_queued, :buddy_invited, :buddy_skipped, hackatime_project_names: [] ])
     end
 end

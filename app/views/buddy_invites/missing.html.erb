@@ -1,0 +1,16 @@
+<% content_for :title, "Invite not found · Wrong Tool" %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "B4", formula: "=BUDDY(?, you)  →  #REF!" %>
+  <main class="project__sheet">
+    <div class="buddy-invited">
+      <section class="buddy-invited__card">
+        <h1 class="buddy-invited__title">That invite link doesn't go anywhere.</h1>
+        <p class="leaderboard__note">Ask your friend for theirs again, or start your own project and invite them.</p>
+        <div class="buddy-invited__actions">
+          <%= link_to "Start building", onboarding_path, class: "onboarding-button onboarding-button--primary project__step-button" %>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>

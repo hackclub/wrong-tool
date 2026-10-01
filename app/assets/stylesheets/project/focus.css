@@ -83,6 +83,39 @@
     }
   }
 
+  /* Locked in together: whether your buddy's in yet. */
+  .focus__together {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: 8px;
+    padding: 3px 10px;
+    border: 1px solid var(--focus-border);
+    border-radius: 12px;
+    font: 500 12px var(--font-chrome);
+    color: var(--focus-muted);
+
+    &::before {
+      content: "";
+      inline-size: 7px;
+      block-size: 7px;
+      border-radius: 50%;
+      background: #b06000;
+    }
+
+    &[data-in] {
+      color: var(--focus-text);
+
+      &::before {
+        background: #34a853;
+      }
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
   .focus__synced {
     font: 12px var(--font-chrome);
     color: var(--focus-muted);

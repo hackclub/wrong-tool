@@ -212,6 +212,26 @@ module ProjectsHelper
     [ places, note ]
   end
 
+  # The sidebar's cards once you're set up, as the rows they fold into: your streak, your buddy, the play party and
+  # where you are on the leaderboard. Your streak's open, unless your buddy needs you (a pomodoro to join).
+  def project_side_sections(project)
+    buddy = project.buddy
+    live = project.pair&.live_pomodoro
+    buddy_waiting = live.present? && !live.in?(project)
+    rank = leaderboard(project).find { |row| row[:you] }[:rank]
+    sections = {
+      streak: { icon: "local-fire-department", label: "Day streak",
+                value: project.streak.positive? ? pluralize(project.streak, "day") : "Not yet", tone: project.streak.positive? ? "good" : "quiet" },
+      buddy: { icon: "group", label: buddy ? "You + #{buddy_name(buddy)}" : "Buddy",
+               value: buddy ? "Week 1" : project.buddy_invited? ? "Pending" : "Invite",
+               tone: buddy ? nil : project.buddy_invited? ? "pending" : "link", dot: buddy_waiting },
+      events: { icon: "event", label: "Play party", value: project_date(Program::PLAY_PARTY_ON), tone: "party" },
+      leaderboard: { icon: "leaderboard", label: "Leaderboard", value: "##{rank}" }
+    }
+    sections[buddy_waiting ? :buddy : :streak][:open] = true
+    sections.to_h { |key, section| [ key, section.merge(key:) ] }
+  end
+
   # Every wrong tool, the games shipped in it, and who's building one. The tools onboarding offers are always here
   # (even with nothing in them yet), with any others people are building in.
   def hall_of_wrong(you: nil)
@@ -260,6 +280,12 @@ module ProjectsHelper
         if project.idea_posted? then [ "Idea posted" ]
         elsif done then [ "Idea post skipped" ]
         else [ "Post your idea in #wrong-tool", "optional" ]
+        end
+      when "buddy"
+        if (buddy = project.buddy) then [ "Paired with #{buddy_name(buddy)}" ]
+        elsif project.buddy_invited? then [ "Buddy invite sent", "you're paired once they sign up" ]
+        elsif done then [ "Buddy skipped", "you can pair up any time" ]
+        else [ "Bring a buddy", "optional" ]
         end
       end
     end

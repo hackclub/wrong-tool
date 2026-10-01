@@ -7,3 +7,14 @@ orpheus:
   pace_minutes: 45
   build_time: evening
   signed_on: 2026-09-30
+
+ana:
+  user: ana
+  tool: figma
+  tool_name: Figma
+  idea: pong
+  prize: rg35xx
+  pace_minutes: 20
+  build_time: after school
+  signed_on: 2026-09-30
+  buddy_code: ana
