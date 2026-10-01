@@ -865,7 +865,9 @@
     background: var(--grey-100);
   }
 
+  /* Positioned, so its hidden radio sits right here (focusing it doesn't scroll anything). */
   .project__length {
+    position: relative;
     min-inline-size: 40px;
     block-size: 34px;
     display: grid;

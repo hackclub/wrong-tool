@@ -192,6 +192,7 @@
   }
 
   .ship__shot {
+    position: relative;
     block-size: 248px;
     display: grid;
     place-items: center;

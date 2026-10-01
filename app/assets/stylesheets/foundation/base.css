@@ -23,10 +23,12 @@
 }
 
 @layer base {
+  /* The page itself never scrolls (each sheet scrolls inside it). `clip`, not `hidden`: a hidden page still scrolls
+     when something focuses an element out of view, and takes the menus with it. */
   html,
   body {
     block-size: 100%;
-    overflow: hidden;
+    overflow: clip;
   }
 
   body {

@@ -175,6 +175,19 @@ class ProjectTest < ApplicationSystemTestCase
     assert_checked_field "15", visible: :all # remembered
   end
 
+  test "picking a pomodoro length with the sheet scrolled doesn't scroll the menus away" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    sign_in_and_open_project
+    page.current_window.resize_to(1280, 600)
+    execute_script("document.querySelector('.project__sheet').scrollTop = 10000")
+    find(".project__length", text: "60").click
+
+    assert_checked_field "60", visible: :all
+    assert_equal [ 0, 0 ], evaluate_script("[document.scrollingElement.scrollTop, document.body.scrollTop]")
+    assert_equal 0, evaluate_script("Math.round(document.querySelector('.app-bar').getBoundingClientRect().top)")
+  end
+
   test "a pomodoro with your buddy: one starts, the other joins, and you count down together" do
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
