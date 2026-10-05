@@ -17,6 +17,11 @@ class BuddyInvitesController < ApplicationController
 
     pair = project.pair_with(@inviter)
     if pair.persisted?
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "buddy_paired"
+      ) if Rails.configuration.x.posthog_configured
+
       flash[:clippy] = "congratulate"
       redirect_to buddy_path
     else

@@ -5,6 +5,20 @@ class SessionsController < ApplicationController
     return_to = safe_return_path(request.env["omniauth.origin"])
     reset_session
     session[:user_id] = user.id
+
+    if Rails.configuration.x.posthog_configured
+      PostHog.identify(
+        distinct_id: user.posthog_distinct_id,
+        properties: user.posthog_properties
+      )
+
+      PostHog.capture(
+        distinct_id: user.posthog_distinct_id,
+        event: "user_logged_in",
+        properties: { login_method: "hack_club_oauth" }
+      )
+    end
+
     redirect_to return_to || onboarding_path
   end
 
@@ -17,6 +31,13 @@ class SessionsController < ApplicationController
   end
 
   def destroy
+    if current_user && Rails.configuration.x.posthog_configured
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "user_logged_out"
+      )
+    end
+
     reset_session
     redirect_to root_path
   end

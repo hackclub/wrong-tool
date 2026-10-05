@@ -11,6 +11,11 @@ class ShipsController < ApplicationController
 
     @ship = @project.ship!(ship_params)
     if @ship.persisted?
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "project_shipped"
+      ) if Rails.configuration.x.posthog_configured
+
       flash[:clippy] = "congratulate"
       redirect_to project_ship_path
     else

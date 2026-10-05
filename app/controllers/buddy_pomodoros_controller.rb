@@ -8,8 +8,17 @@ class BuddyPomodorosController < ApplicationController
   end
 
   def create
-    pomodoro = @pair.live_pomodoro || @pair.pomodoros.create!(started_by: @project, minutes: params.expect(:minutes).to_i,
-                                                                started_at: Time.current)
+    pomodoro = @pair.live_pomodoro
+    unless pomodoro
+      pomodoro = @pair.pomodoros.create!(started_by: @project, minutes: params.expect(:minutes).to_i,
+                                         started_at: Time.current)
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "pomodoro_started",
+        properties: { minutes: pomodoro.minutes }
+      ) if Rails.configuration.x.posthog_configured
+    end
+
     render json: status_of(pomodoro), status: :created
   rescue ActiveRecord::RecordInvalid => error
     render json: { error: error.record.errors.full_messages.first }, status: :unprocessable_entity
@@ -19,7 +28,15 @@ class BuddyPomodorosController < ApplicationController
     pomodoro = @pair.live_pomodoro
     return render json: status_of(nil), status: :not_found unless pomodoro
 
-    pomodoro.update!(joined_at: Time.current) if pomodoro.started_by != @project && pomodoro.joined_at.nil?
+    if pomodoro.started_by != @project && pomodoro.joined_at.nil?
+      pomodoro.update!(joined_at: Time.current)
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "pomodoro_joined",
+        properties: { minutes: pomodoro.minutes }
+      ) if Rails.configuration.x.posthog_configured
+    end
+
     render json: status_of(pomodoro)
   end
 

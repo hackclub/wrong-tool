@@ -22,7 +22,14 @@ class ProjectsController < ApplicationController
     return head :unauthorized unless signed_in?
 
     project = current_user.project || current_user.build_project
+    repledged = project.persisted?
     if project.update(pledge_params.merge(signed_on: Date.current))
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "project_pledged",
+        properties: { repledged: }
+      ) if Rails.configuration.x.posthog_configured
+
       render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path }, status: :created
     else
       render json: { errors: project.errors.full_messages }, status: :unprocessable_entity
@@ -34,7 +41,13 @@ class ProjectsController < ApplicationController
     was_set_up = @project.set_up?
     @project.available_hackatime_projects = hackatime_projects if setup_params.key?(:hackatime_project_names)
     if @project.update(setup_params)
-      flash[:clippy] = @project.set_up? && !was_set_up ? "congratulate" : "hop"
+      setup_completed = @project.set_up? && !was_set_up
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "project_setup_completed"
+      ) if setup_completed && Rails.configuration.x.posthog_configured
+
+      flash[:clippy] = setup_completed ? "congratulate" : "hop"
       redirect_to project_path
     else
       @step = "repo" if @project.errors[:repo_url].any?

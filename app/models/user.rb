@@ -27,6 +27,21 @@ class User < ApplicationRecord
     hackatime_uid.present? && hackatime_access_token.present?
   end
 
+  # Used by posthog-rails to associate automatic exception reports with this user.
+  def posthog_distinct_id
+    id.to_s
+  end
+
+  # Profile data belongs to the PostHog person, rather than event properties.
+  def posthog_properties
+    {
+      email: email,
+      name: name,
+      verification_status: verification_status,
+      ysws_eligible: ysws_eligible
+    }
+  end
+
   def self.from_omniauth(auth)
     claims = auth.extra.raw_info.to_h.with_indifferent_access
     find_or_initialize_by(hca_id: auth.uid).tap do |user|

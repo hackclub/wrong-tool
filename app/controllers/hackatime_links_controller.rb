@@ -9,6 +9,11 @@ class HackatimeLinksController < ApplicationController
     return redirect_to project_path, alert: "Couldn't tell who you are on Hackatime. Try again." if uid.blank?
 
     if current_user.update(hackatime_uid: uid, hackatime_access_token: token)
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "hackatime_linked"
+      ) if Rails.configuration.x.posthog_configured
+
       Hackatime.forget(current_user)
       flash[:clippy] = "hop"
       redirect_to project_path
