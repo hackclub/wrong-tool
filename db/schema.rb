@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -83,6 +83,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
     t.string "buddy_code"
     t.boolean "buddy_invited", default: false, null: false
     t.boolean "buddy_skipped", default: false, null: false
+    t.json "hackatime_baseline"
+    t.boolean "hackatime_auto_linked", default: false, null: false
     t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
   end
@@ -101,6 +103,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
     t.index ["project_id"], name: "index_ships_on_project_id"
   end
 
+  create_table "streak_activities", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.date "activity_date", null: false
+    t.integer "coded_seconds", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "activity_date"], name: "index_streak_activities_on_user_id_and_activity_date", unique: true
+    t.index ["user_id"], name: "index_streak_activities_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "hca_id", null: false
     t.string "email"
@@ -113,6 +125,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
     t.string "first_name"
     t.string "hackatime_uid"
     t.text "hackatime_access_token"
+    t.integer "current_streak", default: 0, null: false
+    t.datetime "streak_synced_at"
+    t.string "timezone"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
@@ -125,4 +140,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_200000) do
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
   add_foreign_key "ships", "projects"
+  add_foreign_key "streak_activities", "users"
 end

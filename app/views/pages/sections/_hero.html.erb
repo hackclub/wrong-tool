@@ -22,7 +22,8 @@
 <%= tag.h2 title, class: "cell cell--title hero__title", data: { formula: %(="#{title}") } %>
 <p class="cell cell--subtitle cell--wrap hero__subtitle"><span>build it in <strong>google sheets</strong>, <strong>figma</strong>, <strong>email</strong>, or whatever else you like. log&nbsp;<%= hours_per_reward %> hours and we'll send you a handheld.</span></p>
 <%= link_to "Start building →", onboarding_path, class: "cell cell--cta hero__cta",
-      data: { formula: "=START(building)", cell_selection_target: "initial" } %>
+      data: { formula: "=START(building)", cell_selection_target: "initial",
+              capture: "signup_clicked", capture_location: "hero" } %>
 <%= tag.span class: "cell hero__dates",
       data: { formula: %(=#{date_formula(program_dates.begin)} & " → " & #{date_formula(program_dates.end)}) } do %>
   <span>runs <%= tag.time sheet_date(program_dates.begin), datetime: program_dates.begin.iso8601 %> → <%= tag.time sheet_date(program_dates.end), datetime: program_dates.end.iso8601 %></span>

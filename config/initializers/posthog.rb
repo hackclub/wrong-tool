@@ -6,6 +6,9 @@ posthog_missing_variable = {
   "posthog.host" => posthog_host
 }.find { |_, value| value.blank? }&.first
 Rails.application.config.x.posthog_configured = posthog_missing_variable.nil?
+# The browser sends events too (posthog-js, see app/views/layouts/_posthog.html.erb), to the same project.
+Rails.application.config.x.posthog_project_token = posthog_api_key
+Rails.application.config.x.posthog_host = posthog_host
 
 if posthog_missing_variable
   if Rails.env.development?

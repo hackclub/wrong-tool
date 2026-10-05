@@ -14,6 +14,12 @@ class SessionsController < ApplicationController
 
       PostHog.capture(
         distinct_id: user.posthog_distinct_id,
+        event: "user_signed_up",
+        properties: { signup_method: "hack_club_oauth" }
+      ) if user.previously_new_record?
+
+      PostHog.capture(
+        distinct_id: user.posthog_distinct_id,
         event: "user_logged_in",
         properties: { login_method: "hack_club_oauth" }
       )

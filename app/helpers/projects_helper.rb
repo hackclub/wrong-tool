@@ -91,6 +91,7 @@ module ProjectsHelper
     if !project.hackatime_linked? then "Nothing's linked yet, so your hours won't count."
     elsif project.hackatime_projects.none? then "Hackatime's linked. Which project is yours?"
     elsif !project.slack_joined? then "Hours count now. Join #wrong-tool and you're set."
+    elsif project.streak.positive? then "#{pluralize(project.streak, "day")} in a row. 20 min today keeps it going."
     else "All set. 20 min today starts your streak."
     end
   end
@@ -162,9 +163,18 @@ module ProjectsHelper
     "Today: #{project_pace_label(project.pace_minutes)}, #{BUILD_TIME_SOON.fetch(project.build_time)}"
   end
 
-  # The week ahead on your streak card, starting today.
-  def project_streak_week(today: Date.current)
-    (today...today + 7).map { |day| { letter: day.strftime("%a")[0], today: day == today } }
+  # When your streak was last checked with Hackatime: "Checked just now", "Checked 5 minutes ago".
+  def project_streak_checked(user)
+    checked_at = user.streak_synced_at
+    if checked_at.nil? then "Not checked yet"
+    elsif checked_at > 1.minute.ago then "Checked just now"
+    else "Checked #{time_ago_in_words(checked_at)} ago"
+    end
+  end
+
+  # This week on your streak card, Sunday to Saturday, with the days you hit 20 minutes.
+  def project_streak_week(project)
+    project.user.streak_week
   end
 
   # Streak rewards: a gold star on day 3, a skip day on day 7, and stickers on your last build day (only the

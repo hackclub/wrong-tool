@@ -19,14 +19,15 @@ end
 OmniAuth.config.test_mode = true
 Rails.application.config.x.hack_club_auth_whoami_url = nil
 
-# Nobody asks the real Hackatime either: who each token belongs to, and the projects each Hackatime user has
-# logged time on.
+# Nobody asks the real Hackatime either: who each token belongs to, the projects each Hackatime user has
+# logged time on, and when they were building (none of the time, unless a test says otherwise).
 Hackatime.stubbed_users = { "token-orpheus" => "1001", "token-heidi" => "1002" }
 Hackatime.stubbed_projects = {
   "1001" => [ Hackatime::Project.new("rhythm-game", 5400), Hackatime::Project.new("beat-sheet-art", 900),
               Hackatime::Project.new("dotfiles", 11_160) ],
   "1002" => [ Hackatime::Project.new("heidis-game", 600) ]
 }
+Hackatime.stubbed_spans = {}
 
 module HackClubAuthHelpers
   def mock_hack_club_auth(uid: "ident!heidi", email: "heidi@hackclub.com", name: "Heidi Hakkuun", first_name: "Heidi",

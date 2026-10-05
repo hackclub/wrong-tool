@@ -15,10 +15,19 @@ class HackatimeLinksController < ApplicationController
       ) if Rails.configuration.x.posthog_configured
 
       Hackatime.forget(current_user)
+      note_hackatime_projects_you_have
       flash[:clippy] = "hop"
       redirect_to project_path
     else
       redirect_to project_path, alert: "That Hackatime account #{current_user.errors[:hackatime_uid].first}."
     end
   end
+
+  private
+    # The projects you already have on Hackatime, so the first new one can link itself (Project#auto_link_hackatime_project).
+    # If Hackatime can't say right now, the project page notes them instead.
+    def note_hackatime_projects_you_have
+      current_user.project&.auto_link_hackatime_project(Hackatime.projects(current_user))
+    rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
+    end
 end

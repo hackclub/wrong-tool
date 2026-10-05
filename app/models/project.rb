@@ -34,6 +34,8 @@ class Project < ApplicationRecord
   validates :name, length: { maximum: 80 }
   validate :screenshot_is_an_image
   validate :picking_hackatime_projects_you_have
+  after_update_commit :refresh_streak, if: :saved_change_to_hackatime_projects?
+
   validates :repo_url, format: { with: %r{\Ahttps?://\S+\z}, message: "should be a link, like https://github.com/you/game" },
                        allow_blank: true
 
@@ -158,6 +160,28 @@ class Project < ApplicationRecord
     names = Array(names).map { |name| name.to_s.strip }.compact_blank.uniq
     @picked_hackatime_projects = names
     self.hackatime_projects = names
+    self.hackatime_auto_linked = false
+  end
+
+  # Your first new Hackatime project links itself. The first time we look after you link Hackatime, we note the
+  # projects you already have there (that's all this does then); if one you didn't have shows up before you've picked
+  # any, it's linked for you (the one with the most time, if a few did) until you keep it or change it. Returns its
+  # name if it linked one just now.
+  def auto_link_hackatime_project(available)
+    return unless hackatime_linked? && hackatime_projects.none?
+
+    if hackatime_baseline.nil?
+      update_columns(hackatime_baseline: available.map(&:name))
+      return
+    end
+
+    newest = available.reject { |project| hackatime_baseline.include?(project.name) }.select { |project| project.seconds.positive? }
+                      .max_by(&:seconds)
+    return unless newest
+
+    update_columns(hackatime_projects: [ newest.name ], hackatime_auto_linked: true)
+    refresh_streak
+    newest.name
   end
 
   # Hours on your linked Hackatime projects since Hackatime time started counting (Program::HACKATIME_START), to a
@@ -172,9 +196,11 @@ class Project < ApplicationRecord
     end
   end
 
-  # Weekly hours and streaks aren't wired up to Hackatime yet: until they are, they're nothing.
+  # Weekly hours aren't wired up to Hackatime yet: until they are, they're nothing.
   def hours_this_week = 0
-  def streak = 0
+
+  # As of the last sync (see User::Streakable).
+  def streak = user.current_streak
 
   # In the Hall of Wrong once a ship's approved.
   def shipped?
@@ -202,6 +228,10 @@ class Project < ApplicationRecord
   end
 
   private
+    def refresh_streak
+      user.refresh_streak!
+    end
+
     def picking_hackatime_projects_you_have
       return if @picked_hackatime_projects.nil?
       return errors.add(:hackatime_projects, "need one picked") if @picked_hackatime_projects.empty?

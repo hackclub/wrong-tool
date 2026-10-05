@@ -570,6 +570,53 @@
     }
   }
 
+  /* Your first new Hackatime project, linked for you: keep it or change it. */
+  .project__auto-linked {
+    --icon-size: 22px;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--blue-600);
+    border-radius: 10px;
+    background: var(--blue-50);
+  }
+
+  .project__auto-linked-icon {
+    flex: none;
+    color: var(--blue-600);
+  }
+
+  .project__auto-linked-text {
+    flex: 1 1 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .project__auto-linked-title {
+    font: 700 15px/1.35 var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .project__auto-linked-name {
+    font-family: var(--font-mono);
+  }
+
+  .project__auto-linked-note {
+    font: 14px/1.4 var(--font-cell);
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  .project__auto-linked-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   /* The Hackatime projects your hours come from. */
   .project__linked {
     display: flex;
@@ -1277,6 +1324,10 @@
     border-radius: 3px;
     box-shadow: inset 0 0 0 1px var(--border-grid);
 
+    [data-done] > & {
+      background: var(--green);
+    }
+
     [data-today] > & {
       box-shadow: inset 0 0 0 2px var(--blue-600);
     }
@@ -1286,6 +1337,35 @@
     font: 13px/1.4 var(--font-cell);
     color: var(--text-secondary);
     text-wrap: pretty;
+  }
+
+  .project__streak-sync {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .project__streak-checked {
+    font: 12px var(--font-cell);
+    color: var(--text-secondary);
+  }
+
+  .project__streak-refresh .onboarding-text-button {
+    block-size: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  /* While Hackatime's being asked (streak_refresh_controller.js), whole turns only. */
+  .project__streak-refresh[data-spinning] .icon {
+    animation: project-refresh-spin 800ms linear infinite;
+  }
+
+  @keyframes project-refresh-spin {
+    to {
+      rotate: 360deg;
+    }
   }
 
   .project__rewards {

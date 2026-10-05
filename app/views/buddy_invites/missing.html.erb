@@ -8,7 +8,8 @@
         <h1 class="buddy-invited__title">This invite link isn't valid.</h1>
         <p class="leaderboard__note">Ask your friend for theirs again, or start your own project and invite them.</p>
         <div class="buddy-invited__actions">
-          <%= link_to "Start building", onboarding_path, class: "onboarding-button onboarding-button--primary project__step-button" %>
+          <%= link_to "Start building", onboarding_path, class: "onboarding-button onboarding-button--primary project__step-button",
+                data: { capture: "signup_clicked", capture_location: "missing_invite" } %>
         </div>
       </section>
     </div>

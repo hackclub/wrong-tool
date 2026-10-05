@@ -1,0 +1,17 @@
+<%# locals: (project:) %>
+<%# Your first new Hackatime project linked itself (Project#auto_link_hackatime_project): say which, and keep it or
+    pick another. %>
+<section class="project__auto-linked" role="status" aria-labelledby="project-auto-linked-title">
+  <%= inline_svg_tag "icons/onboarding/check-circle-filled.svg", class: "icon project__auto-linked-icon", aria_hidden: true %>
+  <div class="project__auto-linked-text">
+    <h2 class="project__auto-linked-title" id="project-auto-linked-title">
+      New time on Hackatime for <span class="project__auto-linked-name"><%= project.hackatime_projects.to_sentence %></span>
+    </h2>
+    <p class="project__auto-linked-note">We linked it to this build automatically, so those hours count. Not this one? Change it.</p>
+  </div>
+  <div class="project__auto-linked-actions">
+    <%= button_to "Keep it", project_path, method: :patch, params: { project: { hackatime_auto_linked: false } },
+          class: "onboarding-button onboarding-button--primary project__step-button" %>
+    <%= link_to "Change", project_path(step: "hackatime_project"), class: "onboarding-text-button project__step-button" %>
+  </div>
+</section>

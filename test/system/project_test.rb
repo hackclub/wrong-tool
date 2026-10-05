@@ -28,6 +28,8 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".formula-bar__content", text: "→ TRUE"
     assert_selector ".project__say", text: "All set. 20 min today starts your streak."
     assert_selector ".project__streak-number", text: "0"
+    within(".project__streak") { click_on "Refresh" }
+    assert_selector ".project__streak-checked", text: "Checked just now"
     find(".project__setup-summary", text: "Setup done · 3 optional steps left").click
     click_on "Later"
     find(".project__setup-summary", text: "Setup done · 2 optional steps left").click

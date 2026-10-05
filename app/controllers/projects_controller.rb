@@ -8,6 +8,8 @@ class ProjectsController < ApplicationController
     @step = params[:step]
     @editing_pace = params[:edit] == "pace"
     @refresh_hackatime = params[:refresh].present?
+    auto_link_hackatime_project
+    current_user.sync_streak_if_stale!
   end
 
   # Your hours from Hackatime, for the pomodoro to keep up to date; ?refresh=1 asks Hackatime now.
@@ -69,10 +71,26 @@ class ProjectsController < ApplicationController
       redirect_to onboarding_path unless @project
     end
 
-    def hackatime_projects
-      Hackatime.projects(current_user)
+    def hackatime_projects(refresh: false)
+      Hackatime.projects(current_user, refresh:)
     rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
       []
+    end
+
+    # Before you've picked a Hackatime project, links the first new one you log time on (Project#auto_link_hackatime_project),
+    # and Clippy hops to tell you.
+    def auto_link_hackatime_project
+      return unless @project.hackatime_linked? && @project.hackatime_projects.none?
+
+      name = @project.auto_link_hackatime_project(hackatime_projects(refresh: @refresh_hackatime))
+      @refresh_hackatime = false # Hackatime's just been asked: the projects step can use what it said
+      return unless name
+
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "hackatime_project_auto_linked"
+      ) if Rails.configuration.x.posthog_configured
+      flash.now[:clippy] = "hop"
     end
 
     def pledge_params
@@ -81,6 +99,7 @@ class ProjectsController < ApplicationController
 
     def setup_params
       params.expect(project: [ :name, :screenshot, :slack_joined, :repo_url, :repo_later, :idea_posted, :idea_skipped,
-                               :pace_minutes, :party_queued, :buddy_invited, :buddy_skipped, hackatime_project_names: [] ])
+                               :pace_minutes, :party_queued, :buddy_invited, :buddy_skipped, :hackatime_auto_linked,
+                               hackatime_project_names: [] ])
     end
 end

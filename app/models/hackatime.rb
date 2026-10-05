@@ -14,9 +14,9 @@ module Hackatime
   # Hackatime couldn't be reached, or answered something we can't use.
   class Unavailable < StandardError; end
 
-  # Tests set these instead of asking the real Hackatime: { token => Hackatime user ID } and
-  # { Hackatime user ID => [ Project, ... ] }.
-  mattr_accessor :stubbed_users, :stubbed_projects
+  # Tests set these instead of asking the real Hackatime: { token => Hackatime user ID },
+  # { Hackatime user ID => [ Project, ... ] } and { Hackatime user ID => [ span, ... ] }.
+  mattr_accessor :stubbed_users, :stubbed_projects, :stubbed_spans
 
   # Who a token belongs to on Hackatime, or nil.
   def self.user_id(token)
@@ -43,6 +43,27 @@ module Hackatime
 
       JSON.parse(response.body).dig("data", "projects").to_a.map { |project| Project.new(project["name"], project["total_seconds"].to_i) }
     end
+  rescue JSON::ParserError => error
+    raise Unavailable, error.message
+  end
+
+  # When you were building on these projects between two dates (end exclusive), as Hackatime's heartbeat spans:
+  # { "start_time" =>, "end_time" =>, "duration" => } with times in epoch seconds. For streaks.
+  def self.heartbeat_spans(user, project_names, start_date:, end_date:)
+    raise NotLinked unless user.hackatime_linked?
+    return stubbed_spans.fetch(user.hackatime_uid, []) if stubbed_spans
+
+    path = "/api/v1/users/my/heartbeats/spans?#{{ start_date: start_date.iso8601, end_date: end_date.iso8601,
+                                                  filter_by_project: project_names.join(",") }.to_query}"
+    response = get(path, bearer: api_key(user))
+    if response.is_a?(Net::HTTPUnauthorized) # a stale API key: get a fresh one and try once more
+      Rails.cache.delete([ "hackatime/api_key", user.hackatime_uid ])
+      response = get(path, bearer: api_key(user))
+    end
+    raise Expired if response.is_a?(Net::HTTPUnauthorized)
+    raise Unavailable, "Hackatime answered #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+    JSON.parse(response.body)["spans"].to_a
   rescue JSON::ParserError => error
     raise Unavailable, error.message
   end

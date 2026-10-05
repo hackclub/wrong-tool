@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { Clippy } from "mascot/clippy"
+import { capture, previewing } from "analytics"
 
 // The onboarding sheet: pick a wrong tool (A1), roll or write an idea (A2), pick a handheld (A3), then commit
 // to a pace and sign the pledge it adds up to (A4). Tapping an answer moves on after a short flash; answered
@@ -11,6 +12,7 @@ const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "idea", "ideaTool
                   "pace", "buildTime", "pledged", "signedOn" ]
 // Set while the pledge is out being signed at Hack Club Auth, so coming back plays the ceremony.
 const SIGNING_KEY = "wrong-tool:signing-pledge"
+const STEP_NAMES = [ "tool", "idea", "prize", "commit" ]
 // Holding the sign button: it fills over 1.3s (and signs when full); let go early and it runs back in 0.35s.
 const HOLD = { fill: 1300, rewind: 350, step: 30 }
 // The signing ceremony, in 70ms ticks: the name finishes going on, Clippy congratulates you (hopping on the
@@ -49,6 +51,9 @@ export default class extends Controller {
     if (this.state.pledged) this.state.step = 4
     this.clippy = new Clippy(this.mascotSpriteTarget, this.soundsValue)
     this.#render()
+    this.#viewed()
+    this.onPageHide = () => this.#abandoned()
+    addEventListener("pagehide", this.onPageHide)
     this.#askWhoami()
     if (this.signedInValue && takeSigningFlag() && this.#commitReady()) {
       this.state.step = 4
@@ -58,6 +63,8 @@ export default class extends Controller {
   }
 
   disconnect() {
+    removeEventListener("pagehide", this.onPageHide)
+    this.#abandoned()
     clearTimeout(this.pickTimer)
     clearTimeout(this.rollTimer)
     clearTimeout(this.mascotTimer)
@@ -78,11 +85,15 @@ export default class extends Controller {
   pickTool({ params: { tool } }) {
     const s = this.state
     if (tool === "other") {
-      if (!s.otherOpen) this.#set({ otherOpen: true })
+      if (!s.otherOpen) {
+        this.#did("other_opened")
+        this.#set({ otherOpen: true })
+      }
       this.otherInputTarget.focus()
       return
     }
     this.#set({ tool, otherOpen: false, ideaSkipped: s.tool === tool && s.ideaSkipped })
+    this.#completed(1, { tool })
     this.#after(PICK_DELAY, () => this.#goTo(2))
   }
 
@@ -98,13 +109,15 @@ export default class extends Controller {
     event.preventDefault()
     if (!this.state.custom.trim()) return
     this.#set({ tool: "other", otherOpen: false, ideaSkipped: false, ideaTool: null })
+    this.#completed(1, { tool: "other", custom_tool: this.state.custom.trim() })
     this.#after(PICK_DELAY - 60, () => this.#goTo(2))
   }
 
   // A2. The genre reel stops on its 13th tick and the setting on its 21st, slowing down as they go.
 
-  roll() {
+  roll(event) {
     if (this.state.rolling && !this.state.ownOpen) return
+    if (event) this.#did("idea_rerolled")
     clearTimeout(this.rollTimer)
     const phrases = this.#phrases()
     const genre = pickOther(this.genresValue, this.state.genre)
@@ -129,17 +142,21 @@ export default class extends Controller {
   }
 
   useIdea() {
-    if (!this.state.rolling && this.state.idea) this.#afterIdea()
+    if (this.state.rolling || !this.state.idea) return
+    this.#completed(2, { idea_source: this.state.ideaOwn ? "own" : "rolled" })
+    this.#afterIdea()
   }
 
   openOwn() {
     clearTimeout(this.rollTimer)
     const s = this.state
+    this.#did("own_idea_opened")
     this.#set({ ownOpen: true, rolling: false, stop1: true, stop2: true, own: s.ideaOwn ? s.idea : s.own })
     this.ownInputTarget.focus()
   }
 
   closeOwn() {
+    this.#did("own_idea_closed")
     this.#set({ ownOpen: false })
     if (!this.state.idea || this.state.ideaOwn) this.roll()
   }
@@ -153,12 +170,14 @@ export default class extends Controller {
     const own = this.state.own.trim()
     if (!own) return
     this.#set({ idea: own, ideaOwn: true, ideaSkipped: false, ownOpen: false, ideaTool: this.state.tool })
+    this.#completed(2, { idea_source: "own" })
     this.#afterIdea()
   }
 
   skipIdea() {
     clearTimeout(this.rollTimer)
     this.#set({ ideaSkipped: true, idea: "", genre: "", phrase: "", rolling: false, stop1: true, stop2: true, ideaOwn: false })
+    this.#completed(2, { idea_source: "skipped" })
     this.#afterIdea()
   }
 
@@ -166,6 +185,7 @@ export default class extends Controller {
 
   claim({ params: { prize } }) {
     this.#set({ prize })
+    this.#completed(3, { prize })
     const { name } = this.prizesValue.find(({ id }) => id === prize)
     this.#congratulate(`Nice pick! The ${name} is yours after ${this.hoursValue} hours.`)
     this.#goTo(4)
@@ -175,16 +195,19 @@ export default class extends Controller {
 
   pickPace({ target }) {
     this.#set({ pace: Number(target.value) })
+    this.#did("pace_picked", { pace_minutes: this.state.pace })
     this.#hop()
   }
 
   pickBuildTime({ target }) {
     this.#set({ buildTime: target.value })
+    this.#did("build_time_picked", { build_time: target.value })
     this.#hop()
   }
 
   // Back (from Hack Club Auth, say) to a page the browser kept as it was: the button is ready to try again.
   resume({ persisted }) {
+    if (persisted) this.left = false
     if (persisted && this.state.signing) this.#set({ signing: false, holdP: 0 })
   }
 
@@ -196,6 +219,7 @@ export default class extends Controller {
       if (event.button !== 0) return
       try { event.currentTarget.setPointerCapture(event.pointerId) } catch {}
     }
+    this.#did("hold_started")
     this.#set({ holding: true, letGo: false })
     this.#tickHold(HOLD.step / HOLD.fill, () => this.#finishHold())
   }
@@ -203,6 +227,9 @@ export default class extends Controller {
   // Letting go early runs it back.
   holdEnd() {
     if (!this.state.holding) return
+    // A tap (as if it were an ordinary button) or a hold given up on.
+    const progress = Math.round(this.state.holdP * 100)
+    this.#did(progress < 20 ? "sign_tapped" : "hold_let_go_early", { progress_percent: progress })
     this.#set({ holding: false, letGo: this.state.holdP > 0.05 })
     this.#tickHold(-HOLD.step / HOLD.rewind)
   }
@@ -227,10 +254,44 @@ export default class extends Controller {
 
   #goTo(step) {
     clearTimeout(this.pickTimer)
+    const moved = step !== this.state.step
     this.#set({ step, otherOpen: false })
+    if (moved) this.#viewed()
     const s = this.state
     if (step === 2 && !s.ideaSkipped && (!s.idea || (s.ideaTool !== s.tool && !s.ideaOwn))) this.roll()
     this.rowTargets[step - 1].querySelector("h2").focus({ preventScroll: true })
+  }
+
+  // For PostHog. Each step is onboarding_step_viewed when you get to it, onboarding_action for what you try
+  // there, and onboarding_step_completed (1, tool, to 4, commit: the hold that signs in) once it's answered.
+  // Leaving before the pledge is signed is onboarding_abandoned, with where you were and what you did last.
+  #completed(step, properties, options) {
+    this.lastAction = "completed"
+    capture("onboarding_step_completed", { step, step_name: STEP_NAMES[step - 1], ...properties }, options)
+  }
+
+  #viewed() {
+    const { step, pledged } = this.state
+    if (pledged || previewing()) return
+    Object.assign(this, { stepSince: performance.now(), furthestStep: Math.max(this.furthestStep ?? 0, step) })
+    capture("onboarding_step_viewed", { step, step_name: STEP_NAMES[step - 1] })
+  }
+
+  #did(action, properties = {}) {
+    this.lastAction = action
+    const { step } = this.state
+    capture("onboarding_action", { action, step, step_name: STEP_NAMES[step - 1], ...properties })
+  }
+
+  // Off to Hack Club Auth, or done, isn't leaving.
+  #abandoned() {
+    const s = this.state
+    if (this.left || this.stepSince == null || s.signing || s.pledged || s.signTick >= 0) return
+    this.left = true
+    capture("onboarding_abandoned", {
+      step: s.step, step_name: STEP_NAMES[s.step - 1], furthest_step: this.furthestStep,
+      seconds_on_step: Math.round((performance.now() - this.stepSince) / 1000), last_action: this.lastAction ?? null
+    }, { transport: "sendBeacon" })
   }
 
   #afterIdea() {
@@ -252,6 +313,9 @@ export default class extends Controller {
   // Club Auth, and the answers wait in this tab for the trip back.
   #finishHold() {
     this.#set({ holding: false })
+    const s = this.state
+    this.#completed(4, { pace_minutes: s.pace, build_time: s.buildTime, signed_in: this.signedInValue },
+                    { transport: "sendBeacon" })
     if (this.signedInValue) return this.#signPledge()
 
     this.#saveAnswers()
@@ -337,7 +401,8 @@ export default class extends Controller {
       // Anything Turbo kept of the project from before it existed was the redirect back here.
       window.Turbo?.cache.clear()
       window.Turbo ? window.Turbo.visit(location) : window.location.assign(location)
-    } catch {
+    } catch (error) {
+      this.#did("pledge_save_failed", { error: String(error.message ?? error) })
       this.saveErrorTarget.hidden = false
     }
   }

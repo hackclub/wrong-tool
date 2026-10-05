@@ -68,11 +68,12 @@
         <div class="app-bar__account" id="app-bar-account" popover>
           <p class="app-bar__account-name"><%= user.name %></p>
           <% if user.email.present? %><p class="app-bar__account-email"><%= user.email %></p><% end %>
-          <%= button_to "Log out", logout_path, method: :delete, class: "menu-bar__entry app-bar__logout" %>
+          <%= button_to "Log out", logout_path, method: :delete, class: "menu-bar__entry app-bar__logout",
+                    form: { data: { posthog_reset: true } } %>
         </div>
       <% end %>
     <% else %>
-      <%= link_to onboarding_path, class: "app-bar__build-button" do %>
+      <%= link_to onboarding_path, class: "app-bar__build-button", data: { capture: "signup_clicked", capture_location: "app_bar" } do %>
         <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>
         <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>
       <% end %>

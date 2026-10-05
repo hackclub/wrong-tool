@@ -1,5 +1,6 @@
-<div class="sheet-viewport" data-sheet-tabs-target="viewport"
-     data-controller="endless-rows" data-action="scroll->endless-rows#fill resize@window->endless-rows#fill">
+<div class="sheet-viewport" data-sheet-tabs-target="viewport" data-landing-analytics-target="viewport"
+     data-controller="endless-rows"
+     data-action="scroll->endless-rows#fill resize@window->endless-rows#fill scroll->landing-analytics#scroll">
   <div class="sheet">
     <div class="sheet__column-headers" data-action="mousedown->cell-selection#pressHeader">
       <span class="sheet__corner"></span>
@@ -19,11 +20,11 @@
 
       <div class="sheet__cells" tabindex="0"
            data-cell-selection-target="grid" data-sheet-editor-target="grid"
-           data-action="mousedown->cell-selection#press click->cell-selection#click dblclick->sheet-editor#edit
+           data-action="mousedown->cell-selection#press mousedown->landing-analytics#pressCell click->cell-selection#click dblclick->sheet-editor#edit
                         keydown->flap-game#key keydown->sheet-editor#key keydown->cell-selection#move">
         <% section_names.each_with_index do |name, index| %>
           <%= tag.section id: name.parameterize, class: [ "sheet__section", "sheet__section--#{name.parameterize}" ], aria: { label: name },
-                hidden: !index.zero?, data: { sheet_tabs_target: "section" } do %>
+                hidden: !index.zero?, data: { sheet_tabs_target: "section", landing_analytics_target: "section" } do %>
             <%= render "pages/sections/#{name.parameterize.underscore}" %>
             <%= render "pages/footer" %>
           <% end %>

@@ -1,6 +1,8 @@
 # Someone signed in with Hack Club Auth. hca_id is their HCA subject (ident!…); everything else is copied
 # from HCA's claims each time they sign in, so it stays current.
 class User < ApplicationRecord
+  include Streakable
+
   has_one :project, dependent: :destroy
 
   # Linking Hackatime gives us their Hackatime ID and a token that reads their projects and hours.

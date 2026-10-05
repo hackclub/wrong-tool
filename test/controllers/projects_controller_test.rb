@@ -115,6 +115,50 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "rhythm-game", "dotfiles" ], projects(:orpheus).reload.hackatime_projects
   end
 
+  test "the first new Hackatime project you log time on links itself, until you keep it or change it" do
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+    mock_hackatime
+    post "/auth/hackatime"
+    follow_redirect!
+    assert_equal %w[rhythm-game beat-sheet-art dotfiles], projects(:orpheus).reload.hackatime_baseline
+
+    get project_path
+    assert_empty projects(:orpheus).reload.hackatime_projects, "projects you already had don't link themselves"
+    assert_select ".project__auto-linked", count: 0
+    assert_select ".project__step-hint", /The first new project you log time on links itself/
+
+    with_hackatime_projects(Hackatime::Project.new("wrong-tool-game", 120), Hackatime::Project.new("scratch", 0)) do
+      get project_path
+    end
+    project = projects(:orpheus).reload
+    assert_equal [ "wrong-tool-game" ], project.hackatime_projects
+    assert project.hackatime_auto_linked?
+    assert project.step_done?("hackatime_project")
+    assert_select ".project__auto-linked-title", "New time on Hackatime for wrong-tool-game"
+    assert_select ".project__auto-linked a[href=?]", project_path(step: "hackatime_project"), "Change"
+
+    patch project_path, params: { project: { hackatime_auto_linked: false } }
+    assert_redirected_to project_path
+    assert_not projects(:orpheus).reload.hackatime_auto_linked?
+    assert_equal [ "wrong-tool-game" ], projects(:orpheus).hackatime_projects
+  end
+
+  test "picking your Hackatime projects yourself replaces one that linked itself, and nothing links itself after" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_baseline: [ "rhythm-game", "beat-sheet-art" ], hackatime_projects: [ "dotfiles" ],
+                               hackatime_auto_linked: true)
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+
+    patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game" ] } }
+    project = projects(:orpheus).reload
+    assert_equal [ "rhythm-game" ], project.hackatime_projects
+    assert_not project.hackatime_auto_linked?
+
+    with_hackatime_projects(Hackatime::Project.new("wrong-tool-game", 120)) { get project_path }
+    assert_equal [ "rhythm-game" ], projects(:orpheus).reload.hackatime_projects
+    assert_select ".project__auto-linked", count: 0
+  end
+
   test "when Hackatime stops accepting your token, you're asked to link it again" do
     users(:orpheus).update!(hackatime_uid: "9999", hackatime_access_token: "revoked")
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
@@ -204,5 +248,14 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     def sign_in_as(_auth)
       post "/auth/hackclub"
       follow_redirect!
+    end
+
+    # As if Orpheus had logged time on these on Hackatime too.
+    def with_hackatime_projects(*added)
+      before = Hackatime.stubbed_projects
+      Hackatime.stubbed_projects = before.merge("1001" => before.fetch("1001") + added)
+      yield
+    ensure
+      Hackatime.stubbed_projects = before
     end
 end

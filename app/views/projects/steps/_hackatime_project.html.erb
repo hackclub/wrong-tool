@@ -44,4 +44,5 @@
 <% end %>
 <p class="project__step-hint">
   <%= project.code_tool? ? "Don't see it? Write a line of code with the extension on, then refresh." : "Don't see it? Log a minute of time on it with Hackatime, then refresh." %>
+  <% if project.hackatime_projects.none? %>The first new project you log time on links itself.<% end %>
 </p>

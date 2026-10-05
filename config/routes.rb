@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   resource :project, only: %i[show create update] do
     resource :ship, only: %i[show create]
     get :hours
+    resource :streak, only: :update
   end
   resource :leaderboard, only: :show
   resource :buddy, only: :show do

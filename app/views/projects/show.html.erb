@@ -35,6 +35,8 @@
           <% if set_up %><%= render "projects/screenshot", project: @project %><% end %>
         </header>
 
+        <% if @project.hackatime_auto_linked? %><%= render "projects/auto_linked", project: @project %><% end %>
+
         <% if set_up %>
           <details class="project__setup-done" <%= "open" if @step %>>
             <summary class="project__setup-summary">
@@ -185,13 +187,24 @@
                 <span class="project__streak-label">day streak</span>
               </p>
               <ol class="project__week" aria-label="This week">
-                <% project_streak_week.each do |day| %>
-                  <li class="project__week-day" <%= "data-today" if day[:today] %>>
+                <% project_streak_week(@project).each do |day| %>
+                  <li class="project__week-day" <%= "data-today" if day[:today] %> <%= "data-done" if day[:completed] %>>
                     <span class="project__week-letter"><%= day[:letter] %></span><span class="project__week-cell"></span>
                   </li>
                 <% end %>
               </ol>
               <p class="project__streak-note">20 min a day keeps it going.</p>
+              <div class="project__streak-sync">
+                <span class="project__streak-checked">
+                  <%= project_streak_checked(current_user) %>
+                </span>
+                <%= button_to project_streak_path, method: :patch, class: "onboarding-text-button onboarding-text-button--quiet",
+                              form_class: "project__streak-refresh",
+                              form: { data: { controller: "streak-refresh", action: "submit->streak-refresh#spin" } } do %>
+                  <%= inline_svg_tag "icons/onboarding/refresh.svg", class: "icon", aria_hidden: true %>Refresh
+                <% end %>
+              </div>
+              <% if flash[:streak_alert] %><p class="project__step-error" role="alert"><%= flash[:streak_alert] %></p><% end %>
               <ul class="project__rewards">
                 <% project_rewards(@project).each do |reward| %>
                   <li class="project__reward" data-state="<%= reward[:state] %>">
