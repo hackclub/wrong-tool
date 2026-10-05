@@ -1,0 +1,189 @@
+/* The bandit dashboard (/admin/nudges): totals, the bandit against its holdout, each bucket's arms with the
+   bandit's current guess, and the latest nudges. Tables borrow the leaderboard's sheet look. */
+@layer sections {
+  .admin {
+    max-inline-size: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 24px 16px 48px;
+  }
+
+  .admin__heading {
+    margin: 0 0 6px;
+    font: 600 15px var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .admin__tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border: 1px solid var(--border-header);
+    background: var(--border-grid);
+    gap: 1px;
+  }
+
+  .admin__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--surface-grid);
+    font: 12px var(--font-cell);
+    color: var(--text-secondary);
+
+    strong {
+      font: 600 22px var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    small {
+      color: var(--text-placeholder);
+    }
+  }
+
+  .leaderboard__table.admin__table {
+    table-layout: auto;
+
+    th[scope="row"] {
+      font-weight: 500;
+      text-align: start;
+      white-space: nowrap;
+    }
+
+    tr[data-leading] {
+      background: var(--green-50);
+    }
+  }
+
+  .admin__muted {
+    color: var(--text-placeholder);
+    font-size: 12px;
+  }
+
+  .admin__guess {
+    inline-size: 260px;
+    white-space: nowrap;
+  }
+
+  td.admin__guess {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* A 0–100% track: the 95% interval as a bar, the mean as a tick. */
+  .admin__interval {
+    position: relative;
+    flex: 1;
+    block-size: 10px;
+    border-radius: 5px;
+    background: var(--grey-100);
+  }
+
+  .admin__interval-range {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--low) * 100%);
+    inline-size: calc((var(--high) - var(--low)) * 100%);
+    border-radius: 5px;
+    background: var(--blue-150);
+  }
+
+  .admin__interval-mean {
+    position: absolute;
+    inset-block: -3px;
+    inset-inline-start: calc(var(--mean) * 100%);
+    inline-size: 2px;
+    background: var(--blue-700);
+  }
+
+  .admin__guess-number {
+    inline-size: 3.5em;
+    font: 13px var(--font-mono);
+    text-align: end;
+  }
+
+  .admin__columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+  }
+
+  .admin__clippy {
+    inline-size: 24px;
+    block-size: 24px;
+    margin-inline-end: 8px;
+    vertical-align: middle;
+    border-radius: 4px;
+  }
+
+  .admin__days {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font: 12px var(--font-mono);
+  }
+
+  .admin__day {
+    display: grid;
+    grid-template-columns: 56px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .admin__day-bar {
+    display: flex;
+    gap: 2px;
+    block-size: 14px;
+
+    span {
+      inline-size: calc(var(--share) * 100%);
+      border-radius: 2px;
+    }
+  }
+
+  .admin__day-count {
+    text-align: end;
+  }
+
+  .admin [data-kind="bandit"] {
+    background: var(--blue-600);
+  }
+
+  .admin [data-kind="fixed"] {
+    background: var(--grey-400);
+  }
+
+  .admin__key {
+    display: inline-block;
+    inline-size: 10px;
+    block-size: 10px;
+    margin-inline: 8px 4px;
+    border-radius: 2px;
+  }
+
+  .admin__table--recent td {
+    vertical-align: top;
+
+    &:first-child {
+      white-space: nowrap;
+    }
+  }
+
+  .admin__table--recent .admin__message {
+    inline-size: 45%;
+  }
+
+  .admin__table th[scope="row"] .admin__muted,
+  .admin__table--recent .admin__muted {
+    display: block;
+  }
+
+  @media (max-width: 700px) {
+    .admin__table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+}

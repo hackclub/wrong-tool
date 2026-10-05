@@ -1,6 +1,4 @@
-# PSEUDO CODE (see Nudge).
-#
-# Thompson sampling over how Clippy frames a nudge, learned separately per bucket ("behind/slack"). Each arm is a
+# Thompson sampling over how Clippy frames a nudge, learned separately per bucket (like "behind"). Each arm is a
 # Beta(successes, failures) guess at how often it gets someone building; we draw from each guess and send the
 # highest draw, so arms we're unsure about still get tried.
 class Nudge::Bandit
@@ -28,7 +26,7 @@ class Nudge::Bandit
     bandit = new(context.bucket)
     arm, propensity, holdout = bandit.pick(context)
     return unless arm
-    context.user.nudges.new(kind: "bandit", bucket: context.bucket, arm:, propensity:, holdout:, channel: context.channel)
+    context.user.nudges.new(kind: "bandit", bucket: context.bucket, arm:, propensity:, holdout:)
   end
 
   # Same people every time, from their id.
@@ -42,9 +40,7 @@ class Nudge::Bandit
     @bucket = bucket
   end
 
-  def state
-    bucket.split("/").first
-  end
+  def state = bucket
 
   # Returns [arm, propensity, holdout], or nil when no arm fits right now.
   def pick(context)
@@ -54,8 +50,9 @@ class Nudge::Bandit
     return if arms.empty?
     return [ arms.sample, 1.0 / arms.size, false ] if context.today < EXPLORE_UNTIL
 
-    winner = draw(arms)
-    propensity = DRAWS.times.count { draw(arms) == winner }.fdiv(DRAWS)
+    posteriors = arms.index_with { |arm| posterior(arm) }
+    winner = draw(posteriors)
+    propensity = DRAWS.times.count { draw(posteriors) == winner }.fdiv(DRAWS)
     [ winner, propensity, false ]
   end
 
@@ -73,8 +70,9 @@ class Nudge::Bandit
     end
   end
 
-  def draw(arms)
-    arms.max_by { |arm| beta_sample(*posterior(arm)) }
+  # One draw from each arm's { arm => [a, b] }, and the arm with the highest.
+  def draw(posteriors)
+    posteriors.max_by { |_, (a, b)| beta_sample(a, b) }.first
   end
 
   # Beta(1, 1) to start, plus this bucket's results, plus a little of every other bucket's. An opt-out counts as
@@ -91,6 +89,18 @@ class Nudge::Bandit
       successes: counts.fetch(1, 0),
       failures: counts.fetch(0, 0) + counts.fetch(Nudge::OPT_OUT_PENALTY, 0) * Nudge::OPT_OUT_PENALTY.abs
     }
+  end
+
+  # For the admin dashboard: each arm's { mean:, low:, high:, best: }, its guessed success rate with a 95% interval,
+  # and how often it'd win a draw right now.
+  def summary(arms = ARMS.fetch(state))
+    posteriors = arms.index_with { |arm| posterior(arm) }
+    samples = DRAWS.times.map { posteriors.transform_values { |(a, b)| beta_sample(a, b) } }
+    wins = samples.map { |draw| draw.max_by(&:last).first }.tally
+    posteriors.to_h do |arm, (a, b)|
+      sorted = samples.map { |draw| draw[arm] }.sort
+      [ arm, { mean: a / (a + b), low: sorted[(DRAWS * 0.025).floor], high: sorted[(DRAWS * 0.975).floor - 1], best: wins.fetch(arm, 0).fdiv(DRAWS) } ]
+    end
   end
 
   private

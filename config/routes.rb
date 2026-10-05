@@ -21,6 +21,17 @@ Rails.application.routes.draw do
   get "b/:code" => "buddy_invites#show", as: :buddy_invite
   post "b/:code" => "buddy_invites#accept"
 
+  # The links in Clippy's messages: the button (tracked, then on to where it says), and stopping his messages.
+  get "n/:token" => "nudge_links#show", as: :nudge_link
+  get "n/:token/stop" => "nudge_links#stop", as: :nudge_stop
+  post "n/:token/stop" => "nudge_links#mute"
+  delete "n/:token/stop" => "nudge_links#unmute"
+
+  # How Clippy's nudges are doing, and what the bandit's learned. Admins only.
+  namespace :admin do
+    resources :nudges, only: :index
+  end
+
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.
   # Linking Hackatime comes back here; it doesn't sign you in.
   get "auth/hackatime/callback" => "hackatime_links#create", as: :hackatime_link_callback

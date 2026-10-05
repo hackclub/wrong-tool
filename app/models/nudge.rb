@@ -1,30 +1,20 @@
-# PSEUDO CODE: a sketch of how Clippy's nudges will work. Nothing calls it yet, and the nudges table, the user
-# columns below, Hackatime and SlackBot don't exist yet.
+# One message Clippy sent someone on Slack, and whether they built afterwards. Every send is logged with the odds the
+# bandit picked it at (propensity), so we can judge other policies against this log later.
 #
-# One message Clippy sent someone, and whether they built afterwards. Every send is logged with the odds the bandit
-# picked it at (propensity), so we can judge other policies against this log later.
-#
-# nudges (no migration yet):
-#   user_id, channel (slack | email), kind (see KINDS), bucket ("behind/slack"), arm, variant (which copy),
-#   propensity, holdout (bool), sent_at, delivered (bool), reward (1, 0 or OPT_OUT_PENALTY; nil until scored),
-#   rewarded_at
-#
-# users also needs has_many :nudges, and:
-#   timezone (IANA, like "America/New_York": from the browser at onboarding, falling back to Slack's users.info),
-#   slack_dm_failed_at (the bot couldn't DM them, so email instead), slack_muted_at, email_unsubscribed_at
+# Every 15 minutes (NudgeDeliveryJob), anyone whose local time just reached the slot for when they said they'd build
+# gets at most one: a fixed one if anything applies (Nudge::Fixed), otherwise whatever the bandit picks
+# (Nudge::Bandit). Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built.
+# What it says is Nudge::Copy, the Slack message is Nudge::Message, and its links are NudgeLinksController.
 class Nudge < ApplicationRecord
-  CHANNELS = %w[slack email].freeze
   # Only bandit nudges are learned from. The rest always send when they apply.
   KINDS = %w[bandit setup milestone program streak_saver].freeze
 
   # Building this long after a nudge counts as it working. Same as what keeps a streak going.
   REWARD_MINUTES = 20
-  # Email gets read later than a Slack DM, so it gets longer to work.
-  REWARD_WINDOW = { "slack" => 6.hours, "email" => 12.hours }.freeze
-  # Muting Clippy or unsubscribing after a nudge counts as this many failures.
+  REWARD_WINDOW = 6.hours
+  # Stopping Clippy's messages from a nudge counts as this many failures.
   OPT_OUT_PENALTY = -5
 
-  # Shared across Slack and email.
   DAILY_CAP = 1
   WEEKLY_CAP = 5
   # Dramatic Clippy is a bit; it stops being funny the third time.
@@ -40,55 +30,107 @@ class Nudge < ApplicationRecord
 
   belongs_to :user
 
+  # The tracked links: /n/<token> goes where the button says, /n/<token>/stop stops Clippy's messages.
+  has_secure_token :token
+
+  validates :kind, inclusion: { in: KINDS }
+
   scope :bandit, -> { where(kind: "bandit") }
+  scope :delivered, -> { where(delivered: true) }
   scope :scored, -> { where.not(reward: nil) }
-  scope :unscored, -> { where(reward: nil, delivered: true) }
+  scope :unscored, -> { delivered.where(reward: nil) }
 
-  # Run every 15 minutes. Anyone whose local time just reached their slot gets at most one nudge: a fixed one if
-  # anything applies, otherwise whatever the bandit picks.
+  # Everyone whose slot it is (with a timezone, on Slack, and not muted), one at a time so one person's trouble
+  # doesn't stop the rest.
   def self.deliver_due(now = Time.current)
-    User.joins(:project).where.not(timezone: nil).find_each do |user|
-      context = Nudge::Context.new(user, now)
-      next unless context.in_slot? && context.may_nudge?
-
-      nudge = Nudge::Fixed.for(context) || Nudge::Bandit.nudge_for(context)
-      nudge&.deliver!(context.vars)
+    User.joins(:project).includes(:project).where.not(timezone: nil).where.not(slack_id: [ nil, "" ])
+        .where(slack_muted_at: nil, slack_dm_failed_at: nil).find_each do |user|
+      deliver_to(user, now)
+    rescue => error
+      Rails.error.report(error, context: { user_id: user.id })
     end
   end
 
-  # Run hourly. Scores every nudge whose window has closed.
+  # Their nudge, if it's their slot and they should get one. Their hours are brought up to date first.
+  def self.deliver_to(user, now = Time.current)
+    context = Nudge::Context.new(user, now)
+    return unless context.in_slot?
+
+    context.refresh!
+    return unless context.may_nudge?
+
+    nudge = Nudge::Fixed.for(context) || Nudge::Bandit.nudge_for(context)
+    nudge&.deliver!(context.vars)
+    nudge
+  end
+
   def self.score_due(now = Time.current)
-    unscored.find_each { |nudge| nudge.score! if nudge.window_closes_at <= now }
+    unscored.where(sent_at: ..now - REWARD_WINDOW).find_each do |nudge|
+      nudge.score!
+    rescue Hackatime::Unavailable
+      # Tried again next hour.
+    end
   end
 
   def window_closes_at
-    sent_at + REWARD_WINDOW.fetch(channel)
+    sent_at + REWARD_WINDOW
   end
 
+  # 1 if they built REWARD_MINUTES in the window, 0 if not, OPT_OUT_PENALTY if this nudge made them stop Clippy's
+  # messages.
   def score!
     reward =
-      if user.opted_out_between?(sent_at, window_closes_at) then OPT_OUT_PENALTY
-      elsif Hackatime.minutes_for(user, sent_at..window_closes_at) >= REWARD_MINUTES then 1
+      if opted_out_at then OPT_OUT_PENALTY
+      elsif built_seconds >= REWARD_MINUTES * 60 then 1
       else 0
       end
     update!(reward:, rewarded_at: Time.current)
   end
 
-  # Slack if the bot can DM them, email otherwise. A DM that fails falls back to email this time and from now on.
+  # Time on their linked Hackatime projects in the window. Nothing linked, or Hackatime not linked any more, is none.
+  def built_seconds
+    project = user.project
+    return 0 unless project&.tracking?
+
+    Hackatime.seconds_between(user, project.hackatime_projects, sent_at..window_closes_at)
+  rescue Hackatime::NotLinked, Hackatime::Expired
+    0
+  end
+
+  # A DM from Clippy's bot. If the bot can't DM them, nothing more is tried.
   def deliver!(vars)
-    self.variant, text = Nudge::Copy.render(self, vars)
-    if channel == "slack"
-      self.delivered = SlackBot.dm(user.slack_id, text, button: Nudge::Copy.link_for(arm), mute_button: Nudge::Copy::SLACK_MUTE)
-      unless delivered
-        user.update!(slack_dm_failed_at: Time.current)
-        self.channel = "email"
-      end
+    self.variant, self.text, self.mood, self.mood_text = Nudge::Copy.render(self, vars)
+    save! # for the token in its links
+    message = SlackBot.dm(user.slack_id, text:, blocks: Nudge::Message.new(self).blocks)
+    user.update!(slack_dm_failed_at: Time.current) if message.nil? && Rails.configuration.x.slack_configured
+    update!(delivered: message.present?, slack_channel: message&.channel, slack_ts: message&.ts, sent_at: Time.current)
+    capture("nudge_sent") if delivered
+  end
+
+  def link_url = "#{Rails.configuration.x.app_url}/n/#{token}"
+  def stop_url = "#{Rails.configuration.x.app_url}/n/#{token}/stop"
+
+  # Where the button goes, past the tracked link.
+  def destination_url
+    case Nudge::Copy.link_for(arm).last
+    when :slack then "https://hackclub.slack.com/archives/#{Program::SLACK_CHANNEL_ID}"
+    else "#{Rails.configuration.x.app_url}/project" # Linking Hackatime and adding a repo are on the project page too.
     end
-    if channel == "email"
-      NudgeMailer.with(nudge: self, subject: Nudge::Copy.subject_for(self, vars), text:).nudge.deliver_later
-      self.delivered = true
-    end
-    self.sent_at = Time.current
-    save!
+  end
+
+  # Someone clicked the button. Counted every time, but the first click is the one that matters.
+  def clicked!
+    self.class.where(id:).update_all([ "clicks = clicks + 1, clicked_at = COALESCE(clicked_at, ?)", Time.current ])
+    reload
+  end
+
+  # What PostHog gets with this nudge's events.
+  def analytics_properties
+    { nudge_id: id, kind:, arm:, variant:, mood:, bucket:, holdout:, propensity: }
+  end
+
+  def capture(event, properties = {})
+    return unless Rails.configuration.x.posthog_configured
+    PostHog.capture(distinct_id: user.posthog_distinct_id, event:, properties: analytics_properties.merge(properties))
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_170000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -49,6 +49,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.datetime "updated_at", null: false
     t.index ["pair_id"], name: "index_buddy_pomodoros_on_pair_id"
     t.index ["started_by_id"], name: "index_buddy_pomodoros_on_started_by_id"
+  end
+
+  create_table "nudges", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "channel", default: "slack", null: false
+    t.string "kind", null: false
+    t.string "bucket"
+    t.string "arm", null: false
+    t.integer "variant"
+    t.string "mood"
+    t.text "text"
+    t.text "mood_text"
+    t.float "propensity"
+    t.boolean "holdout", default: false, null: false
+    t.string "token", null: false
+    t.datetime "sent_at"
+    t.boolean "delivered", default: false, null: false
+    t.string "slack_channel"
+    t.string "slack_ts"
+    t.datetime "clicked_at"
+    t.integer "clicks", default: 0, null: false
+    t.datetime "opted_out_at"
+    t.integer "reward"
+    t.datetime "rewarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token"], name: "index_nudges_on_token", unique: true
+    t.index ["user_id", "sent_at"], name: "index_nudges_on_user_id_and_sent_at"
+    t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
   create_table "pairs", force: :cascade do |t|
@@ -140,6 +169,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.string "timezone"
     t.date "streak_skip_used_on"
     t.datetime "slack_channels_joined_at"
+    t.datetime "slack_muted_at"
+    t.datetime "slack_dm_failed_at"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
@@ -148,6 +179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "buddy_pomodoros", "pairs"
   add_foreign_key "buddy_pomodoros", "projects", column: "started_by_id"
+  add_foreign_key "nudges", "users"
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"

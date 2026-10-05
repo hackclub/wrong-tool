@@ -1,7 +1,7 @@
 # Clippy's Slack bot (see SlackMessageJob), all from Rails credentials (bin/rails credentials:edit):
 #
 #   slack:
-#     bot_token: xoxb-…   # scopes: chat:write, channels:manage (and groups:write for private channels)
+#     bot_token: xoxb-…   # scopes: chat:write, channels:manage (and groups:write for private channels), users:read
 #     kartikey_id: U…     # Kartikey, for the desktop background
 #
 # The channels are in Program::SLACK_CHANNEL_IDS, and the bot needs to be in them.

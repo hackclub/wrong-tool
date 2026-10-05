@@ -16,3 +16,9 @@ production:
   streak_daily_sync:
     class: StreakDailySyncJob
     schedule: at 2:15am every day
+  nudge_delivery:
+    class: NudgeDeliveryJob
+    schedule: every 15 minutes
+  nudge_scoring:
+    class: NudgeScoringJob
+    schedule: every hour at minute 40

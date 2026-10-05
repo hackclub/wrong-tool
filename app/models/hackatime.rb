@@ -68,6 +68,16 @@ module Hackatime
     raise Unavailable, error.message
   end
 
+  # How many seconds you built on these projects between two times, from the spans of the days around them. For
+  # telling whether one of Clippy's nudges worked (Nudge#score!).
+  def self.seconds_between(user, project_names, times)
+    spans = heartbeat_spans(user, project_names, start_date: times.begin.utc.to_date - 1, end_date: times.end.utc.to_date + 2)
+    spans.sum do |span|
+      overlap = [ span["end_time"].to_f, times.end.to_f ].min - [ span["start_time"].to_f, times.begin.to_f ].max
+      overlap.positive? ? overlap : 0
+    end.round
+  end
+
   # After linking (again), so nothing cached from before sticks around.
   def self.forget(user)
     Rails.cache.delete([ "hackatime/projects", user.hackatime_uid, Program::HACKATIME_START ])

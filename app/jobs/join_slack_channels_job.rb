@@ -9,16 +9,17 @@ class JoinSlackChannelsJob < ApplicationJob
     return Rails.logger.info("Slack (not configured): would add #{user.slack_id} to #{Program::SLACK_CHANNEL_IDS.join(", ")}") unless Rails.configuration.x.slack_configured
 
     client = Slack::Web::Client.new
-    Program::SLACK_CHANNEL_IDS.each do |channel|
+    joined = Program::SLACK_CHANNEL_IDS.map do |channel|
       client.conversations_invite(channel:, users: user.slack_id)
+      true
+    rescue Slack::Web::Api::Errors::TooManyRequestsError
+      raise
     rescue Slack::Web::Api::Errors::SlackError => error
-      raise unless error.message == "already_in_channel"
+      next true if error.message == "already_in_channel"
+      # Like not_in_channel: the bot has to be in the channel to add anyone. Tried again when they next sign in.
+      Rails.logger.warn("Adding #{user.slack_id} to Slack channel #{channel} failed: #{error.message}")
+      false
     end
-    user.update_column(:slack_channels_joined_at, Time.current)
-  rescue Slack::Web::Api::Errors::TooManyRequestsError
-    raise
-  rescue Slack::Web::Api::Errors::SlackError => error
-    # Not tried again until they next sign in.
-    Rails.logger.warn("Adding #{user.slack_id} to Slack channels failed: #{error.message}")
+    user.update_column(:slack_channels_joined_at, Time.current) if joined.all?
   end
 end

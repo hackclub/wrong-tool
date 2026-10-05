@@ -1,6 +1,8 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   test "signing in for the first time makes a user from Hack Club Auth's claims" do
     user = User.from_omniauth(mock_hack_club_auth)
 
@@ -33,5 +35,24 @@ class UserTest < ActiveSupport::TestCase
 
     pictures = 200.times.map { |index| User.new(hca_id: "ident!#{index}").then { |user| [ user.animal, user.avatar_color ] } }
     assert_operator pictures.uniq.size, :>, 100, "people mostly get different ones"
+  end
+
+  test "your timezone is remembered from your browser, if it's a real one" do
+    user = users(:ana)
+    user.remember_timezone("America/New_York")
+    assert_equal "America/New_York", user.reload.timezone
+
+    user.remember_timezone("Not/A_Zone")
+    user.remember_timezone("")
+    assert_equal "America/New_York", user.reload.timezone
+  end
+
+  test "a new timezone counts your streak days again" do
+    user = users(:orpheus)
+    link_hackatime(user)
+    user.project.update!(hackatime_projects: [ "rhythm-game" ])
+
+    assert_enqueued_with(job: StreakSyncJob, args: [ user.id ]) { user.remember_timezone("Asia/Kolkata") }
+    assert_no_enqueued_jobs(only: StreakSyncJob) { user.remember_timezone("Asia/Kolkata") }
   end
 end

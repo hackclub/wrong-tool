@@ -1,0 +1,27 @@
+<% muted = @nudge.user.slack_muted_at.present? %>
+<% content_for :title, "Clippy's messages · Wrong Tool" %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: muted ? "=MUTE(clippy)  →  TRUE" : "=MUTE(clippy)" %>
+  <main class="project__sheet">
+    <div class="buddy-invited">
+      <section class="buddy-invited__card">
+        <% if muted %>
+          <h1 class="buddy-invited__title">Clippy won't message you anymore.</h1>
+          <p class="leaderboard__note">Your project, hours and streak all keep working. Changed your mind?</p>
+          <div class="buddy-invited__actions">
+            <%= button_to "Keep sending them", nudge_stop_path(@nudge.token), method: :delete,
+                  class: "onboarding-button project__step-button" %>
+          </div>
+        <% else %>
+          <h1 class="buddy-invited__title">Stop Clippy's messages?</h1>
+          <p class="leaderboard__note">You won't get reminders from Clippy on Slack anymore. Your project, hours and streak all keep working.</p>
+          <div class="buddy-invited__actions">
+            <%= button_to "Stop messages", nudge_stop_path(@nudge.token),
+                  class: "onboarding-button onboarding-button--primary project__step-button" %>
+          </div>
+        <% end %>
+      </section>
+    </div>
+  </main>
+</div>

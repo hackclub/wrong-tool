@@ -1,8 +1,7 @@
-# PSEUDO CODE (see Nudge).
-#
-# Everything Clippy says in a nudge. Clippy writes in lowercase, keeps it to a line or two, and is never actually
-# mean: dramatic is fine, guilt isn't. Each arm has a few variants of about the same intensity, so the bandit learns
-# which framing works rather than which sentence; we rotate through them so nobody gets the same one twice in a row.
+# Everything Clippy says in a nudge, in two parts: the message, which is plain and short (what's true and one easy
+# next step, never guilt), and a line under it with how Clippy feels about it (see MOODS). Clippy writes in
+# lowercase. Each arm has a few variants of about the same intensity, so the bandit learns which framing works
+# rather than which sentence; we rotate through them so nobody gets the same one twice in a row.
 #
 # %{...} fills in from Nudge::Context#vars. A variant whose values aren't there (no streak yet, too few peers) isn't
 # picked.
@@ -11,43 +10,44 @@ module Nudge::Copy
   ARMS = {
     # How close you are to the handheld.
     "progress" => [
-      "%{hours} / 10 hours on %{title}. that's ~%{sessions_left} more %{pace}-min sessions until a %{prize} shows up at your door 📎",
-      "you're %{percent}%% of the way to a %{prize}. clippy did the math. clippy loves math.",
-      "%{hours_left} hours left. at %{pace} minutes a session, you're done by %{finish_on}.",
-      "one %{pace}-min session is %{session_percent}%% of a %{prize}. that's a lot of handheld per minute."
+      "%{hours} of 10 hours on %{title}. about %{sessions_left} more %{pace}-minute sessions to a %{prize}.",
+      "you're %{percent}%% of the way to a %{prize}.",
+      "%{hours_left} hours left. at %{pace} minutes a session, you'd finish by %{finish_on}.",
+      "one %{pace}-minute session gets you %{session_percent}%% closer to a %{prize}."
     ],
     # Keep it going. Only for people with a streak.
     "streak" => [
-      "🔥 %{streak}-day streak on %{title}. tonight makes it %{streak_next}.",
-      "clippy has noticed you've built %{streak} days in a row. clippy would hate for that to stop. (no pressure.) (some pressure.)",
-      "🔥 %{streak} days. %{days_to_reward} more and you unlock: %{next_reward}.",
-      "20 minutes keeps the 🔥 alive. that's like one song. (a long song.)"
+      "🔥 %{streak} days in a row on %{title}. today makes it %{streak_next}.",
+      "you've built %{streak} days in a row. 20 minutes today keeps it going.",
+      "🔥 %{streak} days. %{days_to_reward} more and you unlock %{next_reward}.",
+      "20 minutes today keeps your 🔥 going."
     ],
     # What you told us at the pledge, in your words and at your time.
     "pledge" => [
-      "it's %{local_time}. you said %{build_time}, %{pace} minutes, %{title}. clippy is just the messenger.",
-      "past you signed up for this exact moment. past you had good ideas. %{title} awaits.",
-      "you pledged %{pace} minutes a session. clippy pledged to remind you. clippy keeps its promises.",
-      "%{build_time} o'clock. you know what that means. (it means %{title}.)"
+      "it's %{local_time}. you said %{build_time}, %{pace} minutes on %{title}.",
+      "this is the time you picked for %{title}.",
+      "you pledged %{pace} minutes a session. here's your reminder.",
+      "it's %{build_time}. %{title} is ready when you are."
     ],
     # Make starting easy.
     "tiny_step" => [
-      "no need to finish anything tonight. open %{tool_name}, fix one thing, close it. that counts.",
-      "20 minutes. one feature. clippy will be here timing you. ⏱️",
-      "tiny task: make one thing in %{title} slightly less broken. that's it. that's the whole task.",
-      "you don't have to feel like it. just open %{tool_name}. feeling like it usually shows up around minute 5."
+      "no need to finish anything today. open %{tool_name}, fix one thing, close it. that counts.",
+      "20 minutes, one small feature. that's enough for today.",
+      "one small task: make one thing in %{title} a little less broken.",
+      "you don't have to feel like it. just open %{tool_name}. it usually gets easier after a few minutes."
     ],
     # Other people are building.
     "social" => [
-      "%{peers} people building in %{tool_name} logged time today. yours is the one clippy is rooting for.",
-      "%{peers} people made %{tool_name} do something it was never meant to do today. your turn.",
-      "someone just shipped a game in a tool that was never meant for games. %{title} could be next.",
-      "#wrong is busy today. come show them %{title}."
+      "%{peers} people building in %{tool_name} logged time today.",
+      "%{peers} people made %{tool_name} do something new today. your turn.",
+      "people are shipping games in tools never meant for games. %{title} could be next.",
+      "#wrong is busy today. come share %{title}."
     ],
-    # Clippy being a bit much, on purpose. Capped at Nudge::DRAMATIC_CAP per person.
+    # Clippy being a bit much, on purpose: the whole message is the bit, so there's no mood line. Capped at
+    # Nudge::DRAMATIC_CAP per person.
     "dramatic" => [
       "clippy has been staring at your empty %{tool_name} for %{days_idle} days. clippy is fine. clippy is totally fine. 📎",
-      "it looks like you're trying to win a %{prize}. would you like help with that?\n[ yes ]   [ yes, but tonight ]",
+      "it looks like you're trying to win a %{prize}. would you like help with that?",
       "clippy has started telling the other paperclips about %{title}. they have questions. clippy has no answers.",
       "breaking: local paperclip refreshes your hackatime again. still nothing. more at %{local_time}."
     ]
@@ -56,23 +56,42 @@ module Nudge::Copy
   # Nudges that always send when they apply (see Nudge::Fixed).
   FIXED = {
     # Setup, one missing step at a time.
-    "hackatime" => [ "your hours don't count until hackatime's linked. clippy can't count them either. it takes 2 minutes." ],
-    "repo" => [ "%{title} needs a home. add your repo link so it counts when you ship." ],
+    "hackatime" => [ "your hours start counting once hackatime is linked. it takes about 2 minutes." ],
+    "repo" => [ "add your repo link to %{title} so it counts when you ship." ],
 
     # Milestones.
-    "first_session" => [ "first session logged!! %{title} exists now. clippy is emotional." ],
-    "halfway" => [ "5 hours. halfway to a %{prize}. clippy is vibrating." ],
-    "done" => [ "10 HOURS. you won a %{prize}. clippy is crying. go claim it. 🎉" ],
+    "first_session" => [ "first session logged. %{title} exists now!" ],
+    "halfway" => [ "5 hours. you're halfway to a %{prize}." ],
+    "done" => [ "10 hours. you've earned a %{prize}. go claim it 🎉" ],
 
     # Program dates. "_done" is for people who already have their 10 hours.
-    "kickoff" => [ "wrong tool starts today. %{title}, %{build_time}, %{pace} minutes. clippy's ready if you are." ],
-    "three_days_left" => [ "3 days left. %{hours_left} more hours and a %{prize} is yours. clippy believes in you. (clippy has to, it's a paperclip.)" ],
-    "three_days_left_done" => [ "3 days left, and you already won. anything you build now is just showing off. clippy loves showing off." ],
-    "last_day" => [ "last day of wrong tool. whatever %{title} is right now, ship it. clippy's proud either way." ],
-    "last_day_done" => [ "last day of wrong tool. you won a %{prize} building %{title} in %{tool_name}. clippy will tell its grandchildren." ],
+    "kickoff" => [ "wrong tool starts today. %{title}, %{build_time}, %{pace} minutes." ],
+    "three_days_left" => [ "3 days left. %{hours_left} more hours and a %{prize} is yours." ],
+    "three_days_left_done" => [ "3 days left, and you've already won. anything you build now is a bonus." ],
+    "last_day" => [ "last day of wrong tool. whatever %{title} is right now, ship it." ],
+    "last_day_done" => [ "last day of wrong tool. you earned a %{prize} building %{title} in %{tool_name}." ],
 
     # Before a streak ends.
     "streak_saver" => [ "your 🔥 %{streak} ends at midnight. 20 minutes saves it." ]
+  }.freeze
+
+  # How Clippy feels, the small line under every message, with a picture of him acting it out. Picked at random
+  # within the mood, so it isn't something the bandit learns (it does go with the arm, so an arm's results include
+  # its mood). The big ones are for moments that earn them. Dramatic's mood is the whole message, so it has no line.
+  MOODS = {
+    "hopeful" => [ "📎 clippy believes in you.", "📎 clippy is rooting for you.", "📎 clippy saved you a seat.",
+                   "📎 clippy believes in you. (clippy has to, it's a paperclip.)" ],
+    "proud" => [ "📎 clippy is quietly proud.", "📎 clippy is doing a little happy wiggle.", "📎 clippy did the math. clippy loves math." ],
+    "excited" => [ "📎 clippy is vibrating.", "📎 clippy can't sit still.", "📎 clippy is very excited about this." ],
+    "emotional" => [ "📎 clippy is crying. happy tears.", "📎 clippy is emotional.", "📎 clippy will tell its grandchildren about this." ]
+  }.freeze
+
+  MOOD_FOR = {
+    "progress" => "proud", "streak" => "excited", "pledge" => "hopeful", "tiny_step" => "hopeful", "social" => "excited",
+    "hackatime" => "hopeful", "repo" => "hopeful",
+    "first_session" => "emotional", "halfway" => "excited", "done" => "emotional",
+    "kickoff" => "excited", "three_days_left" => "hopeful", "three_days_left_done" => "proud",
+    "last_day" => "emotional", "last_day_done" => "emotional", "streak_saver" => "hopeful"
   }.freeze
 
   # Where each nudge's one button goes.
@@ -96,23 +115,7 @@ module Nudge::Copy
     "streak_saver" => [ "save your streak", :project ]
   }.freeze
 
-  # Email subject per kind, plus one per bandit arm. Same within an arm, so subjects don't skew what it learns.
-  SUBJECTS = {
-    "progress" => "clippy did the math on %{title}",
-    "streak" => "🔥 your streak",
-    "pledge" => "it's %{build_time}. you know what that means.",
-    "tiny_step" => "one tiny thing for tonight",
-    "social" => "people are building in %{tool_name}",
-    "dramatic" => "clippy is fine. totally fine.",
-    "setup" => "one more thing before your hours count",
-    "milestone" => "📎 !!!",
-    "program" => "wrong tool",
-    "streak_saver" => "your 🔥 %{streak} ends at midnight"
-  }.freeze
-
-  SLACK_MUTE = "🔕 mute clippy"
-  EMAIL_FOOTER = "you're getting this because you pledged to wrong tool, a Hack Club program. " \
-                 "don't want clippy in your inbox? unsubscribe: %{unsubscribe_url}"
+  SLACK_MUTE = "stop these messages"
 
   def self.variants_for(arm)
     ARMS[arm] || FIXED.fetch(arm)
@@ -127,16 +130,24 @@ module Nudge::Copy
     renderable(arm, vars).any?
   end
 
-  # Returns [variant, text]: the next variant this person hasn't just had.
+  # Returns [variant, text, mood, mood_text]: the next variant this person hasn't just had, and how Clippy feels
+  # about it (no mood_text for dramatic, which is all mood).
   def self.render(nudge, vars)
     options = renderable(nudge.arm, vars)
     last = nudge.user.nudges.where(arm: nudge.arm).order(:sent_at).last&.variant
     text, variant = options.reject { |_, index| index == last }.sample || options.sample
-    [ variant, format(text, **vars) ]
+    mood = mood_for(nudge.arm)
+    [ variant, format(text, **vars), mood, MOODS[mood]&.sample ]
   end
 
-  def self.subject_for(nudge, vars)
-    format(SUBJECTS[nudge.arm] || SUBJECTS.fetch(nudge.kind), **vars)
+  def self.mood_for(arm)
+    MOOD_FOR.fetch(arm, "dramatic")
+  end
+
+  # Clippy acting out the mood, next to the message: public/clippy/<mood>.gif, from his sprite sheet
+  # (script/clippy_gifs.py).
+  def self.image_url(mood)
+    "#{Rails.configuration.x.app_url}/clippy/#{mood}.gif"
   end
 
   def self.link_for(arm)

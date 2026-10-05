@@ -10,7 +10,7 @@ class CreateStreakActivities < ActiveRecord::Migration[8.1]
     add_index :streak_activities, %i[user_id activity_date], unique: true
 
     # The streak as of the last sync, so the leaderboard can sort by it without asking Hackatime, and where streak
-    # days start (2am local). Nothing sets timezone yet, so everyone's on UTC.
+    # days start (2am local).
     add_column :users, :current_streak, :integer, null: false, default: 0
     add_column :users, :streak_synced_at, :datetime
     add_column :users, :timezone, :string

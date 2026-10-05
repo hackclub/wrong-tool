@@ -7,6 +7,8 @@ class SessionsController < ApplicationController
     reset_session
     session[:user_id] = user.id
     JoinSlackChannelsJob.perform_later(user.id) unless user.slack_channels_joined_at
+    user.remember_timezone(cookies[:timezone]) if cookies[:timezone].present?
+    SlackTimezoneJob.perform_later(user.id) if user.timezone.blank?
 
     if Rails.configuration.x.posthog_configured
       PostHog.identify(

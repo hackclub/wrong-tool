@@ -5,16 +5,13 @@ posthog_missing_variable = {
   "posthog.project_token" => posthog_api_key,
   "posthog.host" => posthog_host
 }.find { |_, value| value.blank? }&.first
-Rails.application.config.x.posthog_configured = posthog_missing_variable.nil?
+# Only production sends anything, so dev and test traffic stays out of the project's data.
+Rails.application.config.x.posthog_configured = Rails.env.production? && posthog_missing_variable.nil?
 # The browser sends events too (posthog-js, see app/views/layouts/_posthog.html.erb), to the same project.
 Rails.application.config.x.posthog_project_token = posthog_api_key
 Rails.application.config.x.posthog_host = posthog_host
 
-if posthog_missing_variable
-  if Rails.env.development?
-    raise KeyError, "#{posthog_missing_variable} credential required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once #{posthog_missing_variable} is set in credentials (or #{posthog_missing_variable.tr(".", "_").upcase} in the environment)"
-  end
-else
+if Rails.application.config.x.posthog_configured
   PostHog.init do |config|
     config.api_key = posthog_api_key
     config.host = posthog_host

@@ -1,0 +1,178 @@
+<% content_for :title, "Bandit · Wrong Tool admin" %>
+<% pct = ->(rate) { rate.nil? ? "—" : number_to_percentage(rate * 100, precision: 0) } %>
+<% result = { 1 => "built", 0 => "didn't", Nudge::OPT_OUT_PENALTY => "stopped" } %>
+<% totals = @stats.totals %>
+
+<%# How Clippy's nudges are doing and what the bandit's learned (Nudge::Stats), as a sheet. "Worked" means they
+    built Nudge::REWARD_MINUTES within Nudge::REWARD_WINDOW of it. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=BANDIT(clippy)  →  #{pct.(totals.work_rate)}" %>
+
+  <main class="project__sheet">
+    <div class="admin">
+      <header>
+        <h1 class="project__title">Clippy's bandit</h1>
+        <p class="leaderboard__note">
+          A nudge worked if they built <%= Nudge::REWARD_MINUTES %> minutes in the <%= Nudge::REWARD_WINDOW.inspect %> after it.
+          Stopping Clippy's messages counts as <%= Nudge::OPT_OUT_PENALTY.abs %> failures.
+        </p>
+      </header>
+
+      <section class="admin__tiles" aria-label="Totals">
+        <div class="admin__tile"><span>Sent</span><strong><%= totals.sent %></strong></div>
+        <div class="admin__tile"><span>Clicked</span><strong><%= pct.(totals.click_rate) %></strong><small><%= totals.clicked %> nudges</small></div>
+        <div class="admin__tile"><span>Worked</span><strong><%= pct.(totals.work_rate) %></strong><small><%= totals.worked %> of <%= totals.scored %> scored</small></div>
+        <div class="admin__tile"><span>Waiting to score</span><strong><%= @stats.waiting %></strong></div>
+        <div class="admin__tile"><span>Stopped messages</span><strong><%= @stats.muted_users %></strong><small><%= totals.opted_out %> from a nudge</small></div>
+        <div class="admin__tile"><span>Can't DM</span><strong><%= @stats.failed_dms %></strong></div>
+      </section>
+
+      <section>
+        <h2 class="admin__heading">Bandit vs holdout</h2>
+        <p class="leaderboard__note">The holdout (<%= pct.(Nudge::Bandit::HOLDOUT_SHARE) %> of people) always gets the same best guess. If the bandit isn't beating it, it isn't helping.</p>
+        <table class="leaderboard__table admin__table">
+          <thead><tr><th scope="col">Policy</th><th class="leaderboard__number" scope="col">Sent</th><th class="leaderboard__number" scope="col">Clicked</th><th class="leaderboard__number" scope="col">Scored</th><th class="leaderboard__number" scope="col">Worked</th><th class="leaderboard__number" scope="col">Stopped</th></tr></thead>
+          <tbody>
+            <% @stats.policies.each do |name, row| %>
+              <tr>
+                <th scope="row"><%= name %></th>
+                <td class="leaderboard__number"><%= row.sent %></td>
+                <td class="leaderboard__number"><%= pct.(row.click_rate) %></td>
+                <td class="leaderboard__number"><%= row.scored %></td>
+                <td class="leaderboard__number"><%= pct.(row.work_rate) %></td>
+                <td class="leaderboard__number"><%= row.opted_out %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+
+      <% @stats.buckets.each do |bucket, arms| %>
+        <section>
+          <h2 class="admin__heading"><%= bucket.humanize %></h2>
+          <table class="leaderboard__table admin__table">
+            <thead>
+              <tr>
+                <th scope="col">Arm</th>
+                <th class="leaderboard__number" scope="col">Sent</th>
+                <th class="leaderboard__number" scope="col">Clicked</th>
+                <th class="leaderboard__number" scope="col">Worked</th>
+                <th class="leaderboard__number" scope="col">Stopped</th>
+                <th class="admin__guess" scope="col">Success rate (95%)</th>
+                <th class="leaderboard__number" scope="col">Best</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% arms.each do |arm| %>
+                <% row = arm[:row] %>
+                <tr <%= "data-leading" if arm[:best] == arms.map { |a| a[:best] }.max && row.scored.positive? %>>
+                  <th scope="row"><%= arm[:arm].humanize %></th>
+                  <td class="leaderboard__number"><%= row.sent %></td>
+                  <td class="leaderboard__number"><%= pct.(row.click_rate) %></td>
+                  <td class="leaderboard__number"><%= row.worked %>/<%= row.scored %></td>
+                  <td class="leaderboard__number"><%= row.opted_out %></td>
+                  <td class="admin__guess">
+                    <span class="admin__interval" title="<%= pct.(arm[:low]) %> to <%= pct.(arm[:high]) %>">
+                      <span class="admin__interval-range" style="--low: <%= arm[:low] %>; --high: <%= arm[:high] %>"></span>
+                      <span class="admin__interval-mean" style="--mean: <%= arm[:mean] %>"></span>
+                    </span>
+                    <span class="admin__guess-number"><%= pct.(arm[:mean]) %></span>
+                  </td>
+                  <td class="leaderboard__number"><%= pct.(arm[:best]) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </section>
+      <% end %>
+
+      <div class="admin__columns">
+        <section>
+          <h2 class="admin__heading">Clippy's moods</h2>
+          <table class="leaderboard__table admin__table">
+            <thead><tr><th scope="col">Mood</th><th class="leaderboard__number" scope="col">Sent</th><th class="leaderboard__number" scope="col">Clicked</th><th class="leaderboard__number" scope="col">Worked</th></tr></thead>
+            <tbody>
+              <% @stats.moods.each do |mood, row| %>
+                <tr>
+                  <th scope="row"><%= image_tag "/clippy/#{mood}.gif", alt: "", class: "admin__clippy" if mood %><%= mood&.humanize || "None" %></th>
+                  <td class="leaderboard__number"><%= row.sent %></td>
+                  <td class="leaderboard__number"><%= pct.(row.click_rate) %></td>
+                  <td class="leaderboard__number"><%= pct.(row.work_rate) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 class="admin__heading">Fixed nudges</h2>
+          <table class="leaderboard__table admin__table">
+            <thead><tr><th scope="col">Nudge</th><th class="leaderboard__number" scope="col">Sent</th><th class="leaderboard__number" scope="col">Clicked</th><th class="leaderboard__number" scope="col">Worked</th></tr></thead>
+            <tbody>
+              <% @stats.fixed.each do |(kind, arm), row| %>
+                <tr>
+                  <th scope="row"><%= arm.humanize %> <small class="admin__muted"><%= kind %></small></th>
+                  <td class="leaderboard__number"><%= row.sent %></td>
+                  <td class="leaderboard__number"><%= pct.(row.click_rate) %></td>
+                  <td class="leaderboard__number"><%= pct.(row.work_rate) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <% daily = @stats.daily %>
+      <% if daily.any? %>
+        <section>
+          <h2 class="admin__heading">Sent per day</h2>
+          <% most = daily.values.map { |kinds| kinds.values.sum }.max %>
+          <div class="admin__days">
+            <% daily.each do |day, kinds| %>
+              <div class="admin__day" title="<%= kinds["bandit"] %> bandit, <%= kinds["fixed"] %> fixed">
+                <span class="admin__day-label"><%= Date.parse(day.to_s).strftime("%b %-d") %></span>
+                <span class="admin__day-bar">
+                  <span data-kind="bandit" style="--share: <%= kinds["bandit"].fdiv(most) %>"></span>
+                  <span data-kind="fixed" style="--share: <%= kinds["fixed"].fdiv(most) %>"></span>
+                </span>
+                <span class="admin__day-count"><%= kinds.values.sum %></span>
+              </div>
+            <% end %>
+          </div>
+          <p class="leaderboard__note"><span class="admin__key" data-kind="bandit"></span> bandit <span class="admin__key" data-kind="fixed"></span> fixed</p>
+        </section>
+      <% end %>
+
+      <section>
+        <h2 class="admin__heading">Latest nudges</h2>
+        <table class="leaderboard__table admin__table admin__table--recent">
+          <thead>
+            <tr>
+              <th scope="col">Sent</th>
+              <th scope="col">Who</th>
+              <th scope="col">Arm</th>
+              <th scope="col">Message</th>
+              <th class="leaderboard__number" scope="col">Odds</th>
+              <th class="leaderboard__number" scope="col">Clicks</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @stats.recent.each do |nudge| %>
+              <tr>
+                <td><%= "#{time_ago_in_words(nudge.sent_at)} ago" if nudge.sent_at %></td>
+                <td><%= nudge.user.first_name.presence || nudge.user.name %></td>
+                <td><%= nudge.arm.humanize %> <small class="admin__muted"><%= nudge.holdout ? "holdout" : nudge.bucket || nudge.kind %></small></td>
+                <td class="admin__message"><%= nudge.text %><% if nudge.mood_text %> <small class="admin__muted"><%= nudge.mood_text %></small><% end %></td>
+                <td class="leaderboard__number"><%= nudge.propensity && pct.(nudge.propensity) %></td>
+                <td class="leaderboard__number"><%= nudge.clicks %></td>
+                <td><%= nudge.reward.nil? ? "waiting" : result.fetch(nudge.reward, nudge.reward) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</div>
