@@ -1,5 +1,5 @@
 <%# locals: (project:) %>
-<p class="project__step-text">One line about what you're building. People will cheer you on.</p>
+<p class="project__step-text">Share one line about what you're building.</p>
 <p class="project__step-draft"><%= project_idea_post(project) %></p>
 <div class="project__step-actions">
   <%= button_to "Post", project_path, method: :patch, params: { project: { idea_posted: true } },

@@ -225,8 +225,8 @@ export default class extends Controller {
 
     const lockedIn = this.together ? `Locked in with ${this.buddyNameValue}` : "Locked in"
     this.labelTarget.textContent = done ? "Pomodoro done" : onBreak ? "Break" : `${running ? lockedIn : "Paused"} · round ${round}`
-    this.titleTarget.textContent = done ? (built < 60 ? "Short one. Every minute counts." : `Nice. ${Math.round(built / 60)} min of building.`)
-      : onBreak ? "Stand up. Drink some water." : this.titleValue
+    this.titleTarget.textContent = done ? (built < 60 ? "Pomodoro done." : `${Math.round(built / 60)} min logged.`)
+      : onBreak ? "Take a break." : this.titleValue
     this.clockTarget.textContent = clock(done ? built : left)
     this.barTarget.style.inlineSize = done ? "100%" : `${(1 - left / total) * 100}%`
     this.barTarget.toggleAttribute("data-break", onBreak)

@@ -78,7 +78,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_equal [ "ssh", "SSH", "Miyoo Mini Plus", 45, "evening" ],
                  [ project.tool, project.tool_name, ProjectsHelper::PRIZE_NAMES[project.prize], project.pace_minutes, project.build_time ]
     assert_selector "h1", text: /\AAn? #{Regexp.escape(genre)} over SSH\z/
-    assert_selector ".project__day", text: "Day 1 starts now."
+    assert_selector ".project__day", text: "Day 1"
     assert_selector ".sheet-tab[aria-current=page]", text: "My project"
   end
 

@@ -63,7 +63,7 @@ module ProjectsHelper
       projects.map { |hackatime| { name: hackatime.name, note: "#{hackatime.hours.to_s.delete_suffix(".0")} hrs", linked: project.hackatime_projects.include?(hackatime.name) } }
     { projects: choices }
   rescue Hackatime::NotLinked, Hackatime::Expired
-    { projects: [], problem: "Hackatime stopped letting us in.", relink: true }
+    { projects: [], problem: "Your Hackatime link expired.", relink: true }
   rescue Hackatime::Unavailable
     { projects: [], problem: "Couldn't reach Hackatime just now. Try refreshing." }
   end
@@ -208,7 +208,7 @@ module ProjectsHelper
     places = rows.first(3).values_at(1, 0, 2).compact.map { |row| row.merge(place: row[:rank].to_s, label: row[:rank].to_s) }
     places << mine.merge(place: "you", label: "##{mine[:rank]}") if mine[:rank] > 3
     above = rows[rows.index(mine) - 1] if mine[:rank] > 1
-    note = above ? "Hours this week · #{above[:hours] - mine[:hours]} hrs to pass #{above[:name]}" : "Hours this week. You're on top."
+    note = above ? "Hours this week · #{above[:hours] - mine[:hours]} hrs to pass #{above[:name]}" : "Hours this week. You're in first."
     [ places, note ]
   end
 

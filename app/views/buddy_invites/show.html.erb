@@ -62,12 +62,12 @@
           <% if mine %>
             <%= link_to "Go to Buddy", buddy_path, class: "onboarding-button onboarding-button--primary project__step-button" %>
           <% elsif can_accept %>
-            <%= button_to "Build anyway", buddy_invite_path(@inviter.buddy_code), class: "onboarding-button onboarding-button--primary project__step-button",
+            <%= button_to "Pair up", buddy_invite_path(@inviter.buddy_code), class: "onboarding-button onboarding-button--primary project__step-button",
                   form: { data: { turbo: false } } %>
           <% end %>
         </div>
       </section>
-      <p class="buddy-sticky">Note on B4: you don't need to pick the same tool. Please don't.</p>
+      <p class="buddy-sticky">You don't need to use the same tool.</p>
     </div>
   </main>
 

@@ -69,7 +69,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
     assert_select ".project__event[data-kind=ship] .project__event-day", "15"
     assert_select ".project__stair[data-you]", /You/
-    assert_select ".project__stairs-note", "Hours this week. You're on top."
+    assert_select ".project__stairs-note", "Hours this week. You're in first."
     assert_equal [ "Gold star for Clippy", "+1 skip day", "Sticker pack with your Miyoo" ],
                  css_select(".project__reward-label").map(&:text)
   end
@@ -120,7 +120,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
     get project_path
 
-    assert_select ".project__step-error", /Hackatime stopped letting us in/
+    assert_select ".project__step-error", /Your Hackatime link expired/
     assert_select "form[action='/auth/hackatime'] button", "Link Hackatime again"
     assert_select ".project__picker", count: 0
   end

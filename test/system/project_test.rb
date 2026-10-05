@@ -158,7 +158,7 @@ class ProjectTest < ApplicationSystemTestCase
     click_on "End pomodoro"
 
     assert_selector ".focus__label", text: "POMODORO DONE"
-    assert_selector ".focus__title", text: "Short one. Every minute counts."
+    assert_selector ".focus__title", text: "Pomodoro done."
     click_on "Take a 5 min break"
     assert_selector ".focus__label", text: "BREAK"
     assert_selector ".focus__clock", text: /\A(05:00|04:5\d)\z/

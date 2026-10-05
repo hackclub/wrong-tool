@@ -9,13 +9,13 @@ class BuddyInvitesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".buddy-card__title", "Pong in Figma"
     assert_equal [ "Sticker sheet, mailed to both", "+3 bonus hours each", "Co-op slot at Play party" ],
                  css_select(".buddy-invited__reward span:last-child").map(&:text)
-    assert_select "button", "Build anyway"
+    assert_select "button", "Pair up"
   end
 
   test "a link that doesn't exist says so" do
     get buddy_invite_path("nobody")
     assert_response :not_found
-    assert_select "h1", "That invite link doesn't go anywhere."
+    assert_select "h1", "This invite link isn't valid."
   end
 
   test "accepting pairs you up" do
@@ -32,7 +32,7 @@ class BuddyInvitesControllerTest < ActionDispatch::IntegrationTest
 
     get buddy_invite_path("ana")
     assert_select ".project__step-error", "You already have a buddy."
-    assert_select "button", text: "Build anyway", count: 0
+    assert_select "button", text: "Pair up", count: 0
   end
 
   test "without a project yet, accepting waits until you've signed your pledge" do
@@ -55,7 +55,7 @@ class BuddyInvitesControllerTest < ActionDispatch::IntegrationTest
     get buddy_invite_path("ana")
 
     assert_select ".buddy-invited__title", "This is your own invite link."
-    assert_select "button", text: "Build anyway", count: 0
+    assert_select "button", text: "Pair up", count: 0
   end
 
   private

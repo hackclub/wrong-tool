@@ -24,10 +24,10 @@
             <div class="buddy-pair__streak">
               <span class="buddy-pair__streak-label">Pair streak</span>
               <span class="buddy-pair__streak-value">Week 1</span>
-              <span class="buddy-pair__streak-note">Week 1: #PENDING</span>
+              <span class="buddy-pair__streak-note">In progress</span>
             </div>
           </header>
-          <p class="buddy-pair__soon">Your hours this week, side by side, land here next.</p>
+          <p class="buddy-pair__soon">Weekly hours coming soon.</p>
         </div>
 
         <aside class="buddy-pair__side">
@@ -49,7 +49,7 @@
             <% pair_rewards.each do |reward| %>
               <div class="buddy-reward" data-state="<%= reward[:state] %>">
                 <span class="buddy-reward__text"><span class="buddy-reward__key"><%= reward[:label].upcase %></span><%= reward[:reward] %></span>
-                <span class="buddy-reward__status"><%= reward[:status] == "Earned" ? "TRUE" : reward[:weeks] ? "#{reward[:weeks]} WK LEFT" : "#PENDING" %></span>
+                <span class="buddy-reward__status"><%= reward[:status] == "Earned" ? "Earned" : reward[:weeks] ? "#{pluralize(reward[:weeks], "week")} left" : "Pending" %></span>
               </div>
             <% end %>
             <p class="buddy-card__fine buddy-card__fine--padded">Both of you get these. A pair week counts when you both log <%= pair_weekly_hours %>h.</p>
@@ -60,7 +60,7 @@
       <div class="buddy-invite">
         <header class="leaderboard__heading">
           <h1 class="project__title">Build with a buddy</h1>
-          <p class="leaderboard__note">Two people, two different games, one streak. You keep each other going.</p>
+          <p class="leaderboard__note">You each build your own game and share a weekly streak.</p>
         </header>
 
         <div class="buddy-rules" role="table" aria-label="How it works">
@@ -79,7 +79,7 @@
         <div class="buddy-invite__ways">
           <section class="buddy-invite__way">
             <h2 class="project__section-title">Invite a friend</h2>
-            <p class="project__step-text">They sign up from your link and you're paired. A different tool is better. You'll learn more.</p>
+            <p class="project__step-text">They sign up from your link and you're paired. They can use any tool.</p>
             <%= render "buddies/invite_link", project: @project, mark_invited: true %>
           </section>
           <section class="buddy-invite__way">
@@ -89,7 +89,7 @@
           </section>
         </div>
 
-        <p class="buddy-sticky">Note on A1: rewards only unlock when you both log. A link on its own earns nothing.</p>
+        <p class="buddy-sticky">Rewards unlock when you both log hours.</p>
       </div>
     <% end %>
   </main>
