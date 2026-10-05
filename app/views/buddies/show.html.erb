@@ -16,7 +16,7 @@
           <header class="buddy-pair__header">
             <div class="buddy-pair__who">
               <span class="buddy-card__faces buddy-card__faces--large" aria-hidden="true">
-                <span class="buddy-face" data-you><%= buddy_initial(@project) %></span><span class="buddy-face"><%= buddy_initial(buddy) %></span>
+                <%= avatar_tag(current_user, "buddy-face") %><%= avatar_tag(buddy.user, "buddy-face") %>
               </span>
               <h1 class="project__title">You + <%= buddy_name(buddy) %></h1>
               <p class="leaderboard__note"><%= @project.title %> · <%= buddy.title %></p>
@@ -33,7 +33,7 @@
         <aside class="buddy-pair__side">
           <section class="project__card buddy-card">
             <div class="buddy-card__head">
-              <span class="buddy-face buddy-face--large" aria-hidden="true"><%= buddy_initial(buddy) %></span>
+              <%= avatar_tag(buddy.user, "buddy-face buddy-face--large") %>
               <span class="buddy-card__who">
                 <span class="buddy-card__title"><%= buddy_name(buddy) %></span>
                 <span class="buddy-card__note"><%= buddy.title %> · Day <%= buddy.day_number %></span>

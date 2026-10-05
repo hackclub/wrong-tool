@@ -11,7 +11,7 @@ class ProjectTest < ApplicationSystemTestCase
     sign_in_and_open_project
 
     assert_selector ".project__say", text: "Nothing's linked yet, so your hours won't count."
-    assert_selector ".app-bar__avatar", text: "O"
+    assert_selector ".app-bar__avatar .avatar[aria-hidden=true][title^=\"Orpheus the \"]"
     assert_text "Streaks and the leaderboard open once you're set up."
     click_on "Link Hackatime"
 
@@ -218,7 +218,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "the avatar opens your account, where you can log out" do
     sign_in_and_open_project
-    find(".app-bar__avatar", text: "O").click
+    find(".app-bar__avatar").click
     click_on "Log out"
 
     assert_current_path root_path

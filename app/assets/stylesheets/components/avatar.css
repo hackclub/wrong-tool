@@ -1,0 +1,20 @@
+/* Someone's picture: a white animal on their colour, like Google Sheets' anonymous animals. */
+@layer components {
+  .avatar {
+    --avatar-color: var(--grey-600);
+
+    flex: none;
+    inline-size: 24px;
+    block-size: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--avatar-color);
+    color: var(--white);
+
+    svg {
+      inline-size: 64%;
+      block-size: 64%;
+    }
+  }
+}

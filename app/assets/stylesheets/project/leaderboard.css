@@ -137,19 +137,8 @@
   }
 
   .leaderboard__avatar {
-    flex: none;
     inline-size: 24px;
     block-size: 24px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--blue-700);
-    font: 700 11px var(--font-cell);
-    color: var(--white);
-
-    [data-you] & {
-      background: var(--red);
-    }
   }
 
   .leaderboard__shot {

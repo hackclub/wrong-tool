@@ -32,7 +32,7 @@
             <%= image_tag url_for(shot), alt: "Screenshot of #{@inviter.title}", class: "buddy-invited__shot" %>
           <% end %>
           <div class="buddy-invited__about">
-            <span class="buddy-face buddy-face--large" aria-hidden="true"><%= buddy_initial(@inviter) %></span>
+            <%= avatar_tag(@inviter.user, "buddy-face buddy-face--large") %>
             <span class="buddy-card__who">
               <span class="buddy-card__title"><%= @inviter.title %></span>
               <span class="buddy-card__note">Day <%= @inviter.day_number %> · <%= project_hours(@inviter.hours_logged) %>h logged</span>

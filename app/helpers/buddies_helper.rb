@@ -8,9 +8,6 @@ module BuddiesHelper
     project.user.first_name.presence || project.user.name
   end
 
-  def buddy_initial(project)
-    buddy_name(project).to_s[0]&.upcase
-  end
 
   # "wrong.hackclub.com/b/orpheus", for showing; the link itself is buddy_invite_url.
   def buddy_invite_link(project)

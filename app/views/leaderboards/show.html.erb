@@ -40,7 +40,7 @@
               <td class="leaderboard__rank"><%= row[:rank] %></td>
               <td>
                 <span class="leaderboard__builder">
-                  <span class="leaderboard__avatar" aria-hidden="true"><%= row[:initial] %></span>
+                  <%= avatar_tag(row[:user], "leaderboard__avatar") %>
                   <span class="leaderboard__name"><%= row[:name] %></span>
                 </span>
               </td>

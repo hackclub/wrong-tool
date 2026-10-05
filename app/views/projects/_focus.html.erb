@@ -15,7 +15,7 @@
   <% live = project.pair&.live_pomodoro %>
   <% waiting = live && !live.in?(project) %>
   <div class="project__buddy-live" data-focus-target="buddyLive" <%= "hidden" unless waiting %>>
-    <span class="buddy-face" aria-hidden="true"><%= buddy_initial(project.buddy) if project.buddy %></span>
+    <% if project.buddy %><%= avatar_tag(project.buddy.user, "buddy-face") %><% end %>
     <p class="project__buddy-live-text" data-focus-target="buddyLiveText">
       <% if waiting %><%= buddy_name(project.buddy) %> started a <%= live.minutes %>-min pomodoro. Join in.<% end %>
     </p>

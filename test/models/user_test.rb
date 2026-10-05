@@ -23,4 +23,15 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Orpheus Hacksworth", user.name
     assert_not user.ysws_eligible
   end
+
+  test "everyone's picture is an animal on a colour, the same every time" do
+    orpheus = users(:orpheus)
+    assert_includes User::ANIMALS, orpheus.animal
+    assert_includes User::AVATAR_COLORS, orpheus.avatar_color
+    assert_equal [ orpheus.animal, orpheus.avatar_color ], User.find(orpheus.id).then { |again| [ again.animal, again.avatar_color ] }
+    assert Rails.root.join("app/assets/images/animals/#{orpheus.animal}.svg").exist?
+
+    pictures = 200.times.map { |index| User.new(hca_id: "ident!#{index}").then { |user| [ user.animal, user.avatar_color ] } }
+    assert_operator pictures.uniq.size, :>, 100, "people mostly get different ones"
+  end
 end

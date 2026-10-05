@@ -194,7 +194,7 @@ module ProjectsHelper
     ranked.map.with_index(1) do |project, rank|
       mine = project == you
       { rank:, you: mine, name: mine ? "You" : project.user.first_name.presence || project.user.name,
-        initial: leaderboard_initial(project.user), building: project.title, off: !project.set_up?,
+        user: project.user, building: project.title, off: !project.set_up?,
         screenshot: (project.screenshot if project.screenshot.attached? && project.screenshot.blob.persisted?),
         hours: project.hours_this_week, streak: project.streak }
     end
@@ -257,9 +257,6 @@ module ProjectsHelper
     [ (counts.join(", ") + "." if counts.any?), ("Nothing yet in #{empty.map { |row| row[:tool] }.to_sentence(last_word_connector: " or ", two_words_connector: " or ")}." if empty.any?) ]
   end
 
-  def leaderboard_initial(user)
-    (user.first_name.presence || user.name.to_s)[0]&.upcase
-  end
 
   private
     def project_step_label(project, key, done)

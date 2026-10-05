@@ -5,7 +5,7 @@
   <% if buddy %>
     <div class="buddy-card__head">
       <span class="buddy-card__faces" aria-hidden="true">
-        <span class="buddy-face" data-you><%= buddy_initial(project) %></span><span class="buddy-face"><%= buddy_initial(buddy) %></span>
+        <%= avatar_tag(project.user, "buddy-face") %><%= avatar_tag(buddy.user, "buddy-face") %>
       </span>
       <span class="buddy-card__who">
         <%= link_to "You + #{buddy_name(buddy)}", buddy_path, class: "buddy-card__title", id: "buddy-card-title" %>
@@ -28,7 +28,7 @@
   <% elsif project.buddy_invited? %>
     <div class="buddy-card__head buddy-card__head--spread">
       <span class="buddy-card__faces" aria-hidden="true">
-        <span class="buddy-face" data-you><%= buddy_initial(project) %></span><span class="buddy-face" data-pending>…</span>
+        <%= avatar_tag(project.user, "buddy-face") %><span class="buddy-face" data-pending>…</span>
       </span>
       <span class="buddy-card__badge">#PENDING</span>
     </div>
@@ -39,7 +39,7 @@
     <%= render "buddies/invite_link", project:, compact: true %>
   <% else %>
     <span class="buddy-card__faces" aria-hidden="true">
-      <span class="buddy-face" data-you><%= buddy_initial(project) %></span><span class="buddy-face" data-empty>+</span>
+      <%= avatar_tag(project.user, "buddy-face") %><span class="buddy-face" data-empty>+</span>
     </span>
     <div class="buddy-card__who">
       <h2 class="buddy-card__title" id="buddy-card-title">Build with a buddy</h2>

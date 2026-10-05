@@ -13,17 +13,12 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: #8430ce;
     box-shadow: 0 0 0 3px var(--white);
     font: 700 13px var(--font-cell);
     color: var(--white);
 
     & + & {
       margin-inline-start: -6px;
-    }
-
-    &[data-you] {
-      background: var(--red);
     }
 
     &[data-empty],

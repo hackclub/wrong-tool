@@ -9,6 +9,20 @@ class User < ApplicationRecord
   validates :hca_id, presence: true, uniqueness: true
   validates :hackatime_uid, uniqueness: { message: "is already linked to someone else here" }, allow_nil: true
 
+  # Your picture: an animal on a colour, like Google Sheets' anonymous animals, picked from your Hack Club ID so it's
+  # always the same one. (Silhouettes from Microsoft's Fluent Emoji, MIT: app/assets/images/animals.)
+  ANIMALS = %w[fox cat dog panda koala tiger frog owl penguin rabbit hamster otter sloth raccoon turtle octopus hedgehog
+               llama chipmunk beaver duck whale unicorn sauropod].freeze
+  AVATAR_COLORS = %w[#ec3750 #1a73e8 #1e7b45 #b06000 #8430ce #00796b #c62828 #3949ab #e8710a #d01884 #0b8043 #5f6368].freeze
+
+  def animal
+    ANIMALS[avatar_seed % ANIMALS.size]
+  end
+
+  def avatar_color
+    AVATAR_COLORS[avatar_seed / ANIMALS.size % AVATAR_COLORS.size]
+  end
+
   def hackatime_linked?
     hackatime_uid.present? && hackatime_access_token.present?
   end
@@ -26,4 +40,9 @@ class User < ApplicationRecord
       )
     end
   end
+
+  private
+    def avatar_seed
+      @avatar_seed ||= Digest::SHA256.hexdigest(hca_id.to_s).first(12).to_i(16)
+    end
 end

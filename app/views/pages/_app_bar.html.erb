@@ -63,7 +63,7 @@
       <% if user %>
         <%# Your account: who you're signed in as, and logging out. %>
         <button type="button" class="app-bar__avatar" popovertarget="app-bar-account" aria-label="Account: <%= user.name %>">
-          <%= (user.first_name.presence || user.name.to_s)[0]&.upcase %>
+          <%= avatar_tag(user, aria: { hidden: true }, role: nil) %>
         </button>
         <div class="app-bar__account" id="app-bar-account" popover>
           <p class="app-bar__account-name"><%= user.name %></p>

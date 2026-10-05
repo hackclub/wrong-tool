@@ -142,7 +142,7 @@
                   <% if (buddy = @project.buddy) %>
                     <button type="button" class="project__start-buddy" data-action="focus#startWithBuddy">
                       <span class="buddy-card__faces" aria-hidden="true">
-                        <span class="buddy-face" data-you><%= buddy_initial(@project) %></span><span class="buddy-face"><%= buddy_initial(buddy) %></span>
+                        <%= avatar_tag(current_user, "buddy-face") %><%= avatar_tag(buddy.user, "buddy-face") %>
                       </span>
                       With <%= buddy_name(buddy) %>
                     </button>
@@ -251,7 +251,7 @@
               <ol class="project__stairs-places">
                 <% stairs.each do |place| %>
                   <li class="project__stair" data-place="<%= place[:place] %>" <%= "data-you" if place[:you] %>>
-                    <span class="leaderboard__avatar" aria-hidden="true"><%= place[:initial] %></span>
+                    <%= avatar_tag(place[:user], "leaderboard__avatar") %>
                     <span class="project__stair-name"><%= place[:name] %></span>
                     <span class="project__stair-hours"><%= place[:hours] %>h</span>
                     <span class="project__stair-step"><%= place[:label] %></span>
