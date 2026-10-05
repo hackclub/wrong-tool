@@ -7,10 +7,6 @@ class RewardTest < ActiveSupport::TestCase
     @orpheus, @ana = users(:orpheus), users(:ana)
   end
 
-  teardown do
-    Rails.configuration.x.slack_channel_id = nil
-  end
-
   # Days in October someone built `minutes` on.
   def built(user, days, minutes: 20)
     days.each { |day| user.streak_activities.create!(activity_date: Date.new(2026, 10, day), coded_seconds: minutes * 60) }
@@ -68,7 +64,6 @@ class RewardTest < ActiveSupport::TestCase
   end
 
   test "the desktop background goes to the first pair to 10h each, and only them" do
-    Rails.configuration.x.slack_channel_id = "C0WRONGTOOL"
     pair = projects(:orpheus).pair_with(projects(:ana))
     built(@orpheus, 6..10, minutes: 120)
     built(@ana, 6..10, minutes: 120)
@@ -76,7 +71,7 @@ class RewardTest < ActiveSupport::TestCase
 
     assert_equal pair, Reward.desktop_pair
     assert_includes slack_messages,
-                    [ "C0WRONGTOOL", "<@U0ANA> and <@U0ORPHEUS> were the first pair to log 10h each. They'll pick Kartikey's desktop background." ]
+                    [ "C0C5UHLAAP5", "<@U0ANA> and <@U0ORPHEUS> were the first pair to log 10h each. They'll pick Kartikey's desktop background." ]
     assert_raises(ActiveRecord::RecordNotUnique) { Reward.create!(pair: Pair.new, key: "desktop") }
   end
 

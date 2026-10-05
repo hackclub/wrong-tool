@@ -31,9 +31,8 @@ module RewardNotifier
       SlackMessageJob.perform_later(project.user.slack_id, format(DMS.fetch(reward.key), vars), link: [ "Open wrong tool", project_url ])
     end
 
-    channel = Rails.configuration.x.slack_channel_id
-    if POSTS.key?(reward.key) && channel.present?
-      SlackMessageJob.perform_later(channel, format(POSTS.fetch(reward.key), vars_for(*projects)))
+    if POSTS.key?(reward.key)
+      SlackMessageJob.perform_later(Program::SLACK_CHANNEL_ID, format(POSTS.fetch(reward.key), vars_for(*projects)))
     end
   end
 

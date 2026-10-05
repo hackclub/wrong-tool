@@ -13,6 +13,15 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal User.find_by!(hca_id: "ident!heidi").id, session[:user_id]
   end
 
+  test "signing in adds you to the Slack channels, until you've been added" do
+    post "/auth/hackclub"
+    assert_enqueued_with(job: JoinSlackChannelsJob) { follow_redirect! }
+
+    User.find_by!(hca_id: "ident!heidi").update!(slack_channels_joined_at: Time.current)
+    post "/auth/hackclub"
+    assert_no_enqueued_jobs(only: JoinSlackChannelsJob) { follow_redirect! }
+  end
+
   test "won't return anywhere off the site" do
     post "/auth/hackclub", params: { origin: "https://evil.example/phish" }
     follow_redirect!

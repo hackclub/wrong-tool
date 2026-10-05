@@ -9,6 +9,9 @@ module Program
   MILESTONES = { 5 => "shoutout", 10 => "handheld", 20 => "+$85" }.freeze
   # Two weeks, for weekly hours and pair weeks: the first runs to Sunday, the second to the end.
   WEEKS = [ DATES.begin..Date.new(2026, 10, 12), Date.new(2026, 10, 13)..DATES.end ].freeze
+  # wrong tool's Slack channels: #wrong, for shoutouts, and everyone's added to both when they first sign in.
+  SLACK_CHANNEL_ID = "C0C5UHLAAP5"
+  SLACK_CHANNEL_IDS = [ SLACK_CHANNEL_ID, "C0C60KQ0XLJ" ].freeze
   # We play everyone's game live on stream, at 7pm.
   PLAY_PARTY_ON = Date.new(2026, 10, 8)
 

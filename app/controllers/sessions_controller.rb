@@ -1,10 +1,12 @@
-# Hack Club Auth sends people back here. Signing in starts a fresh session; they return to where they came from.
+# Hack Club Auth sends people back here. Signing in starts a fresh session (and adds you to wrong tool's Slack channels
+# the first time); they return to where they came from.
 class SessionsController < ApplicationController
   def create
     user = User.from_omniauth(request.env["omniauth.auth"])
     return_to = safe_return_path(request.env["omniauth.origin"])
     reset_session
     session[:user_id] = user.id
+    JoinSlackChannelsJob.perform_later(user.id) unless user.slack_channels_joined_at
 
     if Rails.configuration.x.posthog_configured
       PostHog.identify(

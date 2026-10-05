@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -139,6 +139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_150000) do
     t.datetime "streak_synced_at"
     t.string "timezone"
     t.date "streak_skip_used_on"
+    t.datetime "slack_channels_joined_at"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
