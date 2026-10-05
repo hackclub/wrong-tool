@@ -1,4 +1,5 @@
-# Shipping your project: the form, and once it's submitted, that it's in review. Opens once you're set up.
+# Shipping your project: the form, and once it's submitted, that it's in review. Opens once you're set up and your
+# hours come from a Hackatime project.
 class ShipsController < ApplicationController
   before_action :require_set_up_project
 
@@ -28,7 +29,7 @@ class ShipsController < ApplicationController
       @project = current_user&.project
       return redirect_to onboarding_path unless @project
 
-      redirect_to project_path unless @project.set_up?
+      redirect_to project_path unless @project.set_up? && @project.tracking?
     end
 
     def ship_params

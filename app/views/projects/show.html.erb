@@ -1,12 +1,16 @@
 <% content_for :title, "#{@project.title} · Wrong Tool" %>
 <% build_days = @project.build_days %>
-<% set_up = @project.set_up? %>
+<%# Walks you through setup until you've been through every step, then it's your schedule. %>
+<% set_up = @project.setup_finished? %>
 
-<%# Your project, the sheet onboarding unlocks: what you pledged and setting up to build it (Hackatime, Slack, a
+<%# Your project, the sheet onboarding unlocks: what you pledged and setting up to build it (Hackatime, a
     repo), then once you're set up, your goal and schedule. Clippy keeps you to it, with your streak and the
-    leaderboard beside. %>
+    leaderboard beside. Until a Hackatime project's linked, the page keeps an eye out for one linking itself. %>
+<% watching = @project.hackatime_linked? && @project.hackatime_projects.none? %>
 <div class="spreadsheet onboarding project" data-saved
-     data-controller="project"
+     data-controller="project<%= " hackatime-watch" if watching %>"
+     <% if watching %>data-hackatime-watch-url-value="<%= hours_project_path(refresh: 1) %>"
+     data-action="visibilitychange@document->hackatime-watch#check"<% end %>
      data-project-clippy-value="<%= flash[:clippy] %>"
      data-project-mood-value="<%= project_clippy_mood(@project) %>"
      data-project-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
@@ -22,7 +26,7 @@
           <div class="project__header-text">
             <div class="project__day-row">
               <span class="project__day"><%= set_up ? "Day 1 of #{build_days.size}" : "Day 1" %></span>
-              <% if set_up %>
+              <% if set_up && @project.tracking? %>
                 <%= link_to project_ship_path, class: "project__ship" do %>
                   <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m226-559 78 33q14-28 29-54t33-52l-56-11-84 84Zm142 83 114 113q42-16 90-49t90-75q70-70 109.5-155.5T806-800q-72-5-158 34.5T492-656q-42 42-75 90t-49 90Zm178-65q-23-23-23-56.5t23-56.5q23-23 57-23t57 23q23 23 23 56.5T660-541q-23 23-57 23t-57-23Zm19 321 84-84-11-56q-26 18-52 32.5T532-299l33 79Zm313-653q19 121-23.5 235.5T708-419l20 99q4 20-2 39t-20 33L538-80l-84-197-171-171-197-84 167-168q14-14 33.5-20t39.5-2l99 20q104-104 218-147t235-24ZM157-321q35-35 85.5-35.5T328-322q35 35 34.5 85.5T327-151q-25 25-83.5 43T82-76q14-103 32-161.5t43-83.5Zm57 56q-10 10-20 36.5T180-175q27-4 53.5-13.5T270-208q12-12 13-29t-11-29q-12-12-29-11.5T214-265Z"/></svg>
                   <%= @project.ship_in_review ? "In review" : "Ship" %>
@@ -47,14 +51,22 @@
             <%= render "projects/steps", project: @project, step: @step, refresh_hackatime: @refresh_hackatime %>
           </details>
 
-          <%# Which Hackatime projects your hours come from; Change opens that step again. %>
+          <%# Which Hackatime projects your hours come from (none yet: the first you log time on links itself); Change
+              opens that step again. %>
           <div class="project__linked">
             <span class="project__linked-label">Hours from</span>
-            <ul class="project__linked-list" aria-label="Linked Hackatime projects">
-              <% @project.hackatime_projects.each do |name| %><li class="project__linked-project"><%= name %></li><% end %>
-            </ul>
-            <%= link_to "Change", project_path(step: "hackatime_project"), class: "onboarding-text-button project__linked-change",
-                  aria: { label: "Change linked Hackatime projects" } %>
+            <% if @project.tracking? %>
+              <ul class="project__linked-list" aria-label="Linked Hackatime projects">
+                <% @project.hackatime_projects.each do |name| %><li class="project__linked-project"><%= name %></li><% end %>
+              </ul>
+            <% else %>
+              <span class="project__linked-none">
+                <%= @project.waiting_for_hackatime_project? ? "nothing yet. Your first Hackatime project links itself once you log time." : "nothing yet. Pick your Hackatime project so your hours count." %>
+              </span>
+            <% end %>
+            <%= link_to @project.tracking? ? "Change" : "Pick", project_path(step: "hackatime_project"),
+                  class: "onboarding-text-button project__linked-change",
+                  aria: { label: @project.tracking? ? "Change linked Hackatime projects" : "Pick your Hackatime project" } %>
           </div>
 
           <%# Your schedule, as one card: the goal (your pace changes here), a cell per build day, and your hours along
@@ -160,7 +172,7 @@
           <section class="project__setup" aria-labelledby="project-setup-title">
             <div class="project__setup-head">
               <h2 class="project__section-title" id="project-setup-title">Set up</h2>
-              <span class="project__setup-count"><%= @project.required_steps_done %> of <%= Project::REQUIRED_STEPS.size %> required</span>
+              <span class="project__setup-count"><%= @project.set_up? ? "#{pluralize(@project.optional_steps_left, "optional step")} left" : "#{pluralize(Project::REQUIRED_STEPS.size - @project.required_steps_done, "required step")} left" %></span>
             </div>
             <%= render "projects/steps", project: @project, step: @step, refresh_hackatime: @refresh_hackatime %>
           </section>
@@ -173,6 +185,11 @@
           <div class="project__perch">
             <div class="project__clippy" data-project-target="clippy" data-perched>
               <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
+              <%# The gold star a 3-day streak earned him. %>
+              <% if current_user.earned?("gold_star") %>
+                <svg class="project__star" viewBox="0 0 24 24" role="img" aria-label="Gold star"><title>Gold star, for a 3-day streak</title>
+                  <path d="m12 2.5 2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
+              <% end %>
             </div>
             <p class="project__say" role="status"><%= project_clippy_says(@project) %></p>
           </div>
@@ -188,7 +205,8 @@
               </p>
               <ol class="project__week" aria-label="This week">
                 <% project_streak_week(@project).each do |day| %>
-                  <li class="project__week-day" <%= "data-today" if day[:today] %> <%= "data-done" if day[:completed] %>>
+                  <li class="project__week-day" <%= "data-today" if day[:today] %> <%= "data-done" if day[:completed] %>
+                      <%= "data-skipped" if day[:skipped] %> <%= tag.attributes(title: "Skip day") if day[:skipped] %>>
                     <span class="project__week-letter"><%= day[:letter] %></span><span class="project__week-cell"></span>
                   </li>
                 <% end %>
@@ -208,7 +226,7 @@
               <ul class="project__rewards">
                 <% project_rewards(@project).each do |reward| %>
                   <li class="project__reward" data-state="<%= reward[:state] %>">
-                    <span class="project__reward-day">Day <%= reward[:day] %></span>
+                    <span class="project__reward-day">Day <%= reward[:days] %></span>
                     <span class="project__reward-label"><%= reward[:label] %></span>
                     <span class="project__reward-status"><%= reward[:status] %></span>
                   </li>

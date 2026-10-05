@@ -1,8 +1,6 @@
 module BuddiesHelper
-  # Each of you logs this much a week for it to count as a pair week.
-  def pair_weekly_hours
-    4
-  end
+  # Each of you logs this much in a program week for it to count as a pair week.
+  def pair_weekly_hours = Pair::WEEKLY_HOURS
 
   def buddy_name(project)
     project.user.first_name.presence || project.user.name
@@ -14,15 +12,23 @@ module BuddiesHelper
     buddy_invite_url(project.buddy_code!).delete_prefix("https://").delete_prefix("http://")
   end
 
-  # What a pair earns, and how far you are from each (pair weeks count once hours are in).
-  def pair_rewards(pair_weeks: 0)
-    upcoming = Pair::REWARDS.find { |reward| reward[:weeks].nil? || reward[:weeks] > pair_weeks }
-    Pair::REWARDS.map do |reward|
-      earned = reward[:weeks] && pair_weeks >= reward[:weeks]
-      left = reward[:weeks].to_i - pair_weeks
-      reward.merge(state: earned ? "earned" : reward.equal?(upcoming) ? "next" : "later",
-                   status: earned ? "Earned" : reward[:weeks] ? pluralize(left, "wk") : "Both ship",
-                   short: reward[:weeks] ? "#{reward[:weeks]} wk" : "Ship")
+  # What a pair earns (Reward::PAIR), and how far your pair is from each: earned, next up or later. The desktop
+  # background is "taken" once another pair has it.
+  def pair_rewards(pair = nil)
+    weeks = pair ? pair.pair_weeks : 0
+    desktop = Reward.desktop_pair
+    rewards = Reward::PAIR.map do |reward|
+      earned = pair&.earned?(reward[:key])
+      taken = reward[:key] == "desktop" && desktop && desktop != pair
+      status = if earned then "Earned"
+      elsif taken then "Taken"
+      elsif reward[:weeks] then "#{reward[:weeks] - weeks} wk left"
+      elsif reward[:key] == "desktop" then "Open"
+      else "Not yet"
+      end
+      reward.merge(earned:, taken:, status:)
     end
+    upcoming = rewards.find { |reward| !reward[:earned] && !reward[:taken] }
+    rewards.map { |reward| reward.merge(state: reward[:earned] ? "earned" : reward.equal?(upcoming) ? "next" : "later") }
   end
 end

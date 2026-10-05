@@ -19,11 +19,10 @@
       <section class="buddy-invited__card" aria-labelledby="buddy-invited-title">
         <div>
           <h1 class="buddy-invited__title" id="buddy-invited-title">
-            <%= mine ? "This is your own invite link." : "#{buddy_name(@inviter)} wants to build with you." %>
+            <%= mine ? "This is your own invite link." : "#{buddy_name(@inviter)} invited you to build together." %>
           </h1>
           <p class="leaderboard__note">
-            You each build your own game in your own wrong tool. Log <%= pair_weekly_hours %>h a week each and you keep a
-            streak together.
+            You each make your own game, in any tool. Weeks you both log <%= pair_weekly_hours %>h count toward a few small rewards.
           </p>
         </div>
 
@@ -42,10 +41,10 @@
         </div>
 
         <div class="buddy-invited__get">
-          <h2 class="buddy-invited__get-title">You both get</h2>
+          <h2 class="buddy-invited__get-title">Rewards for you both</h2>
           <% pair_rewards.each do |reward| %>
             <div class="buddy-invited__reward">
-              <span class="buddy-invited__reward-key"><%= reward[:label] %></span><span><%= reward[:reward] %></span>
+              <span class="buddy-invited__reward-key"><%= reward[:when] %></span><span><%= reward[:label] %></span>
             </div>
           <% end %>
         </div>

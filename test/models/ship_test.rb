@@ -4,7 +4,7 @@ class ShipTest < ActiveSupport::TestCase
   setup do
     @project = projects(:orpheus)
     link_hackatime(@project.user)
-    @project.update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    @project.update!(hackatime_projects: [ "rhythm-game" ])
   end
 
   test "shipping keeps what you submitted, and makes it your project's name and repo" do
@@ -19,7 +19,7 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal [ "Beat Sheet", "https://github.com/orpheus/beat-sheet" ], [ @project.reload.title, @project.repo_url ]
     assert @project.screenshot.attached?, "the screenshot you shipped with is your project's too"
     assert_equal ship, @project.ship_in_review
-    assert_not @project.shipped?, "not in the Hall of Wrong until it's approved"
+    assert_not @project.shipped?, "not shipped until it's approved"
 
     ship.update!(status: "approved")
     assert @project.reload.shipped?

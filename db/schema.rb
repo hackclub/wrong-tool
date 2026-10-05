@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_150000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -70,14 +70,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
     t.integer "pace_minutes", null: false
     t.string "build_time", null: false
     t.date "signed_on", null: false
-    t.boolean "slack_joined", default: false, null: false
     t.string "repo_url"
-    t.boolean "idea_posted", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "hackatime_projects", default: [], null: false
     t.boolean "repo_later", default: false, null: false
-    t.boolean "idea_skipped", default: false, null: false
     t.boolean "party_queued", default: false, null: false
     t.string "name"
     t.string "buddy_code"
@@ -87,6 +84,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
     t.boolean "hackatime_auto_linked", default: false, null: false
     t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
+  end
+
+  create_table "rewards", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "pair_id"
+    t.string "key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_rewards_on_desktop", unique: true, where: "key = 'desktop'"
+    t.index ["pair_id", "key"], name: "index_rewards_on_pair_id_and_key", unique: true
+    t.index ["pair_id"], name: "index_rewards_on_pair_id"
+    t.index ["user_id", "key"], name: "index_rewards_on_user_id_and_key", unique: true
+    t.index ["user_id"], name: "index_rewards_on_user_id"
   end
 
   create_table "ships", force: :cascade do |t|
@@ -128,6 +138,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
     t.integer "current_streak", default: 0, null: false
     t.datetime "streak_synced_at"
     t.string "timezone"
+    t.date "streak_skip_used_on"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
@@ -139,6 +150,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
+  add_foreign_key "rewards", "pairs"
+  add_foreign_key "rewards", "users"
   add_foreign_key "ships", "projects"
   add_foreign_key "streak_activities", "users"
 end

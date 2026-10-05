@@ -42,7 +42,7 @@ module Nudge::Copy
       "%{peers} people building in %{tool_name} logged time today. yours is the one clippy is rooting for.",
       "%{peers} people made %{tool_name} do something it was never meant to do today. your turn.",
       "someone just shipped a game in a tool that was never meant for games. %{title} could be next.",
-      "#wrong-tool is busy today. come show them %{title}."
+      "#wrong is busy today. come show them %{title}."
     ],
     # Clippy being a bit much, on purpose. Capped at Nudge::DRAMATIC_CAP per person.
     "dramatic" => [
@@ -57,15 +57,12 @@ module Nudge::Copy
   FIXED = {
     # Setup, one missing step at a time.
     "hackatime" => [ "your hours don't count until hackatime's linked. clippy can't count them either. it takes 2 minutes." ],
-    "slack" => [ "#wrong-tool is where everyone posts what they're building. join so clippy can show you off." ],
     "repo" => [ "%{title} needs a home. add your repo link so it counts when you ship." ],
 
     # Milestones.
     "first_session" => [ "first session logged!! %{title} exists now. clippy is emotional." ],
     "halfway" => [ "5 hours. halfway to a %{prize}. clippy is vibrating." ],
     "done" => [ "10 HOURS. you won a %{prize}. clippy is crying. go claim it. 🎉" ],
-    "streak_3" => [ "🔥 3 days. clippy got a gold star ⭐ because of you. clippy will never take it off." ],
-    "streak_7" => [ "🔥 7 days. you earned a skip day: miss one and the streak won't break. clippy is so proud." ],
 
     # Program dates. "_done" is for people who already have their 10 hours.
     "kickoff" => [ "wrong tool starts today. %{title}, %{build_time}, %{pace} minutes. clippy's ready if you are." ],
@@ -87,18 +84,15 @@ module Nudge::Copy
     "social" => [ "see what people built", :slack ],
     "dramatic" => [ "make clippy happy", :project ],
     "hackatime" => [ "link hackatime", :hackatime ],
-    "slack" => [ "join #wrong-tool", :slack ],
     "repo" => [ "add your repo", :project ],
     "first_session" => [ "see your progress", :project ],
     "halfway" => [ "see your progress", :project ],
     "done" => [ "claim your handheld", :project ],
-    "streak_3" => [ "see your streak", :project ],
-    "streak_7" => [ "see your streak", :project ],
     "kickoff" => [ "open your project", :project ],
     "three_days_left" => [ "open your project", :project ],
-    "three_days_left_done" => [ "show #wrong-tool", :slack ],
+    "three_days_left_done" => [ "show #wrong", :slack ],
     "last_day" => [ "ship it", :project ],
-    "last_day_done" => [ "show #wrong-tool", :slack ],
+    "last_day_done" => [ "show #wrong", :slack ],
     "streak_saver" => [ "save your streak", :project ]
   }.freeze
 

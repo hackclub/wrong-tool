@@ -10,20 +10,20 @@ class BuddiesControllerTest < ActionDispatch::IntegrationTest
   test "before you're paired: how it works, and your invite link" do
     get buddy_path
 
-    assert_select "h1", "Build with a buddy"
-    assert_equal [ "Both log 4h a week", "Playtest each other", "Cover a bad week" ], css_select(".buddy-rules__title").map(&:text)
+    assert_select "h1", "Build with a friend"
+    assert_equal [ "First pomodoro together", "1 pair week", "2 pair weeks", "First pair to 10h each" ], css_select(".buddy-rules__title").map(&:text)
     assert_select ".buddy-link__input[value=?]", "www.example.com/b/orpheus"
     assert_select ".formula-bar__content", /=BUDDY\(you, \?\) → #N\/A/
   end
 
   test "copying your link from setup counts as sending it" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true, idea_skipped: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true)
     get project_path
     assert_select ".project__step[data-state=current]", /Bring a buddy/
-    assert_select ".buddy-card__title", "Build with a buddy"
 
     patch project_path, params: { project: { buddy_invited: true } }
+    assert_equal "congratulate", flash[:clippy], "that was the last step"
     follow_redirect!
     assert_select ".buddy-card__title", "Invite sent"
     assert_select ".project__step", /Buddy invite sent/
@@ -31,7 +31,7 @@ class BuddiesControllerTest < ActionDispatch::IntegrationTest
 
   test "paired, the sidebar card and the tab show the two of you" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true)
     projects(:orpheus).pair_with(projects(:ana))
     get project_path
 

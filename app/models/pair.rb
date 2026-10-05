@@ -1,16 +1,13 @@
 # Two projects building side by side: separate games in their own wrong tools, one pair streak. You're paired by
 # accepting someone's invite link (or, later, being matched). A project is in one pair at most.
 class Pair < ApplicationRecord
-  # What a pair earns: by pair weeks (both hit the weekly goal), and once you've both shipped.
-  REWARDS = [
-    { weeks: 2, label: "2 pair weeks", reward: "Sticker sheet, mailed to both" },
-    { weeks: 4, label: "4 pair weeks", reward: "+3 bonus hours each" },
-    { weeks: nil, label: "Both ship", reward: "Co-op slot at Play party" }
-  ].freeze
+  # A program week counts as a pair week when you each log this much in it. What pair weeks earn is in Reward::PAIR.
+  WEEKLY_HOURS = 4
 
   belongs_to :first_project, class_name: "Project"
   belongs_to :second_project, class_name: "Project"
   has_many :pomodoros, class_name: "BuddyPomodoro", dependent: :destroy
+  has_many :rewards, dependent: :destroy
 
   validate :two_projects_not_paired_yet, on: :create
 
@@ -21,6 +18,23 @@ class Pair < ApplicationRecord
   def buddy_of(project)
     project == first_project ? second_project : first_project
   end
+
+  def projects = [ first_project, second_project ]
+
+  # Program weeks you both logged WEEKLY_HOURS in, from the week you paired up.
+  def pair_weeks(today: Date.current)
+    Program::WEEKS.count do |week|
+      week.end >= started_on && week.begin <= today &&
+        projects.all? { |project| project.user.hours_in(week) >= WEEKLY_HOURS }
+    end
+  end
+
+  # You've both logged Reward::DESKTOP_HOURS.
+  def desktop_ready?
+    projects.all? { |project| project.user.hours_in(Program::HACKATIME_START..) >= Reward::DESKTOP_HOURS }
+  end
+
+  def earned?(key) = rewards.any? { |reward| reward.key == key }
 
   # The pomodoro you're doing together right now, if there is one.
   def live_pomodoro

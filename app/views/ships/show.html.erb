@@ -1,7 +1,7 @@
 <% content_for :title, "Ship · #{@project.title} · Wrong Tool" %>
 
-<%# Shipping your project, over the whole sheet: the form (with what it still needs and how it'll look in the Hall of
-    Wrong), then once it's in, that it's in review. %>
+<%# Shipping your project, over the whole sheet: the form (with what it still needs), then once it's in, that it's
+    in review. %>
 <div class="ship" data-controller="project"
      data-project-clippy-value="<%= flash[:clippy] %>"
      data-project-mood-value="<%= "happy" %>"
@@ -20,10 +20,9 @@
         <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
       </div>
       <h2 class="ship__done-title">Shipped.</h2>
-      <p class="ship__done-text"><%= @ship.title %> is in review. You'll hear in #wrong-tool when it's live in the Hall of Wrong.</p>
+      <p class="ship__done-text"><%= @ship.title %> is in review. You'll hear in #wrong once it's approved.</p>
       <div class="ship__done-actions">
-        <%= link_to "See the Hall of Wrong", hall_path, class: "onboarding-button onboarding-button--primary ship__button" %>
-        <%= link_to "Back to project", project_path, class: "onboarding-text-button ship__text-button" %>
+        <%= link_to "Back to project", project_path, class: "onboarding-button onboarding-button--primary ship__button" %>
       </div>
     </main>
   <% else %>
@@ -85,17 +84,6 @@
           <% if @ship.errors[:screenshot_shows_game].any? %>
             <span class="ship__error" role="alert"><%= @ship.errors.full_messages_for(:screenshot_shows_game).first %></span>
           <% end %>
-
-          <span class="ship__label ship__label--hall">In the Hall of Wrong</span>
-          <div class="ship__hall">
-            <span class="ship__hall-cell">B7</span>
-            <span class="ship__hall-text">
-              <span class="ship__hall-title" data-ship-target="previewTitle"><%= @ship.title.presence || "Untitled" %></span>
-              <span class="ship__hall-meta">
-                <%= current_user.first_name.presence || current_user.name %> · built in <%= @project.tool_name %> · <%= project_hours(@project.hours_logged) %> hrs
-              </span>
-            </span>
-          </div>
         </div>
       </div>
 

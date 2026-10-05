@@ -13,7 +13,7 @@ class BuddyPomodorosControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ true, true, false, "Ana", 25 ], started.values_at("live", "you_in", "buddy_in", "buddy", "minutes")
 
     users(:ana).update!(hackatime_uid: "1003", hackatime_access_token: "token-ana")
-    projects(:ana).update!(hackatime_projects: [ "pong" ], slack_joined: true)
+    projects(:ana).update!(hackatime_projects: [ "pong" ], repo_later: true, buddy_skipped: true)
     sign_in(:ana)
     get buddy_pomodoro_path, as: :json
     assert_equal [ true, false ], response.parsed_body.values_at("live", "you_in")
@@ -24,6 +24,7 @@ class BuddyPomodorosControllerTest < ActionDispatch::IntegrationTest
     joined = response.parsed_body
     assert_equal [ true, true ], joined.values_at("you_in", "buddy_in")
     assert_equal started["ends_at"], joined["ends_at"]
+    assert projects(:ana).pair.earned?("pair_listed"), "your first pomodoro together lists you as a pair"
 
     sign_in(:orpheus)
     get buddy_pomodoro_path, as: :json

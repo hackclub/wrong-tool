@@ -1,6 +1,7 @@
 <%# locals: (project:) %>
 <%# Your buddy, in the sidebar: an invite to pair up, the invite you've sent, or the two of you and what you'll earn. %>
 <% buddy = project.buddy %>
+<% pair = project.pair %>
 <section class="project__card buddy-card" aria-labelledby="buddy-card-title">
   <% if buddy %>
     <div class="buddy-card__head">
@@ -11,15 +12,15 @@
         <%= link_to "You + #{buddy_name(buddy)}", buddy_path, class: "buddy-card__title", id: "buddy-card-title" %>
         <span class="buddy-card__note"><%= buddy_name(buddy) %> is building <%= buddy.title.sub(/\A\w/, &:downcase) %></span>
       </span>
-      <span class="buddy-card__streak"><b>Week 1</b><span>pair streak</span></span>
+      <span class="buddy-card__streak"><b><%= pair.pair_weeks %> of <%= Program::WEEKS.size %></b><span>pair weeks</span></span>
     </div>
     <div class="buddy-card__section">
-      <span class="buddy-card__caption">Pair rewards · both of you get these</span>
+      <span class="buddy-card__caption">Rewards for you both</span>
       <ul class="project__rewards buddy-card__rewards">
-        <% pair_rewards.each do |reward| %>
+        <% pair_rewards(pair).each do |reward| %>
           <li class="project__reward" data-state="<%= reward[:state] %>">
             <span class="project__reward-day"><%= reward[:short] %></span>
-            <span class="project__reward-label"><%= reward[:reward] %></span>
+            <span class="project__reward-label"><%= reward[:label] %></span>
             <span class="project__reward-status"><%= reward[:status] %></span>
           </li>
         <% end %>
@@ -34,7 +35,7 @@
     </div>
     <div class="buddy-card__who">
       <h2 class="buddy-card__title" id="buddy-card-title">Invite sent</h2>
-      <p class="buddy-card__note">You're paired the moment they sign up from your link.</p>
+      <p class="buddy-card__note">You'll be paired once they sign up.</p>
     </div>
     <%= render "buddies/invite_link", project:, compact: true %>
   <% else %>
@@ -42,15 +43,15 @@
       <%= avatar_tag(project.user, "buddy-face") %><span class="buddy-face" data-empty>+</span>
     </span>
     <div class="buddy-card__who">
-      <h2 class="buddy-card__title" id="buddy-card-title">Build with a buddy</h2>
-      <p class="buddy-card__note">Pair up with a friend. Separate games, one weekly streak, rewards for both.</p>
+      <h2 class="buddy-card__title" id="buddy-card-title">Build with a friend</h2>
+      <p class="buddy-card__note">You each make your own game. Weeks you both log <%= pair_weekly_hours %>h count toward a few small rewards.</p>
     </div>
     <ul class="buddy-card__ladder">
       <% pair_rewards.each do |reward| %>
-        <li><span class="buddy-card__ladder-key"><%= reward[:short] %></span><%= reward[:reward].sub(", mailed to both", ", both") %></li>
+        <li><span class="buddy-card__ladder-key"><%= reward[:short] %></span><%= reward[:label] %></li>
       <% end %>
     </ul>
     <%= render "buddies/invite_link", project:, mark_invited: true, compact: true %>
-    <p class="buddy-card__fine">Rewards only unlock when you both log.</p>
+    <p class="buddy-card__fine">Rewards need both of you to log.</p>
   <% end %>
 </section>

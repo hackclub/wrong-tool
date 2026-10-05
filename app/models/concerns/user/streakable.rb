@@ -1,5 +1,6 @@
 # Your streak: days in a row you built at least 20 minutes on your linked Hackatime projects, kept up to date from
-# Hackatime in the background. Today doesn't break it until it's over. (From Stardance's streaks.)
+# Hackatime in the background. Today doesn't break it until it's over, and once a streak reaches the skip day reward
+# (Reward::STREAK), the first day you miss after that doesn't break it either. (From Stardance's streaks.)
 module User::Streakable
   extend ActiveSupport::Concern
 
@@ -11,15 +12,28 @@ module User::Streakable
 
   included do
     has_many :streak_activities, dependent: :destroy
+    has_many :rewards, dependent: :destroy
   end
 
   def streak_today_date
     StreakActivity.streak_date_for(Time.current, timezone)
   end
 
+  # Your streak, and then whatever streak rewards it's reached (and your pair's, since your hours moved).
   def recalculate_streak!
-    update_column(:current_streak, calculate_current_streak)
+    streak, skipped_on = calculate_current_streak
+    update_columns(current_streak: streak, streak_skip_used_on: skipped_on)
+    Reward.award_streak!(self)
+    project&.pair&.then { |pair| Reward.award_pair!(pair) }
   end
+
+  # Hours on your linked Hackatime projects over some days, as of the last sync. Weekly hours and pair weeks come from
+  # here rather than asking Hackatime.
+  def hours_in(dates)
+    (streak_activities.for_range(dates).sum(:coded_seconds) / 3600.0).round(1)
+  end
+
+  def earned?(key) = rewards.any? { |reward| reward.key == key }
 
   # Queues a sync, unless one went out in the last STREAK_SYNC_THROTTLE.
   def sync_streak_if_stale!
@@ -37,7 +51,7 @@ module User::Streakable
       sync_streak!
     else
       streak_activities.delete_all
-      update_columns(current_streak: 0, streak_synced_at: nil)
+      update_columns(current_streak: 0, streak_skip_used_on: nil, streak_synced_at: nil)
     end
   end
 
@@ -62,7 +76,8 @@ module User::Streakable
     week = today.beginning_of_week(:sunday)..today.end_of_week(:sunday)
     completed = streak_activities.for_range(week).select(&:completed?).map(&:activity_date).to_set
     week.map do |date|
-      { date:, letter: Date::ABBR_DAYNAMES[date.wday][0], today: date == today, completed: completed.include?(date) }
+      { date:, letter: Date::ABBR_DAYNAMES[date.wday][0], today: date == today, completed: completed.include?(date),
+        skipped: date == streak_skip_used_on }
     end
   end
 
@@ -75,17 +90,28 @@ module User::Streakable
       "streak_sync_manual:#{id}"
     end
 
+    # Your streak and the day your skip day covered, if it has: from your first day on, a day you hit 20 minutes adds
+    # one, and a day you missed ends it, unless you have a skip day to cover it. You get one the first time a streak
+    # reaches it, and keep it until you need it.
     def calculate_current_streak
       today = streak_today_date
-      dates = streak_activities.completed
-        .where(activity_date: ..today)
-        .order(activity_date: :desc)
-        .limit(400)
-        .pluck(:activity_date)
-        .to_set
-      date = dates.include?(today) ? today : today - 1.day
-      count = 0
-      count += 1 and date -= 1.day while dates.include?(date)
-      count
+      dates = streak_activities.completed.where(activity_date: ..today).pluck(:activity_date).to_set
+      return [ 0, nil ] if dates.empty?
+
+      skip_at = Reward.definition("skip_day")[:days]
+      count, skip, skipped_on = 0, false, nil
+      (dates.min..today).each do |date|
+        if dates.include?(date)
+          count += 1
+          skip = true if count >= skip_at && skipped_on.nil?
+        elsif date == today
+          # Today isn't over.
+        elsif skip
+          skip, skipped_on = false, date
+        else
+          count = 0
+        end
+      end
+      [ count, skipped_on ]
     end
 end

@@ -41,7 +41,10 @@
               <td>
                 <span class="leaderboard__builder">
                   <%= avatar_tag(row[:user], "leaderboard__avatar") %>
-                  <span class="leaderboard__name"><%= row[:name] %></span>
+                  <span class="leaderboard__name">
+                    <%= row[:name] %><% if row[:buddy] %> + <%= buddy_name(row[:buddy]) %><% end %>
+                  </span>
+                  <% if row[:flame] %><span class="leaderboard__flame" title="5-day streak or longer">🔥</span><% end %>
                 </span>
               </td>
               <td class="leaderboard__building">
@@ -56,7 +59,7 @@
           <% end %>
         </tbody>
       </table>
-      <p class="leaderboard__footnote">Hours come from Hackatime, counting only linked projects. Week resets Monday.</p>
+      <p class="leaderboard__footnote">Hours come from Hackatime, counting only linked projects. Week 1 is Oct 6 to 12, week 2 is Oct 13 to 20.</p>
     </div>
   </main>
 

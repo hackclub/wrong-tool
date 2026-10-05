@@ -88,9 +88,6 @@
     font: 700 14px var(--font-cell);
   }
 
-  .ship__label--hall {
-    padding-block-start: 10px;
-  }
 
   .ship__count {
     font: 13px var(--font-cell);
@@ -182,7 +179,7 @@
     color: var(--red-800);
   }
 
-  /* The screenshot, the check that it's real, and the Hall of Wrong card */
+  /* The screenshot, and the check that it's real */
 
   .ship__side {
     min-inline-size: 0;
@@ -254,46 +251,10 @@
     accent-color: var(--green);
   }
 
-  .ship__hall {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border: 1px solid var(--blue-100);
-    border-radius: 6px;
-    background: #e8f0fe;
-  }
 
-  .ship__hall-cell {
-    flex: none;
-    inline-size: 36px;
-    block-size: 36px;
-    display: grid;
-    place-items: center;
-    border-radius: 4px;
-    background: var(--blue-600);
-    font: 600 13px var(--font-mono);
-    color: var(--white);
-  }
 
-  .ship__hall-text {
-    min-inline-size: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
 
-  .ship__hall-title {
-    overflow: hidden;
-    font: 700 15px var(--font-cell);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
-  .ship__hall-meta {
-    font: 13px var(--font-cell);
-    color: var(--text-secondary);
-  }
 
   /* What it still needs, and Ship it */
 

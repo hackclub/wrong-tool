@@ -10,25 +10,25 @@ class ProjectTest < ActiveSupport::TestCase
     project = projects(:orpheus) # 45 min a day, signed before wrong tool starts
 
     assert_equal 14, project.build_days.size
-    assert_equal Date.new(2026, 10, 2), project.build_days.first
-    assert_equal Date.new(2026, 10, 15), project.finish_on
+    assert_equal Date.new(2026, 10, 6), project.build_days.first
+    assert_equal Date.new(2026, 10, 19), project.finish_on
   end
 
   test "signing after wrong tool starts counts from that day" do
     project = projects(:orpheus)
-    project.signed_on = Date.new(2026, 10, 5)
+    project.signed_on = Date.new(2026, 10, 8)
 
-    assert_equal Date.new(2026, 10, 5), project.build_days.first
+    assert_equal Date.new(2026, 10, 8), project.build_days.first
   end
 
   test "building on weekends only counts Saturdays and Sundays" do
     project = projects(:orpheus)
     project.assign_attributes(build_time: "weekends", pace_minutes: 180)
 
-    assert_equal [ Date.new(2026, 10, 3), Date.new(2026, 10, 4), Date.new(2026, 10, 10), Date.new(2026, 10, 11) ], project.build_days
+    assert_equal [ Date.new(2026, 10, 10), Date.new(2026, 10, 11), Date.new(2026, 10, 17), Date.new(2026, 10, 18) ], project.build_days
   end
 
-  test "setting up takes Hackatime and its project and the Slack channel; a repo and your idea post can wait" do
+  test "setting up takes linking Hackatime; your project, a repo and a buddy can wait" do
     project = projects(:orpheus)
     assert_equal 0, project.required_steps_done
     assert project.step_locked?("hackatime_project")
@@ -37,16 +37,13 @@ class ProjectTest < ActiveSupport::TestCase
     project.hackatime_projects = [ "rhythm-game" ]
     assert project.tracking?
     assert_not project.step_locked?("hackatime_project")
-    assert_not project.set_up?
+    assert project.set_up?, "linking Hackatime is all setup needs"
+    assert_equal 2, project.optional_steps_left
 
-    project.slack_joined = true
-    assert project.set_up?
-    assert_equal 3, project.optional_steps_left
-
-    project.assign_attributes(repo_later: true, idea_skipped: true, buddy_skipped: true)
+    project.assign_attributes(repo_later: true, buddy_skipped: true)
     assert_equal 0, project.optional_steps_left
     assert project.step_open?("repo"), "a repo put off till later can still be added"
-    assert_not project.step_open?("idea")
+    assert_not project.step_open?("slack"), "everyone's added to #wrong for them"
   end
 
   test "renaming it changes its title, and renaming it to nothing puts back your idea and tool" do

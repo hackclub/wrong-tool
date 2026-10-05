@@ -78,3 +78,6 @@ gem "posthog-ruby", "~> 3.23", require: "posthog"
 gem "posthog-rails", "~> 3.18"
 
 gem "dotenv-rails", "~> 3.2"
+
+gem "slack-ruby-client", "~> 3.2"
+gem "slocks", "~> 0.1.2"

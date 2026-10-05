@@ -74,19 +74,19 @@ class Project < ApplicationRecord
     CODE.include?(tool)
   end
 
-  # Setting up, in order: link Hackatime, then which Hackatime project this is, join the Slack channel, add a repo
-  # (or say you'll add it before you ship) and post your idea (or skip it).
-  SETUP_STEPS = %w[hackatime hackatime_project slack repo idea buddy].freeze
-  # You're set up once your hours count and you're in the channel; the repo and your idea post can wait.
-  REQUIRED_STEPS = SETUP_STEPS.first(3).freeze
+  # Setting up, in order: link Hackatime, then which Hackatime project this is, add a repo (or say you'll add it before
+  # you ship) and bring a buddy (or skip it). Everyone's added to #wrong on Slack for them.
+  SETUP_STEPS = %w[hackatime hackatime_project repo buddy].freeze
+  # You're set up once Hackatime's linked. Which Hackatime project this is can wait: with nothing on Hackatime since it
+  # started counting there's nothing to pick yet, and the first new project you log time on links itself
+  # (auto_link_hackatime_project). The repo and a buddy can wait too.
+  REQUIRED_STEPS = %w[hackatime].freeze
 
   def step_done?(step)
     case step
     when "hackatime" then hackatime_linked?
     when "hackatime_project" then hackatime_projects.any?
-    when "slack" then slack_joined?
     when "repo" then (repo_url.present? && errors[:repo_url].none?) || repo_later?
-    when "idea" then idea_posted? || idea_skipped?
     when "buddy" then buddy.present? || buddy_invited? || buddy_skipped?
     end
   end
@@ -107,17 +107,36 @@ class Project < ApplicationRecord
     REQUIRED_STEPS.count { |step| step_done?(step) }
   end
 
+  # Optional steps you haven't done, put off or skipped (a Hackatime project with nothing to pick yet isn't one).
   def optional_steps_left
-    (SETUP_STEPS - REQUIRED_STEPS).count { |step| !step_done?(step) }
+    (SETUP_STEPS - REQUIRED_STEPS).count { |step| !step_settled?(step) }
   end
 
+  # What setup needs: Hackatime linked. That's what unlocks shipping and the leaderboard.
   def set_up?
     required_steps_done == REQUIRED_STEPS.size
+  end
+
+  # You've been through every step: done, put off or skipped. Until then your project page walks you through them,
+  # one at a time, and once you're through it turns into your schedule (and Clippy congratulates you).
+  def setup_finished?
+    set_up? && SETUP_STEPS.all? { |step| step_settled?(step) }
+  end
+
+  # Done, or (your Hackatime project) nothing to pick yet, since it links itself.
+  def step_settled?(step)
+    step_done?(step) || (step == "hackatime_project" && waiting_for_hackatime_project?)
   end
 
   # Hours count once Hackatime knows which project this is.
   def tracking?
     hackatime_linked? && hackatime_projects.any?
+  end
+
+  # Hackatime's linked but has nothing since it started counting to pick from, so the first project you log time on
+  # will link itself. Only known once available_hackatime_projects has been asked for.
+  def waiting_for_hackatime_project?
+    hackatime_linked? && hackatime_projects.none? && available_hackatime_projects&.none?
   end
 
   def pair
@@ -151,7 +170,8 @@ class Project < ApplicationRecord
     user.hackatime_linked?
   end
 
-  # The Hackatime projects you can link: the ones Hackatime says you've logged time on. Set before linking one.
+  # The Hackatime projects you can link: the ones Hackatime says you've logged time on. Set before linking one (and
+  # on your project page, while you haven't).
   attr_accessor :available_hackatime_projects
 
   # The Hackatime projects you ticked: these become the linked ones. Any you hadn't linked before have to be
@@ -196,13 +216,15 @@ class Project < ApplicationRecord
     end
   end
 
-  # Weekly hours aren't wired up to Hackatime yet: until they are, they're nothing.
-  def hours_this_week = 0
+  # This program week (Program::WEEKS), as of the last streak sync. Nothing outside the program.
+  def hours_this_week(today: user.streak_today_date)
+    (week = Program.week_of(today)) ? user.hours_in(week) : 0
+  end
 
   # As of the last sync (see User::Streakable).
   def streak = user.current_streak
 
-  # In the Hall of Wrong once a ship's approved.
+  # Once a ship's approved.
   def shipped?
     ships.any? { |ship| ship.status == "approved" }
   end

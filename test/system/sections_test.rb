@@ -11,7 +11,7 @@ class SectionsTest < ApplicationSystemTestCase
   test "how it works numbers its steps and links the hour trackers" do
     visit "/#how-it-works"
     assert_selector ".how-it-works__number--step", count: 4
-    assert_text "Submit your repo and hours by oct 16."
+    assert_text "Submit your repo and hours by oct 20."
     new_window = window_opened_by { click_link "Lapse ↗" } # not covered by the repo table beside it
     assert_equal "https://lapse.hackclub.com/", within_window(new_window) { current_url }
     new_window.close
@@ -42,7 +42,7 @@ class SectionsTest < ApplicationSystemTestCase
   test "the FAQ answers the common questions, with links" do
     visit "/#faq"
     assert_selector ".faq__question--item", count: 8
-    assert_selector ".faq__answer--item", text: "oct 16."
+    assert_selector ".faq__answer--item", text: "oct 20."
 
     within(all(".faq__answer--item")[3]) do
       assert_link "Hackatime", href: "https://hackatime.hackclub.com/"

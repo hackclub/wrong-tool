@@ -1,5 +1,0 @@
-<%# locals: (project:) %>
-<p class="project__step-text">Where you ask for help, share progress, and hear when things ship.</p>
-<%= button_to "Join #wrong-tool", project_path, method: :patch, params: { project: { slack_joined: true } },
-      class: "onboarding-button onboarding-button--primary project__step-button",
-      form: { data: { action: "submit->project#open" } }, data: { url: wrong_tool_slack_url } %>

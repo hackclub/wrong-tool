@@ -7,7 +7,7 @@ class ProjectTest < ApplicationSystemTestCase
     visit onboarding_path
   end
 
-  test "setting up: link Hackatime and your project, join Slack, then put off the repo and post your idea" do
+  test "setting up: link Hackatime, then your project, put off the repo and skip a buddy, one step at a time" do
     sign_in_and_open_project
 
     assert_selector ".project__say", text: "Nothing's linked yet, so your hours won't count."
@@ -17,26 +17,24 @@ class ProjectTest < ApplicationSystemTestCase
 
     assert_selector ".project__say", text: "Hackatime's linked. Which project is yours?"
     assert_selector ".project__step[data-state=done]", text: "Hackatime linked"
+    assert_selector ".project__setup-count", text: "3 optional steps left"
     assert_button "Pick a project", disabled: true
     check "rhythm-game"
     assert_selector ".project__picker-value", text: "rhythm-game"
     click_on "Link project"
 
-    assert_selector ".project__step[data-state=done]", text: "Linked to rhythm-game"
-    click_on "Join #wrong-tool"
+    assert_selector ".project__say", text: "Hours count now. A couple of quick things and you're in."
+    assert_selector ".project__step[data-state=current]", text: "Add your git repo"
+    click_on "Later"
+    assert_selector ".project__step[data-state=current]", text: "Bring a buddy"
+    within(".project__step[data-state=current]") { click_on "Skip" }
 
     assert_selector ".formula-bar__content", text: "→ TRUE"
     assert_selector ".project__say", text: "All set. 20 min today starts your streak."
+    assert_selector ".project__setup-summary", exact_text: "Setup done"
     assert_selector ".project__streak-number", text: "0"
     within(".project__streak") { click_on "Refresh" }
     assert_selector ".project__streak-checked", text: "Checked just now"
-    find(".project__setup-summary", text: "Setup done · 3 optional steps left").click
-    click_on "Later"
-    find(".project__setup-summary", text: "Setup done · 2 optional steps left").click
-    click_on "Post"
-    find(".project__setup-summary", text: "Setup done · 1 optional step left").click
-    within(".project__step[data-state=current]") { click_on "Skip" }
-    assert_selector ".project__setup-summary", exact_text: "Setup done"
 
     assert_selector ".side-section[open][data-section=streak]"
     find(".side-section__row", text: "Play party").click
@@ -47,8 +45,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "renaming your project in place, and adding a screenshot" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
-                               idea_posted: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
 
     click_on "Rename"
@@ -67,8 +64,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "seeing which Hackatime projects are linked, and changing them" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
-                               idea_posted: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
     assert_selector ".project__linked-project", text: "rhythm-game"
 
@@ -92,8 +88,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "the leaderboard ranks everyone set up, and you" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true, repo_later: true,
-                               idea_posted: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
     find(".side-section__row", text: "Leaderboard").click
     click_on "See all"
@@ -104,15 +99,11 @@ class ProjectTest < ApplicationSystemTestCase
     assert_text "Most hours built this week."
     click_on "Streak"
     assert_text "Longest streaks right now."
-
-    click_on "Hall of Wrong"
-    assert_current_path hall_path
-    assert_selector "tr[data-you]", text: "You're building here"
   end
 
   test "shipping: the form says what it still needs, then it's in review" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
     find(".project__ship").click
 
@@ -121,7 +112,6 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".ship__missing", text: "Still needs a description (40+ characters), a repo URL, a demo URL, a screenshot, a screenshot check."
 
     fill_in "Title", with: "Beat Sheet"
-    assert_selector ".ship__hall-title", text: "Beat Sheet"
     fill_in "Description", with: "A rhythm game where every beat is a cell lighting up in time."
     assert_selector ".ship__count[data-enough]"
     fill_in "Repo URL", with: "github.com/orpheus/beat-sheet"
@@ -139,7 +129,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "a pomodoro: lock in for as long as you pick, pause, end it, then back to the project" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
     assert_checked_field "25", visible: :all
     find(".project__length", text: "15").click
@@ -179,7 +169,7 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "picking a pomodoro length with the sheet scrolled doesn't scroll the menus away" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_and_open_project
     page.current_window.resize_to(1280, 600)
     execute_script("document.querySelector('.project__sheet').scrollTop = 10000")
@@ -192,9 +182,9 @@ class ProjectTest < ApplicationSystemTestCase
 
   test "a pomodoro with your buddy: one starts, the other joins, and you count down together" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     users(:ana).update!(hackatime_uid: "1003", hackatime_access_token: "token-ana")
-    projects(:ana).update!(hackatime_projects: [ "pong" ], slack_joined: true)
+    projects(:ana).update!(hackatime_projects: [ "pong" ], repo_later: true, buddy_skipped: true)
     projects(:orpheus).pair_with(projects(:ana))
 
     sign_in_and_open_project
@@ -230,7 +220,7 @@ class ProjectTest < ApplicationSystemTestCase
   test "once you're done with onboarding, its tab goes" do
     sign_in_and_open_project
     assert_no_selector ".sheet-tab", text: "Onboarding"
-    assert_equal [ "My project", "Buddy", "Leaderboard", "Hall of Wrong" ], all(".sheet-tab").map(&:text)
+    assert_equal [ "My project", "Buddy", "Leaderboard" ], all(".sheet-tab").map(&:text)
 
     visit onboarding_path
     assert_selector ".sheet-tab[aria-current=page]", text: "Onboarding"

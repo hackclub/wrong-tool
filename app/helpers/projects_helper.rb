@@ -8,10 +8,6 @@ module ProjectsHelper
   BUILD_TIME_SOON = { "after school" => "after school", "evening" => "this evening", "late night" => "tonight",
                       "weekends" => "today" }.freeze
 
-  def wrong_tool_slack_url
-    "https://hackclub.slack.com/app_redirect?channel=wrong-tool"
-  end
-
   def project_prize_name(project)
     PRIZE_NAMES.fetch(project.prize)
   end
@@ -74,9 +70,10 @@ module ProjectsHelper
   end
 
   # The setup steps as the page shows them. The one you're on (the step you picked, if you can still do it, or the
-  # first one left) opens to show how to do it.
+  # first one left) opens to show how to do it. Picking your Hackatime project waits its turn while there's nothing on
+  # Hackatime to pick (it links itself once there is).
   def project_steps(project, step: nil)
-    current = project.step_open?(step.to_s) ? step.to_s : Project::SETUP_STEPS.find { |key| !project.step_done?(key) && !project.step_locked?(key) }
+    current = project.step_open?(step.to_s) ? step.to_s : Project::SETUP_STEPS.find { |key| !project.step_settled?(key) && !project.step_locked?(key) }
     Project::SETUP_STEPS.map do |key|
       # A step you reopen (the repo you'd put off) reads as still to do.
       done = project.step_done?(key) && key != current
@@ -89,8 +86,10 @@ module ProjectsHelper
   # What Clippy says while you set up, and after.
   def project_clippy_says(project)
     if !project.hackatime_linked? then "Nothing's linked yet, so your hours won't count."
-    elsif project.hackatime_projects.none? then "Hackatime's linked. Which project is yours?"
-    elsif !project.slack_joined? then "Hours count now. Join #wrong-tool and you're set."
+    elsif project.hackatime_projects.none? && !project.waiting_for_hackatime_project? then "Hackatime's linked. Which project is yours?"
+    elsif !project.setup_finished?
+      project.tracking? ? "Hours count now. A couple of quick things and you're in." : "Hackatime's linked. Your project links itself once you log time."
+    elsif project.waiting_for_hackatime_project? then "All set. Start building and your Hackatime project links itself."
     elsif project.streak.positive? then "#{pluralize(project.streak, "day")} in a row. 20 min today keeps it going."
     else "All set. 20 min today starts your streak."
     end
@@ -99,21 +98,17 @@ module ProjectsHelper
   # How Clippy feels about where you're at (a mood in mascot/clippy.js).
   def project_clippy_mood(project)
     if !project.hackatime_linked? then "attention"
-    elsif project.hackatime_projects.none? then "thinking"
-    elsif !project.slack_joined? then "explaining"
+    elsif project.hackatime_projects.none? && !project.waiting_for_hackatime_project? then "thinking"
+    elsif !project.setup_finished? then "explaining"
     else "happy"
     end
   end
 
-  # =SETUP(hackatime, project, slack) → #REF! until hours count and you're in the channel.
+  # =SETUP(hackatime, project) → #REF! until Hackatime's linked, #N/A while your hours don't count yet (no Hackatime
+  # project linked), then TRUE.
   def project_formula(project)
-    ready = project.tracking? && project.slack_joined?
-    "=SETUP(hackatime, project, slack)  →  #{ready ? "TRUE" : "#REF!"}"
-  end
-
-  # "I'm building a rhythm game in Spreadsheet. 10 hrs, shipping Oct 15."
-  def project_idea_post(project)
-    "I'm building #{project.title.sub(/\A\w/, &:downcase)}. #{hours_per_reward} hrs, shipping #{project_date(project.finish_on)}."
+    result = if !project.set_up? then "#REF!" elsif !project.tracking? then "#N/A" else "TRUE" end
+    "=SETUP(hackatime, project)  →  #{result}"
   end
 
   # Hours logged, your daily pace (which you can change) and when you ship.
@@ -177,26 +172,19 @@ module ProjectsHelper
     project.user.streak_week
   end
 
-  # Streak rewards: a gold star on day 3, a skip day on day 7, and stickers on your last build day (only the
-  # ones your plan reaches). The first one you haven't got yet is next.
+  # Streak rewards (Reward::STREAK), earned or how many days off. The first one you haven't earned is next.
   def project_rewards(project)
     streak = project.streak
-    days = project.build_days.size
-    rewards = [
-      { day: 3, label: "Gold star for Clippy" },
-      { day: 7, label: "+1 skip day" },
-      { day: days, label: "Sticker pack with your #{PRIZE_SHORT_NAMES.fetch(project.prize)}" }
-    ].select { |reward| reward[:day] <= days }.uniq { |reward| reward[:day] }
-    upcoming = rewards.find { |reward| reward[:day] > streak }
+    rewards = Reward::STREAK.map { |reward| reward.merge(earned: project.user.earned?(reward[:key])) }
+    upcoming = rewards.find { |reward| !reward[:earned] }
     rewards.map do |reward|
-      earned = streak >= reward[:day]
-      left = reward[:day] - streak
-      state = if earned then "earned" elsif reward.equal?(upcoming) then "next" else "later" end
-      reward.merge(state:, status: earned ? "Earned" : pluralize(left, "day"))
+      state = if reward[:earned] then "earned" elsif reward.equal?(upcoming) then "next" else "later" end
+      reward.merge(state:, status: reward[:earned] ? "Earned" : pluralize([ reward[:days] - streak, 1 ].max, "day"))
     end
   end
 
-  # Everyone set up, ranked by hours this week or streak, and you (last, with dashes, until you're set up).
+  # Everyone set up, ranked by hours this week or streak, and you (last, with dashes, until you're set up). A streak
+  # long enough for the flame reward shows one, and a pair that's done a pomodoro together shows your buddy.
   def leaderboard(you, sort: "week")
     key = sort == "streak" ? :streak : :hours_this_week
     others = Project.includes(:user, screenshot_attachment: :blob).where.not(id: you.id).select(&:set_up?)
@@ -206,7 +194,8 @@ module ProjectsHelper
       { rank:, you: mine, name: mine ? "You" : project.user.first_name.presence || project.user.name,
         user: project.user, building: project.title, off: !project.set_up?,
         screenshot: (project.screenshot if project.screenshot.attached? && project.screenshot.blob.persisted?),
-        hours: project.hours_this_week, streak: project.streak }
+        hours: project.hours_this_week, streak: project.streak,
+        flame: project.streak >= Reward.definition("flame")[:days], buddy: leaderboard_buddy(project) }
     end
   end
 
@@ -218,7 +207,7 @@ module ProjectsHelper
     places = rows.first(3).values_at(1, 0, 2).compact.map { |row| row.merge(place: row[:rank].to_s, label: row[:rank].to_s) }
     places << mine.merge(place: "you", label: "##{mine[:rank]}") if mine[:rank] > 3
     above = rows[rows.index(mine) - 1] if mine[:rank] > 1
-    note = above ? "Hours this week · #{above[:hours] - mine[:hours]} hrs to pass #{above[:name]}" : "Hours this week. You're in first."
+    note = above ? "Hours this week · #{(above[:hours] - mine[:hours]).round(1)} hrs to pass #{above[:name]}" : "Hours this week. You're in first."
     [ places, note ]
   end
 
@@ -233,7 +222,7 @@ module ProjectsHelper
       streak: { icon: "local-fire-department", label: "Day streak",
                 value: project.streak.positive? ? pluralize(project.streak, "day") : "Not yet", tone: project.streak.positive? ? "good" : "quiet" },
       buddy: { icon: "group", label: buddy ? "You + #{buddy_name(buddy)}" : "Buddy",
-               value: buddy ? "Week 1" : project.buddy_invited? ? "Pending" : "Invite",
+               value: buddy ? pluralize(project.pair.pair_weeks, "pair week") : project.buddy_invited? ? "Pending" : "Invite",
                tone: buddy ? nil : project.buddy_invited? ? "pending" : "link", dot: buddy_waiting },
       events: { icon: "event", label: "Play party", value: project_date(Program::PLAY_PARTY_ON), tone: "party" },
       leaderboard: { icon: "leaderboard", label: "Leaderboard", value: "##{rank}" }
@@ -242,55 +231,32 @@ module ProjectsHelper
     sections.to_h { |key, section| [ key, section.merge(key:) ] }
   end
 
-  # Every wrong tool, the games shipped in it, and who's building one. The tools onboarding offers are always here
-  # (even with nothing in them yet), with any others people are building in.
-  def hall_of_wrong(you: nil)
-    projects = Project.includes(:user, :ships).to_a
-    names = %w[Spreadsheet Figma Email SSH Shaders] | projects.map(&:tool_name)
-    names.map do |name|
-      in_tool = projects.select { |project| project.tool_name.casecmp?(name) }
-      shipped = in_tool.select(&:shipped?)
-      building = in_tool.size - shipped.size
-      games = if shipped.any?
-        shipped.map { |project| "#{project.title} by #{project.user.first_name.presence || project.user.name}" }.to_sentence
-      else
-        "Nobody yet.#{" #{pluralize(building, "person")} building one." if building.positive?}"
-      end
-      { tool: name, shipped: shipped.size, games:, mine: you&.tool_name&.casecmp?(name) }
-    end.sort_by.with_index { |row, index| [ -row[:shipped], index ] }
-  end
-
-  # "2 games shipped in Spreadsheet, 1 in Figma." and where nothing's been shipped yet.
-  def hall_of_wrong_summary(rows)
-    shipped, empty = rows.partition { |row| row[:shipped].positive? }
-    counts = shipped.map.with_index { |row, index| "#{index.zero? ? pluralize(row[:shipped], "game") + " shipped" : row[:shipped]} in #{row[:tool]}" }
-    [ (counts.join(", ") + "." if counts.any?), ("Nothing yet in #{empty.map { |row| row[:tool] }.to_sentence(last_word_connector: " or ", two_words_connector: " or ")}." if empty.any?) ]
-  end
-
 
   private
+    # Your buddy, once the two of you have done a pomodoro together.
+    def leaderboard_buddy(project)
+      pair = project.pair
+      pair.buddy_of(project) if pair&.earned?("pair_listed")
+    end
+
     def project_step_label(project, key, done)
       case key
       when "hackatime" then done ? [ "Hackatime linked" ] : [ "Link Hackatime" ]
       when "hackatime_project"
         if project.hackatime_projects.any? && done then [ "Linked to #{project.hackatime_projects.to_sentence}" ]
         elsif project.hackatime_projects.any? then [ "Change your Hackatime projects" ]
-        else [ "Link your Hackatime project", "after Hackatime" ]
+        elsif project.step_locked?(key) then [ "Link your Hackatime project", "after Hackatime" ]
+        elsif project.waiting_for_hackatime_project? then [ "Link your Hackatime project", "links itself once you log time" ]
+        else [ "Link your Hackatime project", "so your hours count" ]
         end
-      when "slack" then done ? [ "Joined #wrong-tool" ] : [ "Join #wrong-tool on Slack" ]
       when "repo"
         if project.repo_url.present? then [ "Repo added" ]
         elsif done then [ "Git repo", "add before you ship" ]
         else [ "Add your git repo", "before you ship" ]
         end
-      when "idea"
-        if project.idea_posted? then [ "Idea posted" ]
-        elsif done then [ "Idea post skipped" ]
-        else [ "Post your idea in #wrong-tool", "optional" ]
-        end
       when "buddy"
         if (buddy = project.buddy) then [ "Paired with #{buddy_name(buddy)}" ]
-        elsif project.buddy_invited? then [ "Buddy invite sent", "you're paired once they sign up" ]
+        elsif project.buddy_invited? then [ "Buddy invite sent", "you'll be paired when they sign up" ]
         elsif done then [ "Buddy skipped", "you can pair up any time" ]
         else [ "Bring a buddy", "optional" ]
         end

@@ -17,11 +17,11 @@ class StreakActivityTest < ActiveSupport::TestCase
   end
 
   test "days in a row with 20 minutes make the streak, and today doesn't break it until it's over" do
-    travel_to Time.utc(2026, 10, 5, 12) do
+    travel_to Time.utc(2026, 10, 12, 12) do
       Hackatime.stubbed_spans = { "1001" => [
-        span(Time.utc(2026, 10, 2, 15), 25), # Fri
-        span(Time.utc(2026, 10, 3, 15), 20), # Sat
-        span(Time.utc(2026, 10, 4, 15), 30)  # Sun; nothing yet today
+        span(Time.utc(2026, 10, 9, 15), 25), # Fri
+        span(Time.utc(2026, 10, 10, 15), 20), # Sat
+        span(Time.utc(2026, 10, 11, 15), 30)  # Sun; nothing yet today
       ] }
       StreakActivity.sync_for_user!(@user)
 
@@ -31,12 +31,12 @@ class StreakActivityTest < ActiveSupport::TestCase
   end
 
   test "a day under 20 minutes breaks it" do
-    travel_to Time.utc(2026, 10, 5, 12) do
+    travel_to Time.utc(2026, 10, 12, 12) do
       Hackatime.stubbed_spans = { "1001" => [
-        span(Time.utc(2026, 10, 2, 15), 25),
-        span(Time.utc(2026, 10, 3, 15), 10),
-        span(Time.utc(2026, 10, 4, 15), 30),
-        span(Time.utc(2026, 10, 5, 9), 20)
+        span(Time.utc(2026, 10, 9, 15), 25),
+        span(Time.utc(2026, 10, 10, 15), 10),
+        span(Time.utc(2026, 10, 11, 15), 30),
+        span(Time.utc(2026, 10, 12, 9), 20)
       ] }
       StreakActivity.sync_for_user!(@user)
 
@@ -45,33 +45,33 @@ class StreakActivityTest < ActiveSupport::TestCase
   end
 
   test "building past midnight counts for the night before" do
-    travel_to Time.utc(2026, 10, 5, 12) do
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 5, 1), 30) ] }
+    travel_to Time.utc(2026, 10, 12, 12) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 12, 1), 30) ] }
       StreakActivity.sync_for_user!(@user)
 
-      assert_equal 30 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 4)).coded_seconds
+      assert_equal 30 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).coded_seconds
       assert_equal 1, @user.reload.current_streak
     end
   end
 
   test "a span across 2am is split between the two days" do
-    travel_to Time.utc(2026, 10, 5, 12) do
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 5, 1, 50), 30) ] }
+    travel_to Time.utc(2026, 10, 12, 12) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 12, 1, 50), 30) ] }
       StreakActivity.sync_for_user!(@user)
 
-      assert_equal 10 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 4)).coded_seconds
-      assert_equal 20 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 5)).coded_seconds
+      assert_equal 10 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).coded_seconds
+      assert_equal 20 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 12)).coded_seconds
     end
   end
 
   test "days follow your timezone" do
     @user.update!(timezone: "America/New_York")
-    travel_to Time.utc(2026, 10, 5, 12) do
-      # 9pm on the 4th in New York, 1am on the 5th in UTC.
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 5, 1), 30) ] }
+    travel_to Time.utc(2026, 10, 12, 12) do
+      # 9pm on the 11th in New York, 1am on the 12th in UTC.
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 12, 1), 30) ] }
       StreakActivity.sync_for_user!(@user)
 
-      assert @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 4)).completed?
+      assert @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).completed?
     end
   end
 
@@ -84,8 +84,8 @@ class StreakActivityTest < ActiveSupport::TestCase
   end
 
   test "the week shows which days you hit 20 minutes" do
-    travel_to Time.utc(2026, 10, 5, 12) do
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 4, 15), 30) ] }
+    travel_to Time.utc(2026, 10, 12, 12) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 11, 15), 30) ] }
       StreakActivity.sync_for_user!(@user)
 
       week = @user.streak_week
@@ -96,12 +96,12 @@ class StreakActivityTest < ActiveSupport::TestCase
   end
 
   test "changing your Hackatime projects rebuilds the streak from the start" do
-    travel_to Time.utc(2026, 10, 5, 12) do
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 4, 15), 30) ] }
+    travel_to Time.utc(2026, 10, 12, 12) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 11, 15), 30) ] }
       StreakActivity.sync_for_user!(@user)
       assert_equal 1, @user.reload.current_streak
 
-      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 3, 15), 30), span(Time.utc(2026, 10, 4, 15), 30) ] }
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 10, 15), 30), span(Time.utc(2026, 10, 11, 15), 30) ] }
       perform_enqueued_jobs { @user.project.update!(hackatime_projects: [ "rhythm-game", "beat-sheet-art" ]) }
 
       assert_equal 2, @user.reload.current_streak

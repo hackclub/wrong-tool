@@ -1,6 +1,6 @@
 # One time someone shipped their project: the title, description, links and screenshot they submitted (kept as they
-# were, whatever happens to the project after) and the hours it took. It's in review until someone approves it for
-# the Hall of Wrong or sends it back.
+# were, whatever happens to the project after) and the hours it took. It's in review until someone approves it or
+# sends it back.
 class Ship < ApplicationRecord
   STATUSES = %w[in_review approved rejected].freeze
   DESCRIPTION_MIN = 40

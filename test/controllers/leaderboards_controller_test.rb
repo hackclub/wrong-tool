@@ -19,7 +19,7 @@ class LeaderboardsControllerTest < ActionDispatch::IntegrationTest
 
   test "set up, you're ranked" do
     link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ])
     mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS")
     post "/auth/hackclub"
     follow_redirect!

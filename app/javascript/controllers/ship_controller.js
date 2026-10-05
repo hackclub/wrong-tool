@@ -1,10 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
 // The ship form: says what it still needs (and keeps Ship it greyed out until then), counts the description up to
-// its minimum, shows the screenshot you picked, and the title as it'll read in the Hall of Wrong.
+// its minimum, and shows the screenshot you picked.
 export default class extends Controller {
   static targets = [ "title", "description", "count", "repo", "demo", "file", "preview", "placeholder", "confirm",
-                     "missing", "submit", "previewTitle" ]
+                     "missing", "submit" ]
   static values = { descriptionMin: Number, hasScreenshot: Boolean }
 
   connect() {
@@ -16,7 +16,6 @@ export default class extends Controller {
     const short = length < this.descriptionMinValue
     this.countTarget.textContent = short ? `${length} / ${this.descriptionMinValue} min` : `${length} characters`
     this.countTarget.toggleAttribute("data-enough", !short)
-    this.previewTitleTarget.textContent = this.titleTarget.value.trim() || "Untitled"
 
     const missing = [
       !this.titleTarget.value.trim() && "a title",

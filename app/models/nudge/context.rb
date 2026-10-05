@@ -92,7 +92,7 @@ class Nudge::Context
   private
     def build_vars
       hours_left = [ Program::HOURS_PER_REWARD - hours, 0 ].max
-      upcoming = helpers.project_rewards(project, streak:).find { |reward| reward[:next] }
+      upcoming = helpers.project_rewards(project).find { |reward| reward[:state] == "next" }
       {
         first_name: user.first_name,
         title: project.title.downcase_first,
@@ -111,7 +111,7 @@ class Nudge::Context
         streak: (streak if streak.positive?),
         streak_next: (streak + 1 if streak.positive?),
         next_reward: upcoming&.dig(:label)&.downcase,
-        days_to_reward: (upcoming[:day] - streak if upcoming),
+        days_to_reward: (upcoming[:days] - streak if upcoming),
         peers: (peers if peers >= MIN_PEERS),
         days_idle: (((now - last_built_at) / 1.day).floor if last_built_at && now - last_built_at >= LAPSED_AFTER)
       }.compact

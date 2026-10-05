@@ -29,7 +29,6 @@ module Nudge::Fixed
     project = context.project
     step =
       if project.tracker.blank? then "hackatime"
-      elsif !project.slack_joined? then "slack"
       elsif project.repo_url.blank? then "repo"
       end
     build(context, kind: "setup", arm: step) if step
@@ -41,7 +40,8 @@ module Nudge::Fixed
     build(context, kind: "streak_saver", arm: "streak_saver")
   end
 
-  # Milestones, from the Hackatime poll: "first_session", "halfway", "done", "streak_3", "streak_7". Each sends once.
+  # Milestones, from the Hackatime poll: "first_session", "halfway", "done". Each sends once. (Streak rewards tell you
+  # themselves: see RewardNotifier.)
   def self.milestone(context, key)
     return if context.quiet? || context.user.nudges.where(kind: "milestone", arm: key).exists?
     build(context, kind: "milestone", arm: key)

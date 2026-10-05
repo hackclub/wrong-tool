@@ -9,7 +9,13 @@
   <p class="project__step-error" role="alert"><%= choices[:problem] %></p>
   <% if choices[:relink] %><%= render "projects/hackatime_link_button", label: "Link Hackatime again" %><% end %>
 <% elsif choices[:projects].none? %>
-  <p class="project__step-error" role="alert">No projects on Hackatime yet.</p>
+  <%# Nothing since Hackatime started counting: nothing to pick, and that's fine. The first project you log time on
+      links itself, so you're set up without this. %>
+  <p class="project__step-text project__step-waiting" role="status">
+    Nothing on Hackatime since <%= project_date(Program::HACKATIME_START) %> yet, so there's nothing to pick. Start
+    building: the first project you log time on links itself.
+  </p>
+  <%= link_to "Refresh", project_path(step: "hackatime_project", refresh: 1), class: "onboarding-text-button project__step-button" %>
 <% else %>
   <% linked = choices[:projects].select { |choice| choice[:linked] } %>
   <%= form_with model: project, url: project_path, method: :patch, class: "project__picker-form",
@@ -43,6 +49,10 @@
   <p class="project__step-error" role="alert"><%= project.errors.full_messages_for(:hackatime_projects).first %></p>
 <% end %>
 <p class="project__step-hint">
-  <%= project.code_tool? ? "Don't see it? Write a line of code with the extension on, then refresh." : "Don't see it? Log a minute of time on it with Hackatime, then refresh." %>
-  <% if project.hackatime_projects.none? %>The first new project you log time on links itself.<% end %>
+  <% if choices[:projects]&.none? && !choices[:problem] %>
+    <%= project.code_tool? ? "Write a line of code with the extension on and it shows up here." : "Log a minute of time with Hackatime and it shows up here." %>
+  <% else %>
+    <%= project.code_tool? ? "Don't see it? Write a line of code with the extension on, then refresh." : "Don't see it? Log a minute of time on it with Hackatime, then refresh." %>
+    <% if project.hackatime_projects.none? %>The first new project you log time on links itself.<% end %>
+  <% end %>
 </p>

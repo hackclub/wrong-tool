@@ -20,7 +20,6 @@ Rails.application.routes.draw do
   # Someone's buddy invite: see who wants to build with you, and accept.
   get "b/:code" => "buddy_invites#show", as: :buddy_invite
   post "b/:code" => "buddy_invites#accept"
-  get "hall" => "halls#show", as: :hall
 
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.
   # Linking Hackatime comes back here; it doesn't sign you in.

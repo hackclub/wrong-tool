@@ -8,12 +8,15 @@ class ProjectsController < ApplicationController
     @step = params[:step]
     @editing_pace = params[:edit] == "pace"
     @refresh_hackatime = params[:refresh].present?
-    auto_link_hackatime_project
+    flash.now[:clippy] = "hop" if auto_link_hackatime_project(refresh: @refresh_hackatime)
+    @refresh_hackatime = false if @project.available_hackatime_projects # just asked: the projects step can use that
     current_user.sync_streak_if_stale!
   end
 
-  # Your hours from Hackatime, for the pomodoro to keep up to date; ?refresh=1 asks Hackatime now.
+  # Your hours from Hackatime, for the pomodoro to keep up to date (and, before you've linked a Hackatime project,
+  # for your project page to notice when one links itself); ?refresh=1 asks Hackatime now.
   def hours
+    flash[:clippy] = "hop" if auto_link_hackatime_project(refresh: params[:refresh].present?)
     hours = @project.hours_logged(refresh: params[:refresh].present?)
     render json: { hours:, label: helpers.project_hours_label(@project, hours), tracking: @project.tracking?,
                    checked_at: Time.current.iso8601 }
@@ -38,12 +41,15 @@ class ProjectsController < ApplicationController
     end
   end
 
-  # Ticking off a setup step. Clippy hops for each one, and congratulates you when setup's done.
+  # Ticking off a setup step, or changing your project. Clippy hops for each one, and congratulates you when you're
+  # through setup.
   def update
-    was_set_up = @project.set_up?
-    @project.available_hackatime_projects = hackatime_projects if setup_params.key?(:hackatime_project_names)
+    if setup_params.key?(:hackatime_project_names) || (@project.hackatime_linked? && @project.hackatime_projects.none?)
+      @project.available_hackatime_projects = hackatime_projects
+    end
+    was_finished = @project.setup_finished?
     if @project.update(setup_params)
-      setup_completed = @project.set_up? && !was_set_up
+      setup_completed = @project.setup_finished? && !was_finished
       PostHog.capture(
         distinct_id: current_user.posthog_distinct_id,
         event: "project_setup_completed"
@@ -71,26 +77,28 @@ class ProjectsController < ApplicationController
       redirect_to onboarding_path unless @project
     end
 
+    # What's on Hackatime for you to pick from, or nil if it can't say right now.
     def hackatime_projects(refresh: false)
       Hackatime.projects(current_user, refresh:)
     rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
-      []
+      nil
     end
 
-    # Before you've picked a Hackatime project, links the first new one you log time on (Project#auto_link_hackatime_project),
-    # and Clippy hops to tell you.
-    def auto_link_hackatime_project
+    # Before you've picked a Hackatime project, links the first new one you log time on (Project#auto_link_hackatime_project).
+    # Notes what Hackatime has for you to pick from too (left unknown if it can't say right now). Returns the name it
+    # linked, if it did.
+    def auto_link_hackatime_project(refresh: false)
       return unless @project.hackatime_linked? && @project.hackatime_projects.none?
 
-      name = @project.auto_link_hackatime_project(hackatime_projects(refresh: @refresh_hackatime))
-      @refresh_hackatime = false # Hackatime's just been asked: the projects step can use what it said
-      return unless name
-
+      @project.available_hackatime_projects = Hackatime.projects(current_user, refresh:)
+      name = @project.auto_link_hackatime_project(@project.available_hackatime_projects)
       PostHog.capture(
         distinct_id: current_user.posthog_distinct_id,
         event: "hackatime_project_auto_linked"
-      ) if Rails.configuration.x.posthog_configured
-      flash.now[:clippy] = "hop"
+      ) if name && Rails.configuration.x.posthog_configured
+      name
+    rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
+      nil
     end
 
     def pledge_params
@@ -98,8 +106,7 @@ class ProjectsController < ApplicationController
     end
 
     def setup_params
-      params.expect(project: [ :name, :screenshot, :slack_joined, :repo_url, :repo_later, :idea_posted, :idea_skipped,
-                               :pace_minutes, :party_queued, :buddy_invited, :buddy_skipped, :hackatime_auto_linked,
-                               hackatime_project_names: [] ])
+      params.expect(project: [ :name, :screenshot, :repo_url, :repo_later, :pace_minutes, :party_queued, :buddy_invited,
+                               :buddy_skipped, :hackatime_auto_linked, hackatime_project_names: [] ])
     end
 end

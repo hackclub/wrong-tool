@@ -157,6 +157,11 @@
     white-space: nowrap;
   }
 
+  .leaderboard__flame {
+    flex: none;
+    font-size: 13px;
+  }
+
   .leaderboard__footnote {
     font: 13px/1.4 var(--font-cell);
     color: var(--grey-600);

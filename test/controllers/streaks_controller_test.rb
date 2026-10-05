@@ -4,15 +4,15 @@ class StreaksControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:orpheus)
     link_hackatime(@user)
-    @user.project.update!(hackatime_projects: [ "rhythm-game" ], slack_joined: true)
+    @user.project.update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
   end
 
   teardown { Hackatime.stubbed_spans = {} }
 
   test "Refresh on the streak card syncs your streak now" do
     sign_in_as_orpheus
-    travel_to Time.utc(2026, 10, 5, 12) do
-      at = Time.utc(2026, 10, 4, 15)
+    travel_to Time.utc(2026, 10, 12, 12) do
+      at = Time.utc(2026, 10, 11, 15)
       Hackatime.stubbed_spans = { "1001" => [ { "start_time" => at.to_f, "end_time" => (at + 30.minutes).to_f, "duration" => 1800 } ] }
 
       patch project_streak_path

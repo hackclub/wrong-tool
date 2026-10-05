@@ -30,6 +30,7 @@ class BuddyPomodorosController < ApplicationController
 
     if pomodoro.started_by != @project && pomodoro.joined_at.nil?
       pomodoro.update!(joined_at: Time.current)
+      Reward.award_pomodoro!(pomodoro.pair)
       PostHog.capture(
         distinct_id: current_user.posthog_distinct_id,
         event: "pomodoro_joined",

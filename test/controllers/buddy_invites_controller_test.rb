@@ -5,9 +5,9 @@ class BuddyInvitesControllerTest < ActionDispatch::IntegrationTest
     get buddy_invite_path("ana")
 
     assert_response :success
-    assert_select ".buddy-invited__title", "Ana wants to build with you."
+    assert_select ".buddy-invited__title", "Ana invited you to build together."
     assert_select ".buddy-card__title", "Pong in Figma"
-    assert_equal [ "Sticker sheet, mailed to both", "+3 bonus hours each", "Co-op slot at Play party" ],
+    assert_equal [ "Shown as a pair on the leaderboard", "Sticker sheet each", "A mention in #wrong", "Pick Kartikey's desktop background" ],
                  css_select(".buddy-invited__reward span:last-child").map(&:text)
     assert_select "button", "Pair up"
   end

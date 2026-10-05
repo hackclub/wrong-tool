@@ -1,4 +1,4 @@
-<%# Onboarding and your project, as two sheets, the leaderboard once you have a project, and the Hall of Wrong. "My project" stays
+<%# Onboarding and your project, as two sheets, and your buddy and the leaderboard once you have a project. "My project" stays
     locked until there is one (during onboarding, until you've signed the pledge); once there is, you're done with
     onboarding and its tab goes, except while you're on it. It isn't prefetched: before the
     pledge is saved, that would only fetch the redirect back here, and Turbo would serve it when onboarding goes to
@@ -27,11 +27,6 @@
     <% end %>
     <%= link_to leaderboard_path, class: "sheet-tab", aria: { current: ("page" if current == :leaderboard) } do %>
       Leaderboard<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
-    <% end %>
-  <% end %>
-  <% if current != :onboarding %>
-    <%= link_to hall_path, class: "sheet-tab", aria: { current: ("page" if current == :hall) } do %>
-      Hall of Wrong<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
   <% end %>
 </nav>
