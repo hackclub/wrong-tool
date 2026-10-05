@@ -1,14 +1,15 @@
-posthog_api_key = ENV["POSTHOG_PROJECT_TOKEN"]
-posthog_host = ENV["POSTHOG_HOST"]
+posthog = ->(key) { Rails.application.credentials.dig(:posthog, key) || ENV["POSTHOG_#{key.upcase}"] }
+posthog_api_key = posthog.(:project_token)
+posthog_host = posthog.(:host)
 posthog_missing_variable = {
-  "POSTHOG_PROJECT_TOKEN" => posthog_api_key,
-  "POSTHOG_HOST" => posthog_host
+  "posthog.project_token" => posthog_api_key,
+  "posthog.host" => posthog_host
 }.find { |_, value| value.blank? }&.first
 Rails.application.config.x.posthog_configured = posthog_missing_variable.nil?
 
 if posthog_missing_variable
   if Rails.env.development?
-    raise KeyError, "#{posthog_missing_variable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once #{posthog_missing_variable} is configured"
+    raise KeyError, "#{posthog_missing_variable} credential required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once #{posthog_missing_variable} is set in credentials (or #{posthog_missing_variable.tr(".", "_").upcase} in the environment)"
   end
 else
   PostHog.init do |config|
