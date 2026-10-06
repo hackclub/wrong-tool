@@ -26,7 +26,9 @@ Rails.application.config.middleware.use OmniAuth::Builder do
     client_options: {
       identifier: hack_club_auth.(:client_id),
       secret: hack_club_auth.(:client_secret),
-      redirect_uri: hack_club_auth.(:redirect_uri) || "http://localhost:3000/auth/hackclub/callback"
+      # This site's own callback unless set: wrong.hackclub.com (or APP_URL) in production, localhost elsewhere.
+      redirect_uri: hack_club_auth.(:redirect_uri) ||
+        "#{Rails.env.production? ? ENV.fetch("APP_URL", "https://wrong.hackclub.com") : "http://localhost:3000"}/auth/hackclub/callback"
     }
 
   # Not a way to sign in: once you're signed in, it links your Hackatime (see HackatimeLinksController).
