@@ -14,7 +14,9 @@ const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "idea", "ideaTool
 const SIGNING_KEY = "wrong-tool:signing-pledge"
 const STEP_NAMES = [ "tool", "idea", "prize", "commit" ]
 // Holding the sign button: it fills over 1.3s (and signs when full); let go early and it runs back in 0.35s.
-const HOLD = { fill: 1300, rewind: 350, step: 30 }
+// A press shorter than `tap` ms shows how far a hold would get (`demo`) and says to hold; tap again and it fills
+// by itself (`taps`).
+const HOLD = { fill: 1300, rewind: 350, step: 30, tap: 260, demo: 0.25, taps: 2 }
 // The signing ceremony, in 70ms ticks: the name finishes going on, Clippy congratulates you (hopping on the
 // ticks in `hops`), the pledge counts as signed from the 6th tick and it's over after the 28th.
 const CEREMONY = { tick: 70, signed: 6, ticks: 28, hops: [ 2, 5, 8 ] }
@@ -43,7 +45,7 @@ export default class extends Controller {
       genre: "", phrase: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
       rolling: false, stop1: true, stop2: true, spin: 0, ownOpen: false, own: "",
       prize: null, pace: null, buildTime: null, pledged: false, signedOn: null, signing: false, signTick: -1,
-      holdP: 0, holding: false, letGo: false,
+      holdP: 0, holding: false, letGo: false, taps: 0, autofill: false,
       ...this.#restoreAnswers()
     }
     // A pledge is only signed for whoever's signed in.
@@ -220,18 +222,30 @@ export default class extends Controller {
       try { event.currentTarget.setPointerCapture(event.pointerId) } catch {}
     }
     this.#did("hold_started")
+    this.holdSince = performance.now()
     this.#set({ holding: true, letGo: false })
     this.#tickHold(HOLD.step / HOLD.fill, () => this.#finishHold())
   }
 
-  // Letting go early runs it back.
+  // Letting go early runs it back. A tap (as if it were an ordinary button) runs a little way first, to show what
+  // holding does; the second tap means holding isn't working for you, so it fills and signs by itself.
   holdEnd() {
-    if (!this.state.holding) return
-    // A tap (as if it were an ordinary button) or a hold given up on.
-    const progress = Math.round(this.state.holdP * 100)
-    this.#did(progress < 20 ? "sign_tapped" : "hold_let_go_early", { progress_percent: progress })
-    this.#set({ holding: false, letGo: this.state.holdP > 0.05 })
-    this.#tickHold(-HOLD.step / HOLD.rewind)
+    const s = this.state
+    if (!s.holding || s.autofill) return
+    const progress = Math.round(s.holdP * 100)
+    const tapped = performance.now() - this.holdSince < HOLD.tap
+    const taps = s.taps + (tapped ? 1 : 0)
+    this.#did(tapped ? "sign_tapped" : "hold_let_go_early", { progress_percent: progress, taps })
+    if (tapped && taps >= HOLD.taps) {
+      this.#did("sign_autofilled", { taps })
+      return this.#set({ taps, autofill: true })
+    }
+    this.#set({ holding: false, letGo: s.holdP > 0.05 || tapped, taps })
+    if (tapped && s.holdP < HOLD.demo) {
+      this.#tickHold(HOLD.step / HOLD.fill, null, HOLD.demo, () => this.#tickHold(-HOLD.step / HOLD.rewind))
+    } else {
+      this.#tickHold(-HOLD.step / HOLD.rewind)
+    }
   }
 
   // Space or Enter can be held too.
@@ -298,12 +312,17 @@ export default class extends Controller {
     this.#goTo(this.state.prize ? 4 : 3)
   }
 
-  // Moves the hold along by `delta` a step until it's full (then `full`) or empty.
-  #tickHold(delta, full) {
+  // Moves the hold along by `delta` a step until it's full (then `full`) or empty, or, given `stop`, until it
+  // gets that far (then `stopped`).
+  #tickHold(delta, full, stop, stopped) {
     clearInterval(this.holdTicker)
     this.holdTicker = setInterval(() => {
-      const holdP = Math.min(1, Math.max(0, this.state.holdP + delta))
+      const holdP = Math.min(stop ?? 1, Math.max(0, this.state.holdP + delta))
       this.#set({ holdP })
+      if (stop != null && holdP === stop) {
+        clearInterval(this.holdTicker)
+        return stopped?.()
+      }
       if (holdP === 1 || holdP === 0) clearInterval(this.holdTicker)
       if (holdP === 1) full?.()
     }, HOLD.step)
@@ -312,7 +331,7 @@ export default class extends Controller {
   // Signing the pledge is signing in. Already signed in, it signs right here; otherwise the form goes to Hack
   // Club Auth, and the answers wait in this tab for the trip back.
   #finishHold() {
-    this.#set({ holding: false })
+    this.#set({ holding: false, autofill: false })
     const s = this.state
     this.#completed(4, { pace_minutes: s.pace, build_time: s.buildTime, signed_in: this.signedInValue },
                     { transport: "sendBeacon" })
@@ -631,12 +650,16 @@ export default class extends Controller {
     this.signInTarget.setAttribute("aria-busy", s.signing)
     this.holdFillTarget.style.inlineSize = `${(s.signing || ceremony ? 1 : s.holdP) * 100}%`
     this.signInLabelTarget.textContent = s.signing ? "Signing in with Hack Club…"
+      : s.autofill ? "Signing…"
       : s.holding ? "Keep holding…"
+      : s.taps ? "Press and hold to sign"
       : "Hold to sign with Hack Club"
     this.signHintTarget.textContent = s.signing ? "Your pledge is tied to your Hack Club account."
       : !s.pace && !s.buildTime ? "Answer both to sign."
       : !s.pace ? "Pick a pace first."
       : !s.buildTime ? "Pick a time first."
+      : s.autofill ? "No need to hold. Signing it for you."
+      : s.letGo && s.taps ? "Keep it pressed until it fills, about a second. Or tap once more."
       : s.letGo ? "Almost. Hold until it's signed."
       : this.#signerName() ? "Holding signs your name to this pledge."
       : "Hold, then sign in with Hack Club to finish."
