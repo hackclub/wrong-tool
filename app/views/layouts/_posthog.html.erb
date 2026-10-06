@@ -8,6 +8,9 @@
       // api_host is Hack Club's proxy, so links into PostHog (the toolbar) need the real app.
       ui_host: "https://us.posthog.com",
       defaults: "2026-05-30",
+      // Sends this session's id with fetches back to this app (Turbo, the onboarding controller), so events the server
+      // captures can filter session recordings. lib/middleware/posthog_session_cookie.rb covers plain page loads.
+      tracing_headers: [window.location.hostname],
       // Heatmaps (clicks, mouse movement, rage clicks) and clicks on things that do nothing.
       enable_heatmaps: true,
       capture_dead_clicks: true,

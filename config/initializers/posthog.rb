@@ -10,7 +10,8 @@ if posthog_missing_variable && Rails.env.development?
   raise KeyError, "#{posthog_missing_variable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once #{posthog_missing_variable} is configured"
 end
 
-Rails.application.config.x.posthog_configured = posthog_missing_variable.nil?
+# Tests would otherwise send real events (dotenv loads .env there too): every sign-in from www.example.com.
+Rails.application.config.x.posthog_configured = posthog_missing_variable.nil? && !Rails.env.test?
 Rails.application.config.x.posthog_project_token = posthog_api_key
 Rails.application.config.x.posthog_host = posthog_host
 
