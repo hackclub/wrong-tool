@@ -31,6 +31,8 @@ if Rails.application.config.x.posthog_configured
 
   require "opentelemetry/sdk"
   require "opentelemetry/exporter/otlp"
+  require "opentelemetry/sdk/logs"
+  require "opentelemetry/exporter/otlp_logs"
 
   posthog_log_exporter = OpenTelemetry::Exporter::OTLP::Logs::LogsExporter.new(
     endpoint: "#{posthog_host}/i/v1/logs",
@@ -41,7 +43,7 @@ if Rails.application.config.x.posthog_configured
       OpenTelemetry::SDK::Logs::Export::BatchLogRecordProcessor.new(posthog_log_exporter)
     )
   end
-  Rails.application.config.x.posthog_log_logger = OpenTelemetry.logger_provider.logger("wrong_tool.posthog")
+  Rails.application.config.x.posthog_log_logger = OpenTelemetry.logger_provider.logger(name: "wrong_tool.posthog")
   Rails.application.config.x.posthog_log_capture_configured = true
 else
   Rails.application.config.x.posthog_log_capture_configured = false
