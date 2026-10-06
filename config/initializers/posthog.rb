@@ -19,6 +19,11 @@ if Rails.application.config.x.posthog_configured
   PostHog.init do |config|
     config.api_key = posthog_api_key
     config.host = posthog_host
+    # Development shares the project with production, so every event says which it came from.
+    config.before_send = ->(event) do
+      event[:properties] = (event[:properties] || {}).merge("environment" => Rails.env.to_s)
+      event
+    end
   end
 
   PostHog::Rails.configure do |config|

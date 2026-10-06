@@ -21,5 +21,7 @@
         maskTextSelector: "[data-ph-mask]"
       }
     })
+    // The same environment the server's events carry (config/initializers/posthog.rb).
+    posthog.register({ environment: <%= raw Rails.env.to_s.to_json %> })
   </script>
 <% end %>

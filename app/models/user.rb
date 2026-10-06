@@ -67,9 +67,10 @@ class User < ApplicationRecord
     Rails.env.development? || (slack_id.present? && Rails.configuration.x.admin_slack_ids.include?(slack_id))
   end
 
-  # Used by posthog-rails to associate automatic exception reports with this user.
+  # Used by posthog-rails to associate automatic exception reports with this user. Outside production it's
+  # prefixed, since development's user 1 isn't production's (they share a PostHog project).
   def posthog_distinct_id
-    id.to_s
+    Rails.env.production? ? id.to_s : "#{Rails.env}-#{id}"
   end
 
   # Profile data belongs to the PostHog person, rather than event properties.
