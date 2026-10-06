@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_190000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -171,6 +171,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_170000) do
     t.datetime "slack_channels_joined_at"
     t.datetime "slack_muted_at"
     t.datetime "slack_dm_failed_at"
+    t.string "slack_display_name"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end

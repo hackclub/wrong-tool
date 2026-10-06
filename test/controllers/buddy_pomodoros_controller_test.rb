@@ -10,7 +10,7 @@ class BuddyPomodorosControllerTest < ActionDispatch::IntegrationTest
     post buddy_pomodoro_path, params: { minutes: 25 }, as: :json
     assert_response :created
     started = response.parsed_body
-    assert_equal [ true, true, false, "Ana", 25 ], started.values_at("live", "you_in", "buddy_in", "buddy", "minutes")
+    assert_equal [ true, true, false, "pixelana", 25 ], started.values_at("live", "you_in", "buddy_in", "buddy", "minutes")
 
     users(:ana).update!(hackatime_uid: "1003", hackatime_access_token: "token-ana")
     projects(:ana).update!(hackatime_projects: [ "pong" ], repo_later: true, buddy_skipped: true)
@@ -18,7 +18,7 @@ class BuddyPomodorosControllerTest < ActionDispatch::IntegrationTest
     get buddy_pomodoro_path, as: :json
     assert_equal [ true, false ], response.parsed_body.values_at("live", "you_in")
     get project_path
-    assert_select ".project__buddy-live:not([hidden])", /Orpheus started a 25-min pomodoro/
+    assert_select ".project__buddy-live:not([hidden])", /orph started a 25-min pomodoro/
 
     post join_buddy_pomodoro_path, as: :json
     joined = response.parsed_body

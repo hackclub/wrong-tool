@@ -12,7 +12,7 @@ class BuddiesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "h1", "Build with a friend"
     assert_equal [ "First pomodoro together", "1 pair week", "2 pair weeks", "First pair to 10h each" ], css_select(".buddy-rules__title").map(&:text)
-    assert_select ".buddy-link__input[value=?]", "www.example.com/b/orpheus"
+    assert_select ".buddy-link__input[value=?]", "www.example.com/b/#{projects(:orpheus).reload.buddy_code}"
     assert_select ".formula-bar__content", /=BUDDY\(you, \?\) → #N\/A/
   end
 
@@ -35,8 +35,8 @@ class BuddiesControllerTest < ActionDispatch::IntegrationTest
     projects(:orpheus).pair_with(projects(:ana))
     get project_path
 
-    assert_select ".buddy-card__title", "You + Ana"
-    assert_select ".buddy-card__note", "Ana is building pong in Figma"
-    assert_select ".project__step", /Paired with Ana/
+    assert_select ".buddy-card__title", "You + pixelana"
+    assert_select ".buddy-card__note", "pixelana is building pong in Figma"
+    assert_select ".project__step", /Paired with pixelana/
   end
 end

@@ -148,14 +148,19 @@ class Project < ApplicationRecord
     pair&.buddy_of(self)
   end
 
-  # Your invite link's code (/b/<code>): your first name if it's free, made unique if not. Made the first time
-  # it's asked for.
+  # A new invite code: random, so the link says nothing about who you are.
+  def self.new_buddy_code
+    loop do
+      code = SecureRandom.alphanumeric(8).downcase
+      return code unless exists?(buddy_code: code)
+    end
+  end
+
+  # Your invite link's code (/b/<code>), made the first time it's asked for.
   def buddy_code!
     return buddy_code if buddy_code.present?
 
-    base = user.first_name.to_s.parameterize.presence || "buddy"
-    code = base
-    code = "#{base}-#{SecureRandom.alphanumeric(4).downcase}" while Project.exists?(buddy_code: code)
+    code = self.class.new_buddy_code
     update_column(:buddy_code, code) # just the code: whatever else is mid-edit (and maybe invalid) isn't saved
     code
   end

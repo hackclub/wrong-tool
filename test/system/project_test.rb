@@ -11,7 +11,7 @@ class ProjectTest < ApplicationSystemTestCase
     sign_in_and_open_project
 
     assert_selector ".project__say", text: "Nothing's linked yet, so your hours won't count."
-    assert_selector ".app-bar__avatar .avatar[aria-hidden=true][title^=\"Orpheus the \"]"
+    assert_selector ".app-bar__avatar .avatar[aria-hidden=true][title=\"orph\"]"
     assert_text "Streaks and the leaderboard open once you're set up."
     click_on "Link Hackatime"
 
@@ -189,9 +189,9 @@ class ProjectTest < ApplicationSystemTestCase
 
     sign_in_and_open_project
     find(".project__length", text: "45").click
-    click_on "With Ana"
-    assert_selector ".focus__label", text: "LOCKED IN WITH ANA · ROUND 1"
-    assert_selector ".focus__together", text: "waiting for Ana"
+    click_on "With pixelana"
+    assert_selector ".focus__label", text: "LOCKED IN WITH PIXELANA · ROUND 1"
+    assert_selector ".focus__together", text: "waiting for pixelana"
     assert_selector ".focus__clock", text: /\A(45:00|44:5\d)\z/
 
     using_session(:ana) do
@@ -200,10 +200,10 @@ class ProjectTest < ApplicationSystemTestCase
       execute_script('const f=document.createElement("form");f.method="post";f.action="/auth/hackclub";document.body.append(f);f.submit()')
       assert_current_path onboarding_path
       visit project_path
-      assert_selector ".project__buddy-live", text: "Orpheus started a 45-min pomodoro. Join in."
+      assert_selector ".project__buddy-live", text: "orph started a 45-min pomodoro. Join in."
       click_on "Join"
-      assert_selector ".focus__label", text: "LOCKED IN WITH ORPHEUS · ROUND 1"
-      assert_selector ".focus__together", text: "with Orpheus · in"
+      assert_selector ".focus__label", text: "LOCKED IN WITH ORPH · ROUND 1"
+      assert_selector ".focus__together", text: "with orph · in"
       assert_selector ".focus__clock", text: /\A44:[0-5]\d\z/
     end
   end

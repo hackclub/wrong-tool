@@ -188,10 +188,10 @@ module ProjectsHelper
   def leaderboard(you, sort: "week")
     key = sort == "streak" ? :streak : :hours_this_week
     others = Project.includes(:user, screenshot_attachment: :blob).where.not(id: you.id).select(&:set_up?)
-    ranked = (others + [ you ]).sort_by { |project| [ project.set_up? ? 0 : 1, -project.public_send(key), project.user.name.to_s ] }
+    ranked = (others + [ you ]).sort_by { |project| [ project.set_up? ? 0 : 1, -project.public_send(key), project.id ] }
     ranked.map.with_index(1) do |project, rank|
       mine = project == you
-      { rank:, you: mine, name: mine ? "You" : project.user.first_name.presence || project.user.name,
+      { rank:, you: mine, name: mine ? "You" : project.user.public_name,
         user: project.user, building: project.title, off: !project.set_up?,
         screenshot: (project.screenshot if project.screenshot.attached? && project.screenshot.blob.persisted?),
         hours: project.hours_this_week, streak: project.streak,

@@ -25,14 +25,14 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   test "signing in remembers your browser's timezone" do
     cookies[:timezone] = "Europe/Berlin"
     post "/auth/hackclub"
-    assert_no_enqueued_jobs(only: SlackTimezoneJob) { follow_redirect! }
+    follow_redirect!
 
     assert_equal "Europe/Berlin", User.find_by!(hca_id: "ident!heidi").timezone
   end
 
-  test "signing in without a timezone from your browser asks Slack for it" do
+  test "signing in looks up your Slack profile, for your display name (and timezone, if your browser hasn't said)" do
     post "/auth/hackclub"
-    assert_enqueued_with(job: SlackTimezoneJob) { follow_redirect! }
+    assert_enqueued_with(job: SlackProfileJob) { follow_redirect! }
   end
 
   test "a signed-in browser in a new timezone moves you there" do

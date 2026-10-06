@@ -2,12 +2,13 @@ module BuddiesHelper
   # Each of you logs this much in a program week for it to count as a pair week.
   def pair_weekly_hours = Pair::WEEKLY_HOURS
 
+  # Their Slack display name, never their real name (see User#public_name).
   def buddy_name(project)
-    project.user.first_name.presence || project.user.name
+    project.user.public_name
   end
 
 
-  # "wrong.hackclub.com/b/orpheus", for showing; the link itself is buddy_invite_url.
+  # "wrong.hackclub.com/b/k3j9x2qa", for showing; the link itself is buddy_invite_url.
   def buddy_invite_link(project)
     buddy_invite_url(project.buddy_code!).delete_prefix("https://").delete_prefix("http://")
   end

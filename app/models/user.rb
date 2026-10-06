@@ -25,6 +25,12 @@ class User < ApplicationRecord
     ANIMALS[avatar_seed % ANIMALS.size]
   end
 
+  # What everyone else sees you as: your Slack display name, or your animal ("Anonymous Fox") if you don't have one.
+  # Your real name is never shown to anyone but you (and admins).
+  def public_name
+    slack_display_name.presence || "Anonymous #{animal.capitalize}"
+  end
+
   def avatar_color
     AVATAR_COLORS[avatar_seed / ANIMALS.size % AVATAR_COLORS.size]
   end

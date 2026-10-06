@@ -19,12 +19,12 @@ class PairTest < ActiveSupport::TestCase
     assert_equal [ "You can't pair with yourself" ], projects(:ana).pair_with(projects(:ana)).errors.full_messages
   end
 
-  test "an invite code is your first name, made unique" do
-    assert_equal "ana", projects(:ana).buddy_code!
-    assert_equal "orpheus", projects(:orpheus).buddy_code!
+  test "an invite code is random, so the link says nothing about who sent it, and it stays the same" do
+    code = projects(:orpheus).buddy_code!
 
-    other = users(:ana).dup.tap { |user| user.update!(hca_id: "ident!ana2") }
-    taken = projects(:ana).dup.tap { |project| project.update!(user: other, buddy_code: nil) }
-    assert_match(/\Aana-[a-z0-9]{4}\z/, taken.buddy_code!)
+    assert_match(/\A[a-z0-9]{8}\z/, code)
+    assert_no_match(/orph/i, code)
+    assert_equal code, projects(:orpheus).reload.buddy_code!
+    assert_equal "k3j9x2qa", projects(:ana).buddy_code!
   end
 end

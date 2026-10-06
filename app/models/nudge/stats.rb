@@ -15,7 +15,7 @@ class Nudge::Stats
 
   attr_reader :nudges
 
-  def initialize(nudges = Nudge.delivered)
+  def initialize(nudges = Nudge.delivered.real)
     @nudges = nudges
   end
 

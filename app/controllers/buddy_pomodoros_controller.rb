@@ -50,7 +50,7 @@ class BuddyPomodorosController < ApplicationController
 
     def status_of(pomodoro)
       buddy = @pair.buddy_of(@project)
-      buddy_name = buddy.user.first_name.presence || buddy.user.name
+      buddy_name = buddy.user.public_name
       return { live: false, buddy: buddy_name } unless pomodoro
 
       { live: true, buddy: buddy_name, minutes: pomodoro.minutes, ends_at: pomodoro.ends_at.iso8601(3),

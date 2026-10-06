@@ -22,3 +22,6 @@ production:
   nudge_scoring:
     class: NudgeScoringJob
     schedule: every hour at minute 40
+  slack_profiles_sync:
+    class: SlackProfilesSyncJob
+    schedule: at 3:30am every day

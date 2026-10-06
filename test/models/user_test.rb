@@ -55,4 +55,13 @@ class UserTest < ActiveSupport::TestCase
     assert_enqueued_with(job: StreakSyncJob, args: [ user.id ]) { user.remember_timezone("Asia/Kolkata") }
     assert_no_enqueued_jobs(only: StreakSyncJob) { user.remember_timezone("Asia/Kolkata") }
   end
+
+  test "everyone else sees your Slack display name, or your animal without one, never your real name" do
+    user = users(:ana)
+    assert_equal "pixelana", user.public_name
+
+    user.update!(slack_display_name: nil)
+    assert_equal "Anonymous #{user.animal.capitalize}", user.public_name
+    assert_no_match(/Ana|Lovelace/, user.public_name)
+  end
 end

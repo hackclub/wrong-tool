@@ -43,10 +43,11 @@ module RewardNotifier
       kartikey: kartikey.present? ? "<@#{kartikey}>" : "Kartikey" }
   end
 
-  # Their @mention, or their first name if they're not on Slack.
+  # Their @mention (Slack shows the name they chose there), or what everyone here sees them as if they're not on
+  # Slack: never their real name, since #wrong is public.
   def self.mention(project)
     user = project.user
-    user.slack_id.present? ? "<@#{user.slack_id}>" : user.first_name.presence || user.name
+    user.slack_id.present? ? "<@#{user.slack_id}>" : user.public_name
   end
 
   def self.project_url = "#{Rails.configuration.x.app_url}/project"

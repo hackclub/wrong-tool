@@ -6,8 +6,9 @@
 # (Nudge::Bandit). Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built.
 # What it says is Nudge::Copy, the Slack message is Nudge::Message, and its links are NudgeLinksController.
 class Nudge < ApplicationRecord
-  # Only bandit nudges are learned from. The rest always send when they apply.
-  KINDS = %w[bandit setup milestone program streak_saver].freeze
+  # Only bandit nudges are learned from. The rest always send when they apply, bar test ones (bin/rails nudges:test),
+  # which are never scored or counted.
+  KINDS = %w[bandit setup milestone program streak_saver test].freeze
 
   # Building this long after a nudge counts as it working. Same as what keeps a streak going.
   REWARD_MINUTES = 20
@@ -37,6 +38,7 @@ class Nudge < ApplicationRecord
 
   scope :bandit, -> { where(kind: "bandit") }
   scope :delivered, -> { where(delivered: true) }
+  scope :real, -> { where.not(kind: "test") }
   scope :scored, -> { where.not(reward: nil) }
   scope :unscored, -> { delivered.where(reward: nil) }
 
@@ -65,7 +67,7 @@ class Nudge < ApplicationRecord
   end
 
   def self.score_due(now = Time.current)
-    unscored.where(sent_at: ..now - REWARD_WINDOW).find_each do |nudge|
+    unscored.real.where(sent_at: ..now - REWARD_WINDOW).find_each do |nudge|
       nudge.score!
     rescue Hackatime::Unavailable
       # Tried again next hour.
