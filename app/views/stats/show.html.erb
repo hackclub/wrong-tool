@@ -2,10 +2,10 @@
 <% totals, streaks = @stats[:totals], @stats[:streaks] %>
 <% day = @stats[:day].clamp(0, @stats[:days]) %>
 <% daily = @stats[:daily] %>
-<% axis_max = stat_axis_max(daily.filter_map { |d| d[:hours] }.max) %>
-<% peak = daily.select { |d| d[:hours] }.max_by { |d| d[:hours] } %>
+<% axis_max = stat_axis_max(daily.map { |d| d[:hours] }.max) %>
+<% peak = daily.reject { |d| d[:future] || d[:hours].zero? }.max_by { |d| d[:hours] } %>
 
-<%# wrong tool in numbers (PublicStats), for anyone: totals only, and "<3" for any group too small to show. %>
+<%# wrong tool in numbers (PublicStats), for anyone: exact totals, and no names. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
   <%= render "onboarding/formula_bar", name_box: "A1", formula: "=SUM(hours)  →  #{stat(totals[:hours])}" %>
@@ -17,7 +17,7 @@
         <h1 class="project__title">wrong tool in numbers</h1>
         <p class="leaderboard__note">
           <% if day < 1 %>Starts <%= Program::DATES.begin.strftime("%b %-d") %>.<% elsif @stats[:day] > @stats[:days] %>That's a wrap.<% else %>Day <%= day %> of <%= @stats[:days] %>.<% end %>
-          Totals across everyone, never anyone on their own; groups under <%= PublicStats::MIN_GROUP %> people show as "&lt;<%= PublicStats::MIN_GROUP %>".
+          Totals across everyone building.
         </p>
       </header>
 
@@ -38,10 +38,10 @@
           </div>
           <% daily.each do |d| %>
             <% date = d[:date].strftime("%b %-d") %>
-            <% tip = d[:future] ? "#{date}: still to come" : d[:hours] ? "#{date}: #{d[:hours]} hours by #{d[:builders]} builders" : "#{date}: fewer than #{PublicStats::MIN_GROUP} builders" %>
-            <div class="stats__column" <%= "data-future" if d[:future] %> <%= "data-hidden" if !d[:future] && d[:hours].nil? %>
+            <% tip = d[:future] ? "#{date}: still to come" : "#{date}: #{d[:hours]} hours by #{pluralize(d[:builders], "builder")}" %>
+            <div class="stats__column" <%= "data-future" if d[:future] %>
                  tabindex="0" data-tooltip="<%= tip %>" aria-label="<%= tip %>">
-              <span class="stats__column-bar" style="--value: <%= d[:hours] || 0 %>">
+              <span class="stats__column-bar" style="--value: <%= d[:hours] %>">
                 <% if d.equal?(peak) %><span class="stats__column-label"><%= d[:hours] %></span><% end %>
               </span>
               <span class="stats__column-date" aria-hidden="true"><%= d[:date].day %></span>
@@ -64,7 +64,7 @@
 
       <section class="stats__card" aria-labelledby="stats-funnel">
         <h2 class="stats__heading" id="stats-funnel">From signing in to shipping</h2>
-        <% first = @stats[:funnel].first[:count] || 0 %>
+        <% first = @stats[:funnel].first[:count] %>
         <table class="stats__bars">
           <thead class="visually-hidden"><tr><th scope="col">Step</th><th scope="col">People</th><th scope="col">Of everyone who signed in</th></tr></thead>
           <tbody>
@@ -72,7 +72,7 @@
               <tr>
                 <th scope="row"><%= step[:label] %></th>
                 <td class="stats__bar-cell">
-                  <span class="stats__bar" style="--share: <%= first.positive? && step[:count] ? step[:count].fdiv(first) : 0 %>"></span>
+                  <span class="stats__bar" style="--share: <%= first.positive? ? step[:count].fdiv(first) : 0 %>"></span>
                   <span class="stats__bar-value"><%= stat(step[:count]) %></span>
                 </td>
                 <td class="stats__bar-share"><%= stat_share(step[:share]) %></td>
@@ -85,18 +85,18 @@
       <div class="stats__pair">
         <section class="stats__card" aria-labelledby="stats-tools">
           <h2 class="stats__heading" id="stats-tools">The wrong tools</h2>
-          <% most = @stats[:tools].filter_map { |t| t[:builders] }.max || 0 %>
+          <% most = @stats[:tools].map { |t| t[:builders] }.max %>
           <table class="stats__bars">
             <thead><tr><th scope="col">Tool</th><th scope="col">Builders</th><th class="stats__bar-share" scope="col">Hours</th></tr></thead>
             <tbody>
-              <% @stats[:tools].sort_by { |t| -(t[:builders] || 0) }.each do |tool| %>
+              <% @stats[:tools].sort_by { |t| -t[:builders] }.each do |tool| %>
                 <tr>
                   <th scope="row"><%= tool[:label] %></th>
                   <td class="stats__bar-cell">
-                    <span class="stats__bar" style="--share: <%= most.positive? && tool[:builders] ? tool[:builders].fdiv(most) : 0 %>"></span>
+                    <span class="stats__bar" style="--share: <%= most.positive? ? tool[:builders].fdiv(most) : 0 %>"></span>
                     <span class="stats__bar-value"><%= stat(tool[:builders]) %></span>
                   </td>
-                  <td class="stats__bar-share"><%= tool[:builders] ? stat(tool[:hours]) : "" %></td>
+                  <td class="stats__bar-share"><%= stat(tool[:hours]) %></td>
                 </tr>
               <% end %>
             </tbody>
@@ -107,10 +107,10 @@
           <h2 class="stats__heading" id="stats-streaks">Streaks and buddies</h2>
           <div class="stats__tiles stats__tiles--small">
             <div class="stats__tile"><span>On a streak</span><strong><%= stat(streaks[:on_streak]) %></strong></div>
-            <div class="stats__tile"><span>Longest streak</span><strong><%= streaks[:longest] ? "#{streaks[:longest]} days" : "—" %></strong></div>
+            <div class="stats__tile"><span>Longest streak</span><strong><%= streaks[:longest] ? pluralize(streaks[:longest], "day") : "—" %></strong></div>
             <div class="stats__tile"><span>Buddy pairs</span><strong><%= stat(streaks[:pairs]) %></strong></div>
           </div>
-          <% most = streaks[:groups].filter_map { |g| g[:people] }.max || 0 %>
+          <% most = streaks[:groups].map { |g| g[:people] }.max %>
           <table class="stats__bars">
             <thead><tr><th scope="col">Streak</th><th scope="col">People</th></tr></thead>
             <tbody>
@@ -118,7 +118,7 @@
                 <tr>
                   <th scope="row"><%= group[:label] %></th>
                   <td class="stats__bar-cell">
-                    <span class="stats__bar" style="--share: <%= most.positive? && group[:people] ? group[:people].fdiv(most) : 0 %>"></span>
+                    <span class="stats__bar" style="--share: <%= most.positive? ? group[:people].fdiv(most) : 0 %>"></span>
                     <span class="stats__bar-value"><%= stat(group[:people]) %></span>
                   </td>
                 </tr>

@@ -1,7 +1,6 @@
 module StatsHelper
-  # A number, or "<3" where it's too few people to show (see PublicStats).
   def stat(value)
-    value.nil? ? "<#{PublicStats::MIN_GROUP}" : number_with_delimiter(value)
+    number_with_delimiter(value)
   end
 
   def stat_share(share)

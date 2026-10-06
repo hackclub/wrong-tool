@@ -124,10 +124,6 @@
     filter: brightness(1.15);
   }
 
-  .stats__column[data-hidden] .stats__column-bar {
-    background: var(--grey-300);
-  }
-
   .stats__column[data-future] .stats__column-bar {
     background: transparent;
   }
