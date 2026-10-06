@@ -10,8 +10,8 @@ class Nudge::Stats
     def failed = scored - worked
   end
 
-  COUNTS = [ "COUNT(*)", "COUNT(clicked_at)", "COUNT(reward)", "COALESCE(SUM(reward = 1), 0)",
-             "COALESCE(SUM(opted_out_at IS NOT NULL), 0)" ].map { |sql| Arel.sql(sql) }.freeze
+  COUNTS = [ "COUNT(*)", "COUNT(clicked_at)", "COUNT(reward)", "COUNT(*) FILTER (WHERE reward = 1)",
+             "COUNT(opted_out_at)" ].map { |sql| Arel.sql(sql) }.freeze
 
   attr_reader :nudges
 
