@@ -55,11 +55,16 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".onboarding-commit__sign-hint", text: "Hold, then sign in with Hack Club to finish."
     assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in every evening to keep you on track."
 
-    # A click isn't a hold, and letting go early runs it back.
-    click_on "Hold to sign with Hack Club"
-    assert_current_path onboarding_path
+    # Letting go early runs it back.
     hold_sign_button(seconds: 0.4)
     assert_selector ".onboarding-commit__sign-hint", text: "Almost. Hold until it's signed."
+    assert_no_selector ".onboarding-commit[data-pledged]"
+
+    # A click isn't a hold: it says to hold instead.
+    click_on "Hold to sign with Hack Club"
+    assert_current_path onboarding_path
+    assert_button "Press and hold to sign"
+    assert_selector ".onboarding-commit__sign-hint", text: "Keep it pressed until it fills, about a second. Or tap once more."
     assert_no_selector ".onboarding-commit[data-pledged]"
 
     hold_sign_button(seconds: 1.6)
@@ -147,10 +152,31 @@ class OnboardingTest < ApplicationSystemTestCase
     end
   end
 
+  test "tapping the sign button twice signs it for you" do
+    mock_hack_club_auth
+    with_whoami(signed_in: true, email: "heidi@hackclub.com", first_name: "Heidi") do
+      visit onboarding_path
+      click_on "Email"
+      click_on "Skip for now"
+      click_on "RG35XX Pro"
+      find(".onboarding-chip", text: "1 hr").click
+      find(".onboarding-chip", text: "late night").click
+
+      click_on "Hold to sign with Hack Club"
+      assert_button "Press and hold to sign"
+      assert_no_selector ".onboarding-commit[data-pledged]"
+
+      click_on "Press and hold to sign"
+      assert_selector ".onboarding-commit__sign-hint", text: "No need to hold. Signing it for you."
+      assert_selector ".onboarding-commit[data-pledged]", wait: 3
+      assert_current_path project_path, wait: 5
+    end
+  end
+
   private
     # Presses the sign button and keeps it down, the way you'd hold it.
     def hold_sign_button(seconds:)
-      button = find_button("Hold to sign with Hack Club")
+      button = find(".onboarding-hold")
       page.driver.browser.action.click_and_hold(button.native).perform
       sleep seconds
       page.driver.browser.action.release.perform
