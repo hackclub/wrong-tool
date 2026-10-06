@@ -1,0 +1,254 @@
+/* The public stats page (/stats): headline tiles, hours per day as columns, and the funnel, tools and streaks as
+   bar tables. One series everywhere, so one colour (the brand green); text stays in text colours. */
+@layer sections {
+  .stats {
+    --stats-mark: var(--green);
+    --stats-track: var(--grey-75);
+
+    position: relative;
+    max-inline-size: 1000px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px 16px 48px;
+  }
+
+  .stats__heading {
+    margin: 0 0 12px;
+    font: 600 15px var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .stats__card {
+    padding: 16px;
+    border: 1px solid var(--border-header);
+    background: var(--surface-grid);
+  }
+
+  .stats__tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border-header);
+    background: var(--border-grid);
+  }
+
+  .stats__tiles--small {
+    margin-block-end: 16px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stats__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--surface-grid);
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
+
+    strong {
+      font: 600 28px var(--font-cell);
+      color: var(--text-primary);
+    }
+  }
+
+  .stats__tiles--small strong {
+    font-size: 20px;
+  }
+
+  /* Hours per day: one column per day, growing from the baseline, on three hairline gridlines. */
+  .stats__columns {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: end;
+    gap: 2px;
+    block-size: 220px;
+    padding-inline-start: 36px;
+    padding-block-start: 12px;
+  }
+
+  /* Three hairline gridlines (top, middle, zero), their values in the gutter. */
+  .stats__grid {
+    position: absolute;
+    inset: 12px 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+
+    span {
+      position: relative;
+      block-size: 0;
+      font: 11px var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      line-height: 0;
+      color: var(--text-placeholder);
+    }
+
+    span::after {
+      content: "";
+      position: absolute;
+      inset-inline: 36px 0;
+      inset-block-start: 0;
+      border-block-start: 1px solid var(--border-grid);
+    }
+  }
+
+  .stats__column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    block-size: 100%;
+    padding-block-end: 20px;
+    outline-offset: 2px;
+    cursor: default;
+  }
+
+  .stats__column-bar {
+    position: relative;
+    inline-size: 100%;
+    max-inline-size: 24px;
+    block-size: calc(var(--value) / var(--axis-max) * 100%);
+    min-block-size: 2px;
+    border-radius: 4px 4px 0 0;
+    background: var(--stats-mark);
+  }
+
+  .stats__column:hover .stats__column-bar,
+  .stats__column:focus-visible .stats__column-bar {
+    filter: brightness(1.15);
+  }
+
+  .stats__column[data-hidden] .stats__column-bar {
+    background: var(--grey-300);
+  }
+
+  .stats__column[data-future] .stats__column-bar {
+    background: transparent;
+  }
+
+  .stats__column-label {
+    position: absolute;
+    inset-block-end: calc(100% + 4px);
+    inset-inline: -20px;
+    font: 600 12px var(--font-cell);
+    color: var(--text-primary);
+    text-align: center;
+  }
+
+  .stats__column-date {
+    position: absolute;
+    inset-block-end: 0;
+    font: 11px var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  .stats__column[data-future] .stats__column-date {
+    color: var(--text-placeholder);
+  }
+
+  .stats__axis-note {
+    margin: 6px 0 0 36px;
+    font: 12px var(--font-cell);
+    color: var(--text-placeholder);
+  }
+
+  .stats__table-view {
+    margin-block-start: 12px;
+    font: 13px var(--font-cell);
+
+    summary {
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    table {
+      margin-block-start: 8px;
+      max-inline-size: 420px;
+    }
+  }
+
+  /* Bar tables: label, a bar from the start, its value, and (for the funnel) its share. */
+  .stats__bars {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font: 13px var(--font-cell);
+
+    thead th {
+      padding-block-end: 6px;
+      font: 12px var(--font-cell);
+      color: var(--text-secondary);
+      text-align: start;
+    }
+
+    tbody th {
+      inline-size: 1%;
+      padding: 5px 12px 5px 0;
+      font-weight: 400;
+      color: var(--text-primary);
+      text-align: start;
+      white-space: nowrap;
+    }
+  }
+
+  .stats__bar-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-block: 5px;
+  }
+
+  .stats__bar {
+    flex: 0 0 auto;
+    inline-size: calc(var(--share) * (100% - 3.5em));
+    min-inline-size: 2px;
+    block-size: 18px;
+    border-radius: 0 4px 4px 0;
+    background: var(--stats-mark);
+  }
+
+  .stats__bar-value {
+    font: 600 13px var(--font-cell);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+
+  .stats__bar-share {
+    inline-size: 4em;
+    padding-inline-start: 8px;
+    font: 12px var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    text-align: end;
+  }
+
+  .stats__pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .stats__tooltip {
+    position: absolute;
+    z-index: 2;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: var(--grey-900);
+    font: 12px var(--font-cell);
+    color: var(--white);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  @media (width <= 600px) {
+    .stats__bars tbody th {
+      inline-size: 40%;
+      white-space: normal;
+    }
+  }
+}

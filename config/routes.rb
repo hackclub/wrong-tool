@@ -11,6 +11,8 @@ Rails.application.routes.draw do
     resource :streak, only: :update
   end
   resource :leaderboard, only: :show
+  # wrong tool in numbers, for anyone: totals only, never anyone on their own (PublicStats).
+  get "stats" => "stats#show", as: :stats
   resource :buddy, only: :show do
     # A pomodoro together: start one, see how it's going (polled), and join your buddy's.
     resource :pomodoro, only: %i[show create], controller: "buddy_pomodoros" do
