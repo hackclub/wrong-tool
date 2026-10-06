@@ -650,6 +650,16 @@
     text-decoration: none;
   }
 
+  /* Under the name: re-pledge with a different tool (the pledge again). */
+  .project__change-tool {
+    align-self: flex-start;
+    block-size: 30px;
+    margin-inline-start: -10px;
+    padding: 0 10px;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
   /* Your schedule card: the goal cells (the pace one you can change), then the days and your hours. */
 
   .project__plan {

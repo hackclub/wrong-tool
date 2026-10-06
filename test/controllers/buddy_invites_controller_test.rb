@@ -49,6 +49,20 @@ class BuddyInvitesControllerTest < ActionDispatch::IntegrationTest
     assert_equal projects(:ana), User.find_by!(hca_id: "ident!heidi").project.buddy
   end
 
+  test "accepting before signing in still pairs you once you've signed your pledge" do
+    post buddy_invite_path("k3j9x2qa")
+    assert_redirected_to onboarding_path
+
+    mock_hack_club_auth
+    post "/auth/hackclub"
+    follow_redirect!
+
+    post project_path, as: :json, params: { project: { tool: "email", tool_name: "Email", idea: "a mail RPG", prize: "miyoo",
+                                                       pace_minutes: 20, build_time: "evening" } }
+    assert_equal buddy_path, response.parsed_body["location"]
+    assert_equal projects(:ana), User.find_by!(hca_id: "ident!heidi").project.buddy
+  end
+
   test "your own link is yours" do
     mock_hack_club_auth(uid: users(:ana).hca_id, slack_id: "U0ANA")
     post "/auth/hackclub"

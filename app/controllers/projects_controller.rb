@@ -22,13 +22,15 @@ class ProjectsController < ApplicationController
                    checked_at: Time.current.iso8601 }
   end
 
-  # Signing the pledge (the onboarding controller posts it once the ceremony's done). Signing again re-pledges.
+  # Signing the pledge (the onboarding controller posts it once the ceremony's done). Signing again re-pledges, like
+  # changing your tool from your project page: everything you chose is replaced, but you keep the day you first signed,
+  # so your schedule doesn't move.
   def create
     return head :unauthorized unless signed_in?
 
     project = current_user.project || current_user.build_project
     repledged = project.persisted?
-    if project.update(pledge_params.merge(signed_on: Date.current))
+    if project.update(pledge_params.merge(signed_on: project.signed_on || Date.current))
       PostHog.capture(
         distinct_id: current_user.posthog_distinct_id,
         event: "project_pledged",

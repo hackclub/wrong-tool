@@ -22,6 +22,26 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "Something cursed in Figma", 60, Date.current ], [ project.title, project.pace_minutes, project.signed_on ]
   end
 
+  test "changing your tool re-pledges, keeping your hours, buddy and the day you first signed" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+    projects(:orpheus).pair_with(projects(:ana))
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+    get project_path
+    assert_select "a.project__change-tool[href=?]", onboarding_path
+
+    travel_to Program::DATES.begin + 3 do
+      post project_path, as: :json, params: { project: { tool: "figma", tool_name: "Figma", idea: "a puzzle game", prize: "rg35xx",
+                                                         pace_minutes: 60, build_time: "late night" } }
+    end
+
+    assert_response :created
+    project = projects(:orpheus).reload
+    assert_equal [ "figma", "late night", Date.new(2026, 9, 30) ], [ project.tool, project.build_time, project.signed_on ]
+    assert_equal [ "rhythm-game" ], project.hackatime_projects
+    assert_equal projects(:ana), project.buddy
+  end
+
   test "a pledge needs someone signed in, and answers onboarding offers" do
     post project_path, as: :json, params: { project: { tool: "figma" } }
     assert_response :unauthorized

@@ -109,6 +109,24 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal [ 1, 0, Nudge::OPT_OUT_PENALTY ], [ worked, didnt, opted_out ].map { |nudge| nudge.reload.reward }
   end
 
+  test "scoring tells PostHog how the nudge did" do
+    nudge = sent!("tiny_step", at: at_slot(8))
+    Hackatime.stubbed_spans = { "1001" => [ span(at_slot(8, hour: 21), 25) ] }
+    captured = []
+    original, configured = PostHog.method(:capture), Rails.configuration.x.posthog_configured
+    PostHog.define_singleton_method(:capture) { |**event| captured << event }
+    Rails.configuration.x.posthog_configured = true
+
+    travel_to(at_slot(11)) { Nudge.score_due }
+
+    event = captured.find { |each| each[:event] == "nudge_scored" }
+    assert_equal({ nudge_id: nudge.id, arm: "tiny_step", reward: 1, worked: true, built_minutes: 25 },
+                 event[:properties].slice(:nudge_id, :arm, :reward, :worked, :built_minutes))
+  ensure
+    PostHog.define_singleton_method(:capture, original)
+    Rails.configuration.x.posthog_configured = configured
+  end
+
   test "the window has to close before a nudge is scored" do
     nudge = sent!("tiny_step", at: at_slot(8))
     travel_to(at_slot(8, hour: 23)) { Nudge.score_due }

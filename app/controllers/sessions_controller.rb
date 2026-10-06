@@ -4,8 +4,10 @@ class SessionsController < ApplicationController
   def create
     user = User.from_omniauth(request.env["omniauth.auth"])
     return_to = safe_return_path(request.env["omniauth.origin"])
+    buddy_code = session[:buddy_code] # a buddy invite accepted before signing in still pairs you after onboarding
     reset_session
     session[:user_id] = user.id
+    session[:buddy_code] = buddy_code if buddy_code
     JoinSlackChannelsJob.perform_later(user.id) unless user.slack_channels_joined_at
     user.remember_timezone(cookies[:timezone]) if cookies[:timezone].present?
     SlackProfileJob.perform_later(user.id) if user.slack_id.present?

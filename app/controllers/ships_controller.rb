@@ -16,6 +16,7 @@ class ShipsController < ApplicationController
         distinct_id: current_user.posthog_distinct_id,
         event: "project_shipped"
       ) if Rails.configuration.x.posthog_configured
+      PosthogLog.info("project_shipped")
 
       flash[:clippy] = "congratulate"
       redirect_to project_ship_path

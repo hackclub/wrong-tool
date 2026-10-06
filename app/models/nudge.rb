@@ -81,12 +81,15 @@ class Nudge < ApplicationRecord
   # 1 if they built REWARD_MINUTES in the window, 0 if not, OPT_OUT_PENALTY if this nudge made them stop Clippy's
   # messages.
   def score!
+    seconds = opted_out_at ? 0 : built_seconds
     reward =
       if opted_out_at then OPT_OUT_PENALTY
-      elsif built_seconds >= REWARD_MINUTES * 60 then 1
+      elsif seconds >= REWARD_MINUTES * 60 then 1
       else 0
       end
     update!(reward:, rewarded_at: Time.current)
+    capture("nudge_scored", reward:, worked: reward == 1, opted_out: opted_out_at.present?,
+                            built_minutes: seconds / 60, clicked: clicked_at.present?)
   end
 
   # Time on their linked Hackatime projects in the window. Nothing linked, or Hackatime not linked any more, is none.

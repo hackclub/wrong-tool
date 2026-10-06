@@ -14,7 +14,7 @@ export function previewing() {
 
 addEventListener("turbo:load", () => {
   const userId = document.body.dataset.posthogUserId
-  if (userId) window.posthog?.identify(userId)
+  if (userId && window.posthog?.get_distinct_id() !== userId) window.posthog.identify(userId)
 })
 
 // Links and buttons with data-capture="event" send it when clicked, with data-capture-location as where from.
