@@ -6,10 +6,17 @@
     posthog.init(<%= raw Rails.configuration.x.posthog_project_token.to_json %>, {
       api_host: <%= raw Rails.configuration.x.posthog_host.to_json %>,
       defaults: "2026-05-30",
-      // Heatmaps (clicks, mouse movement, rage clicks) and clicks on things that do nothing. Session replay
-      // records the cursor too; it's switched on in the project's settings.
+      // Heatmaps (clicks, mouse movement, rage clicks) and clicks on things that do nothing.
       enable_heatmaps: true,
-      capture_dead_clicks: true
+      capture_dead_clicks: true,
+      // Session replay (also needs "Record user sessions" on in the project's settings). Most people here are teens,
+      // so nothing typed is recorded, nor text marked data-ph-mask (your name and email, your signature), and
+      // anything marked ph-no-capture (the admin pages) isn't recorded at all.
+      disable_session_recording: false,
+      session_recording: {
+        maskAllInputs: true,
+        maskTextSelector: "[data-ph-mask]"
+      }
     })
   </script>
 <% end %>

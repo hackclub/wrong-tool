@@ -66,8 +66,8 @@
           <%= avatar_tag(user, aria: { hidden: true }, role: nil) %>
         </button>
         <div class="app-bar__account" id="app-bar-account" popover>
-          <p class="app-bar__account-name"><%= user.name %></p>
-          <% if user.email.present? %><p class="app-bar__account-email"><%= user.email %></p><% end %>
+          <p class="app-bar__account-name" data-ph-mask><%= user.name %></p>
+          <% if user.email.present? %><p class="app-bar__account-email" data-ph-mask><%= user.email %></p><% end %>
           <%= button_to "Log out", logout_path, method: :delete, class: "menu-bar__entry app-bar__logout",
                     form: { data: { posthog_reset: true } } %>
         </div>
