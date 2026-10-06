@@ -650,7 +650,7 @@
     text-decoration: none;
   }
 
-  /* Under the name: re-pledge with a different tool (the pledge again). */
+  /* Under the name: changing your tool, which opens the tools (.project__tools) right below. */
   .project__change-tool {
     align-self: flex-start;
     block-size: 30px;
@@ -658,6 +658,38 @@
     padding: 0 10px;
     font-size: 13px;
     text-decoration: none;
+  }
+
+  /* The tools to change to: chips like the paces', then your own under Other. */
+  .project__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-block-start: 4px;
+  }
+
+  .project__tool-other {
+    display: flex;
+    gap: 8px;
+  }
+
+  .project__tool-other-input {
+    block-size: 32px;
+    inline-size: 200px;
+    padding: 0 12px;
+    border: 1px solid var(--border-header);
+    border-radius: 16px;
+    background: var(--white);
+    font: 13px var(--font-chrome);
+
+    &[aria-invalid="true"] {
+      border-color: var(--red-800);
+    }
+  }
+
+  .project__tools .project__title-error {
+    flex-basis: 100%;
   }
 
   /* Your schedule card: the goal cells (the pace one you can change), then the days and your hours. */

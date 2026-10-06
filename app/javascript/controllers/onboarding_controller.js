@@ -383,7 +383,8 @@ export default class extends Controller {
     }, CEREMONY.tick)
   }
 
-  // The signed pledge becomes your project, and off you go to it. (Try again, if it didn't save.)
+  // The signed pledge becomes your project, and off you go to it. (Try again, if it didn't save.) If you'd already
+  // pledged, your project stays as it was.
   async saveProject() {
     const s = this.state
     this.saveErrorTarget.hidden = true

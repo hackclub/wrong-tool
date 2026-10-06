@@ -73,6 +73,13 @@
         </div>
       <% end %>
     <% else %>
+      <%# Coming back: Hack Club Auth, then back to this page. From the landing page that's your project (or
+          onboarding, if you never pledged), so signing in again doesn't mean going through onboarding again. %>
+      <% unless signed_in? %>
+        <%= button_to "Sign in", "/auth/hackclub", params: { origin: request.path }, class: "app-bar__sign-in-button",
+              form: { class: "app-bar__sign-in", data: { turbo: false } },
+              data: { capture: "login_clicked", capture_location: "app_bar" } %>
+      <% end %>
       <%= link_to onboarding_path, class: "app-bar__build-button", data: { capture: "signup_clicked", capture_location: "app_bar" } do %>
         <span class="app-bar__build-label"><%= inline_svg_tag "icons/header/sports-esports.svg", class: "icon", aria_hidden: true %><span>Start<span class="app-bar__build-rest"> building</span></span></span>
         <span class="app-bar__build-caret"><%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %></span>

@@ -34,9 +34,10 @@
               <% end %>
             </div>
             <%= render "projects/title", project: @project %>
-            <%# Re-pledging: the whole pledge again, from the tool on (ProjectsController#create). %>
-            <%= link_to "Change your tool", onboarding_path, class: "onboarding-text-button project__change-tool",
-                  data: { capture: "change_tool_clicked", capture_location: "project" } %>
+            <%= link_to "Change your tool", project_path(edit: ("tool" unless @editing_tool)),
+                  class: "onboarding-text-button project__change-tool", aria: { expanded: @editing_tool },
+                  data: { capture: ("change_tool_clicked" unless @editing_tool), capture_location: "project" } %>
+            <% if @editing_tool %><%= render "projects/tools", project: @project %><% end %>
             <% unless set_up %><p class="project__meta"><%= project_meta(@project) %></p><% end %>
           </div>
           <% if set_up %><%= render "projects/screenshot", project: @project %><% end %>

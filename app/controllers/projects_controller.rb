@@ -2,11 +2,13 @@
 class ProjectsController < ApplicationController
   before_action :require_project, only: %i[show update hours]
 
-  # ?step= opens one of the setup steps you can still do (otherwise it's the first one left); ?edit=pace, your pace.
+  # ?step= opens one of the setup steps you can still do (otherwise it's the first one left); ?edit=pace, your pace;
+  # ?edit=tool, your tool.
   # ?refresh=1 asks Hackatime for your projects again.
   def show
     @step = params[:step]
     @editing_pace = params[:edit] == "pace"
+    @editing_tool = params[:edit] == "tool"
     @refresh_hackatime = params[:refresh].present?
     flash.now[:clippy] = "hop" if auto_link_hackatime_project(refresh: @refresh_hackatime)
     @refresh_hackatime = false if @project.available_hackatime_projects # just asked: the projects step can use that
@@ -22,19 +24,21 @@ class ProjectsController < ApplicationController
                    checked_at: Time.current.iso8601 }
   end
 
-  # Signing the pledge (the onboarding controller posts it once the ceremony's done). Signing again re-pledges, like
-  # changing your tool from your project page: everything you chose is replaced, but you keep the day you first signed,
-  # so your schedule doesn't move.
+  # Signing the pledge (the onboarding controller posts it once the ceremony's done). Once you've pledged, going
+  # through onboarding again leaves your pledge alone and takes you back to your project; you change your tool and
+  # pace there.
   def create
     return head :unauthorized unless signed_in?
 
-    project = current_user.project || current_user.build_project
-    repledged = project.persisted?
-    if project.update(pledge_params.merge(signed_on: project.signed_on || Date.current))
+    if (project = current_user.project)
+      return render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path }
+    end
+
+    project = current_user.build_project
+    if project.update(pledge_params.merge(signed_on: Date.current))
       PostHog.capture(
         distinct_id: current_user.posthog_distinct_id,
-        event: "project_pledged",
-        properties: { repledged: }
+        event: "project_pledged"
       ) if Rails.configuration.x.posthog_configured
 
       render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path }, status: :created
@@ -62,6 +66,7 @@ class ProjectsController < ApplicationController
     else
       @step = "repo" if @project.errors[:repo_url].any?
       @step = "hackatime_project" if @project.errors[:hackatime_projects].any?
+      @editing_tool = @project.errors[:tool].any? || @project.errors[:tool_name].any?
       render :show, status: :unprocessable_entity
     end
   end
@@ -108,7 +113,7 @@ class ProjectsController < ApplicationController
     end
 
     def setup_params
-      params.expect(project: [ :name, :screenshot, :repo_url, :repo_later, :pace_minutes, :party_queued, :buddy_invited,
+      params.expect(project: [ :name, :tool, :tool_name, :screenshot, :repo_url, :repo_later, :pace_minutes, :party_queued, :buddy_invited,
                                :buddy_skipped, :hackatime_auto_linked, hackatime_project_names: [] ])
     end
 end

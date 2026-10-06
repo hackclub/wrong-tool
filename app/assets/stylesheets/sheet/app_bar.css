@@ -424,6 +424,23 @@
     text-decoration: none;
   }
 
+  .app-bar__sign-in {
+    flex: none;
+    margin-inline-start: 8px;
+  }
+
+  .app-bar__sign-in-button {
+    block-size: 40px;
+    padding-inline: 16px;
+    border-radius: 20px;
+    color: var(--blue-700);
+    font: 500 14px var(--font-chrome);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
   .app-bar__build-button {
     overflow: hidden;
     background: var(--sky-200);
@@ -501,6 +518,15 @@
     .app-bar__build-caret,
     .app-bar__build-rest {
       display: none;
+    }
+
+    .app-bar__sign-in {
+      margin-inline-start: 0;
+    }
+
+    .app-bar__sign-in-button {
+      block-size: 36px;
+      padding-inline: 12px;
     }
 
     .app-bar__build-button {

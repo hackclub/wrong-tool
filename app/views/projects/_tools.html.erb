@@ -1,0 +1,20 @@
+<%# locals: (project:) %>
+<%# Changing your tool, right here (not the pledge again): the tools onboarding offers, or your own under Other. Your
+    idea, prize, pace and the day you signed stay as they are. %>
+<div class="project__tools" role="group" aria-label="Your wrong tool">
+  <% onboarding_tools.reject { |tool| tool[:id] == "other" }.each do |tool| %>
+    <%= button_to tool[:name], project_path, method: :patch, params: { project: { tool: tool[:id], tool_name: tool[:name] } },
+          class: "project__pace", aria: { pressed: tool[:id] == project.tool } %>
+  <% end %>
+  <%= form_with model: project, url: project_path, method: :patch, class: "project__tool-other" do |form| %>
+    <%= form.hidden_field :tool, value: "other" %>
+    <%= form.label :tool_name, "Other tool", class: "visually-hidden" %>
+    <%= form.text_field :tool_name, value: (project.tool_name if project.tool == "other"), placeholder: "Other, e.g. Google Slides",
+          maxlength: 28, autocomplete: "off", spellcheck: false, required: true,
+          class: "project__tool-other-input", aria: { invalid: project.errors[:tool_name].any? } %>
+    <%= form.submit "Use it", class: "project__pace" %>
+  <% end %>
+  <% if project.errors[:tool_name].any? %>
+    <p class="project__title-error" role="alert"><%= project.errors.full_messages_for(:tool_name).first %></p>
+  <% end %>
+</div>
