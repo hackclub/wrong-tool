@@ -26,7 +26,7 @@
       </div>
     </main>
   <% else %>
-    <% screenshot = @project.screenshot if @project.screenshot.attached? && @project.screenshot.blob.persisted? %>
+    <% screenshot = @project.stored_screenshot %>
     <%= form_with model: @ship, url: project_ship_path, method: :post, multipart: true, class: "ship__form",
           data: { controller: "ship", ship_description_min_value: Ship::DESCRIPTION_MIN, ship_has_screenshot_value: screenshot.present?,
                   action: "input->ship#check change->ship#check" } do |form| %>

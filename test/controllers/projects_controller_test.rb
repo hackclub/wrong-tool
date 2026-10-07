@@ -333,6 +333,13 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project__shot-image[alt='Screenshot of Beat Sheet']"
     get leaderboard_path
     assert_select "tr[data-you] .leaderboard__shot"
+
+    blob = projects(:orpheus).reload.screenshot.blob
+    blob.service.delete(blob.key)
+    get leaderboard_path
+    assert_select "tr[data-you] .leaderboard__shot", count: 0
+    get project_path
+    assert_select ".project__shot-placeholder", "Add a screenshot"
   end
 
   test "a screenshot that isn't an image says so" do

@@ -78,6 +78,17 @@ class ProjectTest < ActiveSupport::TestCase
     assert project.valid?
   end
 
+  test "a screenshot whose file has gone from storage isn't shown" do
+    project = projects(:orpheus)
+    project.screenshot.attach(io: file_fixture("screenshot.png").open, filename: "screenshot.png", content_type: "image/png")
+    project.save!
+    assert_equal project.screenshot, project.stored_screenshot
+
+    project.screenshot.blob.service.delete(project.screenshot.blob.key)
+    assert project.screenshot.attached?
+    assert_nil project.reload.stored_screenshot
+  end
+
   test "the ticked Hackatime projects are the linked ones, and new ones have to be on Hackatime" do
     project = projects(:orpheus)
     link_hackatime(project.user)

@@ -250,13 +250,23 @@ class Project < ApplicationRecord
     ships.in_review.order(:created_at).last
   end
 
+  # The screenshot, unless its file has gone from storage. The blob's row can outlive the file, and showing that one
+  # is a broken image.
+  def stored_screenshot
+    return unless screenshot.attached? && screenshot.blob.persisted?
+    return screenshot if screenshot.blob.service.exist?(screenshot.blob.key)
+
+    PosthogLog.warn("screenshot_file_missing")
+    nil
+  end
+
   # Shipping: what you submit becomes your project's name and repo too, and the screenshot you pick (or the one you
   # had) is kept with the ship.
   def ship!(params)
     upload = params.delete(:screenshot)
     ship = ships.build(params.merge(hackatime_projects:, hours: hours_logged))
     if upload.present? then ship.screenshot.attach(upload)
-    elsif screenshot.attached? then ship.screenshot.attach(screenshot.blob)
+    elsif (kept = stored_screenshot) then ship.screenshot.attach(kept.blob)
     end
 
     if ship.save

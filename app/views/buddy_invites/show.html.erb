@@ -27,7 +27,7 @@
         </div>
 
         <div class="buddy-invited__project">
-          <% if (shot = @inviter.screenshot).attached? && shot.blob.persisted? %>
+          <% if (shot = @inviter.stored_screenshot) %>
             <%= image_tag url_for(shot), alt: "Screenshot of #{@inviter.title}", class: "buddy-invited__shot" %>
           <% end %>
           <div class="buddy-invited__about">
