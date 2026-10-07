@@ -460,7 +460,7 @@
     }
   }
 
-  /* A checkbox like the design's: dark grey outline (light grey was easy to miss), blue with a white tick when on. */
+  /* A checkbox like the design's: dark grey outline, blue with a white tick when on. */
   .project__picker-box {
     flex: none;
     inline-size: 20px;
