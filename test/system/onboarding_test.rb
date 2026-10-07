@@ -1,6 +1,8 @@
 require "application_system_test_case"
 
 class OnboardingTest < ApplicationSystemTestCase
+  include OnboardingHelper
+
   test "Start building in the app bar and the hero both open onboarding" do
     visit root_path
     assert_selector "a.app-bar__build-button[href='#{onboarding_path}']"
@@ -24,7 +26,11 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_button "Roll again", wait: 5
     idea = find(".formula-bar__content").text.delete_prefix('="').delete_suffix('"')
     assert_match(/\Aan? .+/, idea)
-    genre = all(".onboarding-reel").first.text
+    genre, setting, twist = all(".onboarding-reel").map(&:text)
+    assert_includes onboarding_genres, genre
+    assert_includes onboarding_twists, twist
+    assert_equal "#{genre} #{setting}, #{twist}", idea.delete_prefix("a ").delete_prefix("an ")
+    pledged = "#{genre} #{twist}"
     click_on "Use this idea"
 
     assert_selector "h2", text: "Pick your prize."
@@ -39,7 +45,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_button "Hold to sign with Hack Club", disabled: true
     assert_selector ".onboarding-commit__sign-hint", text: "Answer both to sign."
     assert_selector ".onboarding-pledge__signature", visible: :hidden
-    assert_selector ".onboarding-pledge__text", text: /and ship an? #{Regexp.escape(genre)}/
+    assert_selector ".onboarding-pledge__text", text: /and ship an? #{Regexp.escape(pledged)}/
     assert_selector ".onboarding-pledge__text", text: "every day and ship"
     assert_selector ".onboarding-pledge__text", text: "over SSH by"
     assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in to keep you on track."
@@ -48,7 +54,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".onboarding-pledge__text", text: "I'll build 45 min every day"
     assert_selector ".onboarding-commit__finish", text: /\AYou'd finish by [A-Z][a-z]{2} \d+\.\z/
     assert_selector ".onboarding-commit__sign-hint", text: "Pick a time first."
-    assert_selector ".formula-bar__content", text: /\A=SHIP\("#{Regexp.escape(genre)}","SSH",DATE\(\d+,\d+\)\)\z/
+    assert_selector ".formula-bar__content", text: /\A=SHIP\("#{Regexp.escape(pledged)}","SSH",DATE\(\d+,\d+\)\)\z/
     assert_button "Hold to sign with Hack Club", disabled: true
     find(".onboarding-chip", text: "evening").click
     assert_selector ".app-bar__title", text: /\.sh\z/
@@ -82,9 +88,30 @@ class OnboardingTest < ApplicationSystemTestCase
     project = User.find_by!(hca_id: "ident!heidi").project
     assert_equal [ "ssh", "SSH", "Miyoo Mini Plus", 45, "evening" ],
                  [ project.tool, project.tool_name, ProjectsHelper::PRIZE_NAMES[project.prize], project.pace_minutes, project.build_time ]
-    assert_selector "h1", text: /\AAn? #{Regexp.escape(genre)} over SSH\z/
+    assert_equal pledged, project.idea.delete_prefix("a ").delete_prefix("an ")
+    assert_selector "h1", text: /\AAn? #{Regexp.escape(pledged)} over SSH\z/
     assert_selector ".project__day", text: "Day 1"
     assert_selector ".sheet-tab[aria-current=page]", text: "My project"
+  end
+
+  test "rolling steers clear of ideas two people have pledged, and ones you've rolled already" do
+    visit onboarding_path
+    click_on "Spreadsheet"
+    assert_button "Roll again", wait: 5
+
+    # Everything's been pledged twice except one idea, pledged once, and one nobody's pledged: that's the next roll.
+    mark_taken(except: { "a snake clone where the floor is lava" => 0, "an escape room about tax season" => 1 })
+    click_on "Roll again"
+    assert_button "Roll again", wait: 5
+    assert_equal [ "snake clone", "where the floor is lava" ], all(".onboarding-reel").map(&:text).values_at(0, 2)
+    assert_selector ".onboarding-idea__article", text: "a"
+
+    # That one's been rolled now, so the once-pledged idea comes up next.
+    click_on "Roll again"
+    assert_button "Roll again", wait: 5
+    assert_equal [ "escape room", "about tax season" ], all(".onboarding-reel").map(&:text).values_at(0, 2)
+    assert_selector ".onboarding-idea__article", text: "an"
+    assert_selector ".formula-bar__content", text: /\A="an escape room .*, about tax season"\z/
   end
 
   test "Other asks for the tool's name" do
@@ -189,5 +216,12 @@ class OnboardingTest < ApplicationSystemTestCase
       yield
     ensure
       config.hack_club_auth_whoami_url = nil
+    end
+
+  private
+    # Tells the sheet every rolled idea's been pledged twice, bar the ones in `except` (idea => times pledged).
+    def mark_taken(except:)
+      taken = onboarding_rolled_ideas.index_with(2).merge(except).reject { |_, count| count.zero? }
+      page.execute_script("document.querySelector('[data-controller~=onboarding]').dataset.onboardingTakenValue = arguments[0]", taken.to_json)
     end
 end

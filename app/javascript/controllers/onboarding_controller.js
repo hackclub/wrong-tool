@@ -8,7 +8,7 @@ import { capture, previewing } from "analytics"
 // to Hack Club Auth), and the pledge signs itself once you're back.
 const PICK_DELAY = 360
 const ANSWERS_KEY = "wrong-tool:onboarding"
-const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "idea", "ideaTool", "ideaOwn", "ideaSkipped", "prize",
+const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "twist", "idea", "ideaTool", "ideaOwn", "ideaSkipped", "prize",
                   "pace", "buildTime", "pledged", "signedOn" ]
 // Set while the pledge is out being signed at Hack Club Auth, so coming back plays the ceremony.
 const SIGNING_KEY = "wrong-tool:signing-pledge"
@@ -34,7 +34,7 @@ export default class extends Controller {
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
   static values = {
-    tools: Array, genres: Array, prizes: Array, hours: Number, sounds: Object,
+    tools: Array, genres: Array, twists: Array, taken: Object, prizes: Array, hours: Number, sounds: Object,
     signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object,
     projectUrl: String, hasProject: Boolean
   }
@@ -42,8 +42,8 @@ export default class extends Controller {
   connect() {
     this.state = {
       step: 1, tool: null, custom: "", otherOpen: false,
-      genre: "", phrase: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
-      rolling: false, stop1: true, stop2: true, spin: 0, ownOpen: false, own: "",
+      genre: "", phrase: "", twist: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
+      rolling: false, stop1: true, stop2: true, stop3: true, spin: 0, ownOpen: false, own: "",
       prize: null, pace: null, buildTime: null, pledged: false, signedOn: null, signing: false, signTick: -1,
       holdP: 0, holding: false, letGo: false, taps: 0, autofill: false,
       ...this.#restoreAnswers()
@@ -51,6 +51,8 @@ export default class extends Controller {
     // A pledge is only signed for whoever's signed in.
     if (!this.signedInValue) this.state.pledged = false
     if (this.state.pledged) this.state.step = 4
+    // Ideas rolled this visit (as the pledge would store them), so "Roll again" never shows one twice.
+    this.rolled = new Set()
     this.clippy = new Clippy(this.mascotSpriteTarget, this.soundsValue)
     this.#render()
     this.#viewed()
@@ -115,19 +117,20 @@ export default class extends Controller {
     this.#after(PICK_DELAY - 60, () => this.#goTo(2))
   }
 
-  // A2. The genre reel stops on its 13th tick and the setting on its 21st, slowing down as they go.
+  // A2. Three reels: the genre stops on its 11th tick, the tool's setting on its 16th and the twist on its 21st,
+  // slowing down as they go. Where they land is decided up front (#pickIdea).
 
   roll(event) {
     if (this.state.rolling && !this.state.ownOpen) return
     if (event) this.#did("idea_rerolled")
     clearTimeout(this.rollTimer)
     const phrases = this.#phrases()
-    const genre = pickOther(this.genresValue, this.state.genre)
+    const [ genre, twist ] = this.#pickIdea()
     const phrase = phrases.length > 1 ? pickOther(phrases, this.state.phrase) : phrases[0]
-    const settle = () => ({ genre, phrase, idea: `${article(genre)} ${genre} ${phrase}`, stop1: true, stop2: true,
+    const settle = () => ({ genre, phrase, twist, idea: ideaText(genre, phrase, twist), stop1: true, stop2: true, stop3: true,
                             rolling: false, ideaTool: this.state.tool, ideaOwn: false })
 
-    this.#set({ rolling: true, stop1: false, stop2: false, ownOpen: false, ideaSkipped: false })
+    this.#set({ rolling: true, stop1: false, stop2: false, stop3: false, ownOpen: false, ideaSkipped: false })
     if (reducedMotion()) return this.#set(settle())
 
     let tick = 0
@@ -135,12 +138,27 @@ export default class extends Controller {
       tick++
       const s = this.state
       const changes = { spin: s.spin + 1 }
-      if (!s.stop1) Object.assign(changes, tick >= 13 ? { genre, stop1: true } : { genre: any(this.genresValue) })
-      if (!s.stop2) Object.assign(changes, tick >= 21 ? settle() : { phrase: any(phrases) })
+      if (!s.stop1) Object.assign(changes, tick >= 11 ? { genre, stop1: true } : { genre: any(this.genresValue) })
+      if (!s.stop2) Object.assign(changes, tick >= 16 ? { phrase, stop2: true } : { phrase: any(phrases) })
+      if (!s.stop3) Object.assign(changes, tick >= 21 ? settle() : { twist: any(this.twistsValue) })
       this.#set(changes)
       if (tick < 21) this.rollTimer = setTimeout(spin, 38 + tick * tick * 0.36)
     }
     spin()
+  }
+
+  // The genre and twist to land on. Both change from what's showing, and it's not one rolled this visit. Of
+  // those, an idea nobody's pledged yet (takenValue counts pledges of each), or failing that one pledged just
+  // once: at most two people end up building the same thing. Only once every idea's taken twice is any fair game.
+  #pickIdea() {
+    const s = this.state
+    const pairs = this.genresValue.flatMap(genre => this.twistsValue.map(twist => [ genre, twist ]))
+    const taken = ([ genre, twist ]) => this.takenValue[pledgeText(genre, twist)] ?? 0
+    const untried = pairs.filter(([ genre, twist ]) => genre !== s.genre && twist !== s.twist && !this.rolled.has(pledgeText(genre, twist)))
+    const pool = [ untried.filter(pair => taken(pair) === 0), untried.filter(pair => taken(pair) < 2), untried, pairs ].find(list => list.length)
+    const pick = any(pool)
+    this.rolled.add(pledgeText(...pick))
+    return pick
   }
 
   useIdea() {
@@ -153,7 +171,7 @@ export default class extends Controller {
     clearTimeout(this.rollTimer)
     const s = this.state
     this.#did("own_idea_opened")
-    this.#set({ ownOpen: true, rolling: false, stop1: true, stop2: true, own: s.ideaOwn ? s.idea : s.own })
+    this.#set({ ownOpen: true, rolling: false, stop1: true, stop2: true, stop3: true, own: s.ideaOwn ? s.idea : s.own })
     this.ownInputTarget.focus()
   }
 
@@ -178,7 +196,8 @@ export default class extends Controller {
 
   skipIdea() {
     clearTimeout(this.rollTimer)
-    this.#set({ ideaSkipped: true, idea: "", genre: "", phrase: "", rolling: false, stop1: true, stop2: true, ideaOwn: false })
+    this.#set({ ideaSkipped: true, idea: "", genre: "", phrase: "", twist: "", rolling: false, stop1: true, stop2: true, stop3: true,
+                ideaOwn: false })
     this.#completed(2, { idea_source: "skipped" })
     this.#afterIdea()
   }
@@ -447,11 +466,11 @@ export default class extends Controller {
     }
   }
 
-  // What the pledge says you'll ship: the genre you rolled (the tool comes after "in"), what you wrote, or
-  // something cursed if you skipped.
+  // What the pledge says you'll ship: the genre and twist you rolled (the tool comes after "in"), what you wrote,
+  // or something cursed if you skipped.
   #pledgeIdea(s = this.state) {
     if (!s.idea) return "something cursed"
-    if (!s.ideaOwn && s.genre) return `${article(s.genre)} ${s.genre}`
+    if (!s.ideaOwn && s.genre) return pledgeText(s.genre, s.twist)
     return s.idea
   }
 
@@ -581,13 +600,15 @@ export default class extends Controller {
   #renderIdea(toolName) {
     const s = this.state
     const tool = this.#tool()
-    const [ genreReel, phraseReel ] = this.reelTargets
+    const [ genreReel, phraseReel, twistReel ] = this.reelTargets
     this.ideaTarget.dataset.mode = s.ownOpen ? "own" : "roll"
     this.articleTarget.textContent = s.genre ? article(s.genre) : "a"
     genreReel.textContent = s.genre || "…"
     genreReel.toggleAttribute("data-spinning", !s.stop1)
     phraseReel.textContent = s.phrase || "…"
     phraseReel.toggleAttribute("data-spinning", !s.stop2)
+    twistReel.textContent = s.twist || "…"
+    twistReel.toggleAttribute("data-spinning", !s.stop3)
     this.diceTarget.style.rotate = `${s.spin * 90}deg`
     this.rollLabelTarget.textContent = s.rolling ? "Rolling…" : "Roll again"
     this.useIdeaTarget.disabled = s.rolling || !s.idea
@@ -678,6 +699,17 @@ function pickOther(list, current) {
 
 function article(word) {
   return /^[aeiou]/i.test(word) ? "an" : "a"
+}
+
+// "a snake clone in Google Sheets, where the floor is lava": what the reels read together.
+function ideaText(genre, phrase, twist) {
+  return `${article(genre)} ${genre} ${phrase}, ${twist}`
+}
+
+// "a snake clone where the floor is lava": what the pledge stores (the tool follows "in"). Answers saved before
+// there were twists have none.
+function pledgeText(genre, twist) {
+  return [ article(genre), genre, twist ].filter(Boolean).join(" ")
 }
 
 function capitalize(text) {

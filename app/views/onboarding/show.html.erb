@@ -7,6 +7,8 @@
      data-action="pageshow@window->onboarding#resume"
      data-onboarding-tools-value="<%= onboarding_tools.to_json %>"
      data-onboarding-genres-value="<%= onboarding_genres.to_json %>"
+     data-onboarding-twists-value="<%= onboarding_twists.to_json %>"
+     data-onboarding-taken-value="<%= onboarding_taken_ideas.to_json %>"
      data-onboarding-prizes-value="<%= onboarding_prizes.map { |prize| prize.slice(:id, :name, :full) }.to_json %>"
      data-onboarding-hours-value="<%= hours_per_reward %>"
      data-onboarding-signed-in-value="<%= signed_in? %>"

@@ -47,6 +47,36 @@ module OnboardingHelper
       "card battler", "escape room", "snake clone", "heist game", "dating sim", "golf game" ]
   end
 
+  # The third reel: a twist that follows any genre ("a snake clone where the floor is lava") and reads before the
+  # tool ("... in Spreadsheet"). Kept to 31 characters so the longest fits a phone-width reel.
+  def onboarding_twists
+    [ "where you play the villain", "set in a haunted laundromat", "about a very tired wizard", "with only one button",
+      "where gravity flips every turn", "starring a sentient toaster", "set entirely underwater", "where you can't see yourself",
+      "that plays itself when you stop", "set in a dentist's waiting room", "with a goose that steals things", "set on a moving train",
+      "where time runs backwards", "about tax season", "where the enemies are polite", "with a disappointed narrator",
+      "set during a thunderstorm", "where you're the final boss", "where the floor is lava", "about a cat who's late for work",
+      "set inside a vending machine", "where dying makes you stronger", "with a tutorial that lies", "set in a library after hours",
+      "where everything is on fire", "about escaping a group chat", "starring a haunted pencil", "where the map keeps shrinking",
+      "set at the end of a school day", "where your shadow plays too", "about a snail with places to be", "where the music is the enemy",
+      "set on a giant pizza", "where you only move backwards", "about a ghost learning to cook", "where the sun never comes up",
+      "with one life and no restarts", "where every level is a lie", "set in a submarine with a leak", "about a very small knight" ]
+  end
+
+  # Every idea the reels can land on, as the pledge stores it: "a snake clone where the floor is lava".
+  def onboarding_rolled_ideas
+    onboarding_genres.product(onboarding_twists).map { |genre, twist| "#{article_for(genre)} #{genre} #{twist}" }
+  end
+
+  # Rolled ideas someone's already pledged (in any tool), and how many times. The roller steers clear of ones pledged
+  # twice, so at most two people end up building the same thing.
+  def onboarding_taken_ideas
+    Project.where(idea: onboarding_rolled_ideas).group(:idea).count
+  end
+
+  def article_for(noun)
+    noun.match?(/\A[aeiou]/i) ? "an" : "a"
+  end
+
   def onboarding_prizes
     [
       { id: "rg35xx", maker: "ANBERNIC", name: "RG35XX Pro", full: "ANBERNIC RG35XX Pro",
