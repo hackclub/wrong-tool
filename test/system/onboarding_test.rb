@@ -19,6 +19,10 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".formula-bar__name", exact_text: "A1"
     assert_selector ".app-bar__progress", exact_text: "Step 1 of 4"
 
+    # Each tile says where its hours come from.
+    assert_selector ".onboarding-tool[data-tool=spreadsheet] .onboarding-tool__tracker", exact_text: "Lapse, or Hackatime for code"
+    assert_selector ".onboarding-tool[data-tool=ssh] .onboarding-tool__tracker", exact_text: "Hackatime plugin"
+    assert_selector ".onboarding-tool[data-tool=other] .onboarding-tool__tracker", exact_text: "Lapse, or Hackatime for code"
     click_on "SSH"
     assert_selector "h2", text: "What are you building?"
     assert_selector ".onboarding-row[data-state=done]", text: "SSH"
@@ -49,6 +53,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".onboarding-pledge__text", text: "every day and ship"
     assert_selector ".onboarding-pledge__text", text: "over SSH by"
     assert_selector ".onboarding-pledge__accountable", text: "Clippy will check in to keep you on track."
+    assert_selector ".onboarding-pledge__tracker", exact_text: "Hours come from the Hackatime plugin in your editor."
 
     find(".onboarding-chip", text: "45 min").click
     assert_selector ".onboarding-pledge__text", text: "I'll build 45 min every day"
@@ -94,6 +99,35 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".sheet-tab[aria-current=page]", text: "My project"
   end
 
+  test "a pledge this tab remembers but that never became a project is there to sign again, not a dead end" do
+    mock_hack_club_auth
+    visit onboarding_path
+    execute_script(<<~JS)
+      sessionStorage.setItem("wrong-tool:onboarding", JSON.stringify({ step: 4, tool: "ssh", custom: "", genre: "heist game",
+        phrase: "over SSH", twist: "where the floor is lava", idea: "a heist game over SSH, where the floor is lava", ideaTool: "ssh",
+        ideaOwn: false, ideaSkipped: false, prize: "miyoo", pace: 45, buildTime: "evening", pledged: true, signedOn: "2026-10-07" }))
+      const form = document.createElement("form"); form.method = "post"; form.action = "/auth/hackclub"; document.body.append(form); form.submit()
+    JS
+    assert_current_path onboarding_path
+    assert_selector ".onboarding-commit__sign-hint", text: "Holding signs your name to this pledge."
+
+    # Signed in, with no project saved: not pledged after all. The pledge is filled in, waiting to be signed.
+    assert_no_selector ".onboarding-commit[data-pledged]"
+    assert_button "Hold to sign with Hack Club"
+    assert_selector ".onboarding-pledge__text", text: "and ship a heist game where the floor is lava over SSH"
+    assert_selector ".sheet-tab[aria-disabled=true]", text: "My project"
+  end
+
+  test "a quick answer under Other is one tap" do
+    visit onboarding_path
+    click_on "Other"
+    within(".onboarding-tool__chips") { click_on "Discord" }
+
+    assert_selector "h2", text: "What are you building?"
+    assert_selector ".onboarding-row[data-state=done]", text: "Discord"
+    assert_selector ".onboarding-tool[data-tool=other] .onboarding-tool__name", exact_text: "Discord", visible: :all
+  end
+
   test "rolling steers clear of ideas two people have pledged, and ones you've rolled already" do
     visit onboarding_path
     click_on "Spreadsheet"
@@ -114,15 +148,43 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_selector ".formula-bar__content", text: /\A="an escape room .*, about tax season"\z/
   end
 
-  test "Other asks for the tool's name" do
+  test "Other asks for the tool's name, and its pledge says Lapse unless the name sounds like code" do
     visit onboarding_path
+    assert_selector ".onboarding-row__help", text: "Anything not made for making games counts. Game engines don't."
     click_on "Other"
+    assert_no_selector ".onboarding-tool__verdict", visible: :visible
+
+    # A game engine is the one answer that's no: Clippy says so, and the arrow won't take it.
+    fill_in "Which tool?", with: "Unity"
+    assert_selector ".onboarding-tool__verdict[data-kind=engine]", exact_text: "Unity? That's a game engine, so it's the right tool. Pick something stranger."
+    assert_selector ".onboarding-tool__mood", exact_text: "clippy is unmoved."
+    assert_button "Use this tool", disabled: true
+    find_field("Which tool?").send_keys(:enter)
+    assert_selector ".formula-bar__name", exact_text: "A1"
+
     fill_in "Which tool?", with: "Google Slides"
+    assert_selector ".onboarding-tool__verdict[data-kind=yes]",
+                    exact_text: "Google Slides? Yes, that counts. Code in an editor counts through the Hackatime plugin. Everything else, record with Lapse."
+    assert_selector ".onboarding-tool__mood", exact_text: "clippy is intrigued."
     assert_selector ".formula-bar__content", exact_text: %(=PICK("Google Slides"))
     click_on "Use this tool"
 
     assert_selector "h2", text: "What are you building?"
     assert_selector ".onboarding-row[data-state=done]", text: "Google Slides"
+    assert_button "Roll again", wait: 5
+    click_on "Use this idea"
+    click_on "Mini Plus"
+    assert_selector ".onboarding-pledge__tracker",
+                    exact_text: "Hours come from Lapse recordings, or the Hackatime plugin for any code you write in an editor."
+
+    # Back at A1, tapping the Other tile (now named for your tool) reopens its field: a code-sounding name flips the tracker.
+    find(".onboarding-row__summary", text: "Platform").click
+    find(".onboarding-tool[data-tool=other] .onboarding-tool__button").click
+    fill_in "Which tool?", with: "CMake"
+    click_on "Use this tool"
+    assert_button "Roll again", wait: 5
+    click_on "Use this idea"
+    assert_selector ".onboarding-pledge__tracker", exact_text: "Hours come from the Hackatime plugin in your editor."
   end
 
   test "writing your own idea, or skipping it for later" do

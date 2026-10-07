@@ -1,5 +1,6 @@
-<%# A1: a tile per tool, each with a tiny scene of a game built in it. Tapping one picks it and moves on;
-    "Other" turns its name strip into a field instead. %>
+<%# A1: a tile per tool, each with a tiny scene of a game built in it and how its hours are tracked. Tapping one
+    picks it and moves on; "Other" turns its name strip into a field instead, with quick answers in place of its
+    scene and Clippy's verdict on what you type (anything counts but a game engine). %>
 <div class="onboarding-tools">
   <% onboarding_tools.each do |tool| %>
     <div class="onboarding-tool" data-onboarding-target="tool" data-tool="<%= tool[:id] %>">
@@ -7,20 +8,32 @@
               data-action="onboarding#pickTool" data-onboarding-tool-param="<%= tool[:id] %>">
         <%= render "onboarding/tool_preview", tool: tool[:id] %>
         <span class="onboarding-tool__strip">
-          <span class="onboarding-tool__name" <%= "data-onboarding-target=otherName" if tool[:id] == "other" %>><%= tool[:name] %></span>
+          <span class="onboarding-tool__label">
+            <span class="onboarding-tool__name" <%= "data-onboarding-target=otherName" if tool[:id] == "other" %>><%= tool[:name] %></span>
+            <span class="onboarding-tool__tracker"><%= tool[:tracker_label] %></span>
+          </span>
           <%= inline_svg_tag "icons/onboarding/chevron-right.svg", class: "icon onboarding-tool__go", aria_hidden: true %>
           <%= inline_svg_tag "icons/onboarding/check-circle.svg", class: "icon onboarding-tool__picked", aria_hidden: true %>
         </span>
       </button>
 
       <% if tool[:id] == "other" %>
+        <div class="onboarding-tool__advice">
+          <div class="onboarding-tool__chips" role="group" aria-label="Tools people often pick">
+            <% onboarding_other_chips.each do |name| %>
+              <button type="button" class="onboarding-tool__chip" data-action="onboarding#pickChip" data-onboarding-name-param="<%= name %>"><%= name %></button>
+            <% end %>
+          </div>
+          <p class="onboarding-tool__verdict" role="status" aria-live="polite" data-onboarding-target="otherVerdict"></p>
+          <p class="onboarding-tool__mood" data-onboarding-target="otherMood"></p>
+        </div>
         <form class="onboarding-tool__other" data-action="submit->onboarding#confirmOther">
           <label class="onboarding-tool__other-label" for="onboarding-other-tool">Which tool?</label>
           <span class="onboarding-tool__other-row">
             <input id="onboarding-other-tool" class="onboarding-tool__other-input" maxlength="28" placeholder="e.g. Google Slides"
                    autocomplete="off" spellcheck="false"
                    data-onboarding-target="otherInput" data-action="input->onboarding#typeOther keydown->onboarding#otherKey">
-            <button class="onboarding-round-button" title="Use this tool" aria-label="Use this tool">
+            <button class="onboarding-round-button" title="Use this tool" aria-label="Use this tool" data-onboarding-target="otherSubmit">
               <%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
             </button>
           </span>

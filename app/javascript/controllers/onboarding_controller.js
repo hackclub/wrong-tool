@@ -24,18 +24,18 @@ const CEREMONY = { tick: 70, signed: 6, ticks: 28, hops: [ 2, 5, 8 ] }
 export default class extends Controller {
   static targets = [
     "row", "summary", "value",
-    "tool", "otherName", "otherInput",
+    "tool", "otherName", "otherInput", "otherSubmit", "otherVerdict", "otherMood",
     "idea", "reel", "article", "dice", "rollLabel", "useIdea", "ownInput", "useOwn",
     "prize", "mascot", "mascotSprite", "mascotSay",
     "commit", "pace", "finishLine", "buildTime",
-    "pledgePace", "pledgeEvery", "pledgeIdea", "pledgePreposition", "pledgeTool", "pledgeDate", "accountable", "ink",
+    "pledgePace", "pledgeEvery", "pledgeIdea", "pledgePreposition", "pledgeTool", "pledgeDate", "accountable", "pledgeTracker", "ink",
     "signature", "saveError",
     "signIn", "holdFill", "signInLabel", "signHint",
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
   static values = {
-    tools: Array, genres: Array, twists: Array, taken: Object, prizes: Array, hours: Number, sounds: Object,
-    signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object,
+    tools: Array, genres: Array, twists: Array, taken: Object, engines: Array, prizes: Array, hours: Number, sounds: Object,
+    signedIn: Boolean, name: String, whoamiUrl: String, program: Object, checkIns: Object, codeNames: String,
     projectUrl: String, hasProject: Boolean
   }
 
@@ -48,8 +48,9 @@ export default class extends Controller {
       holdP: 0, holding: false, letGo: false, taps: 0, autofill: false,
       ...this.#restoreAnswers()
     }
-    // A pledge is only signed for whoever's signed in.
-    if (!this.signedInValue) this.state.pledged = false
+    // A pledge is only signed for whoever's signed in, and only once it's saved as your project: without one (the
+    // save failed, or the project's gone since), a pledge this tab remembers is there to sign again.
+    if (!this.signedInValue || !this.hasProjectValue) this.state.pledged = false
     if (this.state.pledged) this.state.step = 4
     // Ideas rolled this visit (as the pledge would store them), so "Roll again" never shows one twice.
     this.rolled = new Set()
@@ -110,11 +111,36 @@ export default class extends Controller {
   }
 
   confirmOther(event) {
-    event.preventDefault()
-    if (!this.state.custom.trim()) return
+    event?.preventDefault()
+    const custom = this.state.custom.trim()
+    if (!custom) return
+    if (this.#verdict().kind === "engine") return this.#did("other_engine_blocked", { custom_tool: custom })
     this.#set({ tool: "other", otherOpen: false, ideaSkipped: false, ideaTool: null })
-    this.#completed(1, { tool: "other", custom_tool: this.state.custom.trim() })
+    this.#completed(1, { tool: "other", custom_tool: custom })
     this.#after(PICK_DELAY - 60, () => this.#goTo(2))
+  }
+
+  // A quick answer under Other: it's your tool.
+  pickChip({ params: { name } }) {
+    this.#did("other_chip_picked", { custom_tool: name })
+    this.#set({ custom: name })
+    this.confirmOther()
+  }
+
+  // Does what you typed under Other count? Anything does but a game engine (enginesValue). Says how its hours
+  // would be tracked too. Clippy's feeling about it goes on its own line.
+  #verdict() {
+    const name = this.state.custom.trim()
+    if (!name) return { kind: "none", text: "", mood: "" }
+    const engines = new RegExp(`\\b(?:${this.enginesValue.map(escapeRegExp).join("|")})\\b`, "i")
+    if (engines.test(name)) {
+      return { kind: "engine", text: `${name}? That's a game engine, so it's the right tool. Pick something stranger.`,
+               mood: "clippy is unmoved." }
+    }
+    const hours = this.#tracker() === "hackatime"
+      ? "Hours come from the Hackatime plugin in your editor."
+      : "Code in an editor counts through the Hackatime plugin. Everything else, record with Lapse."
+    return { kind: "yes", text: `${name}? Yes, that counts. ${hours}`, mood: "clippy is intrigued." }
   }
 
   // A2. Three reels: the genre stops on its 11th tick, the tool's setting on its 16th and the twist on its 21st,
@@ -504,6 +530,14 @@ export default class extends Controller {
     return tool.id === "other" ? (s.custom.trim() || "Other") : tool.name
   }
 
+  // Where the hours will come from: the tool's tracker, or for Other, the Hackatime plugin if the name sounds like
+  // code (Project::CODE_NAMES) and Lapse otherwise.
+  #tracker() {
+    const tool = this.#tool()
+    if (tool?.tracker) return tool.tracker
+    return new RegExp(this.codeNamesValue, "i").test(this.state.custom) ? "hackatime" : "lapse"
+  }
+
   #phrases() {
     const tool = this.#tool()
     if (!tool) return [ "in the wrong tool" ]
@@ -595,6 +629,11 @@ export default class extends Controller {
     })
     this.otherNameTarget.textContent = s.tool === "other" && s.custom.trim() ? s.custom.trim() : "Other"
     if (this.otherInputTarget.value !== s.custom) this.otherInputTarget.value = s.custom
+    const verdict = this.#verdict()
+    this.otherVerdictTarget.textContent = verdict.text
+    this.otherVerdictTarget.dataset.kind = verdict.kind
+    this.otherMoodTarget.textContent = verdict.mood
+    this.otherSubmitTarget.disabled = verdict.kind === "engine"
   }
 
   #renderIdea(toolName) {
@@ -652,6 +691,9 @@ export default class extends Controller {
     this.pledgeEveryTarget.textContent = s.buildTime === "weekends" ? "every weekend day" : "every day"
     const checkIn = this.checkInsValue[s.buildTime]
     this.accountableTarget.textContent = `Clippy will check in${checkIn ? ` ${checkIn}` : ""} to keep you on track.`
+    this.pledgeTrackerTarget.textContent = this.#tracker() === "hackatime"
+      ? "Hours come from the Hackatime plugin in your editor."
+      : "Hours come from Lapse recordings, or the Hackatime plugin for any code you write in an editor."
 
     // The signature goes on as you hold (your name, if Hack Club's told us it), and finishes in the ceremony.
     const name = this.#signerName()
@@ -699,6 +741,10 @@ function pickOther(list, current) {
 
 function article(word) {
   return /^[aeiou]/i.test(word) ? "an" : "a"
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 // "a snake clone in Google Sheets, where the floor is lava": what the reels read together.

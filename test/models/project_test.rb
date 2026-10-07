@@ -6,6 +6,18 @@ class ProjectTest < ActiveSupport::TestCase
     assert_equal "Something cursed over SSH", Project.new(idea: "something cursed", tool: "ssh", tool_name: "SSH").title
   end
 
+  test "code tools track with the Hackatime plugin, the rest with Lapse, and Other goes by its name" do
+    assert_equal "lapse", projects(:orpheus).tracker
+    assert_equal "hackatime", Project.new(tool: "ssh").tracker
+    assert_equal "hackatime", Project.new(tool: "shaders").tracker
+    { "Google Slides" => "lapse", "Discord" => "lapse", "Home Assistant" => "lapse", "a PDF" => "lapse",
+      "CMake ONLY" => "hackatime", "pure CSS" => "hackatime", "Github Actions" => "hackatime", "git commits" => "hackatime",
+      "C" => "hackatime", "brainf**k" => "hackatime" }.each do |name, tracker|
+      assert_equal tracker, Project.new(tool: "other", tool_name: name).tracker, name
+    end
+    assert projects(:orpheus).lapse_tool?
+  end
+
   test "build days run from the day wrong tool starts, one session of the pace a day, until the hours are in" do
     project = projects(:orpheus) # 45 min a day, signed before wrong tool starts
 

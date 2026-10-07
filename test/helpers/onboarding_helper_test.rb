@@ -11,6 +11,14 @@ class OnboardingHelperTest < ActionView::TestCase
     assert_empty (onboarding_genres + onboarding_twists).reject { |word| word == word.downcase }
   end
 
+  test "the engines list is what's not allowed, and the quick answers are tools people ask about" do
+    assert_includes onboarding_engines, "unity"
+    assert_includes onboarding_engines, "godot"
+    assert_not_includes onboarding_engines, "raylib" # not an engine, as ruled in #wrong
+    assert_equal [ "Google Slides", "Google Docs", "PowerPoint", "Discord", "Notion", "CMake" ], onboarding_other_chips
+    assert_empty onboarding_engines.reject { |engine| engine == engine.downcase }
+  end
+
   test "taken ideas are the rolled ones people have pledged, and how many times" do
     assert_empty onboarding_taken_ideas
 

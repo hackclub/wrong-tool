@@ -43,6 +43,23 @@ class ProjectTest < ApplicationSystemTestCase
     assert_selector ".project__party-queued", text: "In the queue"
   end
 
+  test "with nothing on Hackatime yet, a Lapse tool's project step says to record with Lapse" do
+    link_hackatime(users(:orpheus))
+    before = Hackatime.stubbed_projects
+    Hackatime.stubbed_projects = before.merge("1001" => [])
+    sign_in_and_open_project
+
+    assert_selector ".project__say", text: "Hackatime's linked. Record with Lapse and your project links itself."
+    # It waits its turn (the repo's the step to do), but stays open with how to get that first session there.
+    assert_selector ".project__step[data-state=pending]", text: "Record your first session with Lapse"
+    assert_selector ".project__step[data-state=pending] .project__step-waiting",
+                    text: "Record a session of building with Lapse, or write some code with the Hackatime plugin on. Either lands on Hackatime as a project and links itself."
+    assert_link "Get Lapse", href: "https://lapse.hackclub.com/"
+    assert_selector ".project__step[data-state=current]", text: "Add your git repo"
+  ensure
+    Hackatime.stubbed_projects = before
+  end
+
   test "renaming your project in place, and adding a screenshot" do
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)

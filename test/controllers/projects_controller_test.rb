@@ -219,9 +219,12 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     with_only_hackatime_projects do
       get project_path
       assert_select ".project__step[data-state=current] .project__step-title", /Add your git repo/
-      assert_select ".project__step[data-state=pending] .project__step-note", /links itself once you log time/
+      assert_select ".project__step[data-state=pending] .project__step-title", /Record your first session with Lapse/
+      assert_select ".project__step[data-state=pending] .project__step-note", /it links itself/
+      assert_select ".project__step[data-state=pending] .project__step-waiting", /Record a session of building with Lapse/
+      assert_select ".project__step[data-state=pending] a[href=?]", "https://lapse.hackclub.com/", "Get Lapse"
       assert_select ".project__setup-count", "2 optional steps left"
-      assert_select ".project__say", "Hackatime's linked. Your project links itself once you log time."
+      assert_select ".project__say", "Hackatime's linked. Record with Lapse and your project links itself."
 
       patch project_path, params: { project: { repo_later: true } }
       patch project_path, params: { project: { buddy_skipped: true } }
@@ -229,15 +232,16 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
       follow_redirect!
       assert_select ".project__setup-summary", "Setup done"
       assert_select ".formula-bar__content", /#N\/A/
-      assert_select ".project__linked-none", /Your first Hackatime project links itself/
+      assert_select ".project__linked-none", /Record with Lapse and your project links itself/
       assert_select ".project__linked a", "Pick"
-      assert_select ".project__say", "All set. Start building and your Hackatime project links itself."
+      assert_select ".project__say", "All set. Record with Lapse and your project links itself."
       assert_select ".project__ship", count: 0
       get project_ship_path
       assert_redirected_to project_path, "nothing to ship hours from yet"
 
       get project_path(step: "hackatime_project")
-      assert_select ".project__step-waiting", /Nothing on Hackatime since .* yet, so there's nothing to pick/
+      assert_select ".project__step-waiting", /Record a session of building with Lapse/
+      assert_select ".project__step-hint", /Nothing on Hackatime since .* yet/
       assert_select ".project__step-error", count: 0
 
       get hours_project_path(refresh: 1)

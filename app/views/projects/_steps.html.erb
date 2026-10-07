@@ -1,6 +1,7 @@
 <%# locals: (project:, step:, refresh_hackatime: false) %>
 <%# The setup steps: a numbered circle that ticks green when done. The step you're on opens, outlined in red, to
-    show how to do it; any other step you can still do opens it instead. %>
+    show how to do it; any other step you can still do opens it instead. Your Hackatime project, while it's waiting
+    for your first time to show up, stays open too (it says how). %>
 <ol class="project__steps">
   <% project_steps(project, step:).each do |item| %>
     <li class="project__step" data-state="<%= item[:current] ? "current" : item[:done] ? "done" : item[:locked] ? "locked" : "pending" %>">
@@ -20,7 +21,7 @@
       <% else %>
         <div class="project__step-header"><%= header %></div>
       <% end %>
-      <% if item[:current] %>
+      <% if item[:current] || item[:waiting] %>
         <div class="project__step-body"><%= render "projects/steps/#{item[:key]}", project:, **(item[:key] == "hackatime_project" ? { refresh: refresh_hackatime } : {}) %></div>
       <% end %>
     </li>

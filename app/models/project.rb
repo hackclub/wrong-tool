@@ -9,8 +9,9 @@ class Project < ApplicationRecord
   # Tools you'd play a game "over" rather than "in".
   OVER = %w[email ssh].freeze
   # Tools you'd write code in, so Hackatime's editor extension tracks them; the rest record with Lapse, which syncs to
-  # Hackatime.
+  # Hackatime. Under Other, a tool named like code (CMake, pure CSS, git commits) counts as code too.
   CODE = %w[ssh shaders].freeze
+  CODE_NAMES = /\b(c|c\+\+|cpp|rust|python|java|javascript|js|typescript|html|css|bash|zsh|shell|terminal|cmake|make|git|github|commits?|sql|lua|brainf\w*|asm|vim|neovim|emacs|cli|latex|docker|regex|yaml|json)\b/i
 
   SCREENSHOT_TYPES = %w[image/png image/jpeg image/webp image/gif].freeze
   SCREENSHOT_MAX_SIZE = 5.megabytes
@@ -71,7 +72,16 @@ class Project < ApplicationRecord
   end
 
   def code_tool?
-    CODE.include?(tool)
+    CODE.include?(tool) || (tool == "other" && tool_name.to_s.match?(CODE_NAMES))
+  end
+
+  # Where your hours come from: the Hackatime editor plugin if you're writing code, Lapse recordings otherwise.
+  def tracker
+    code_tool? ? "hackatime" : "lapse"
+  end
+
+  def lapse_tool?
+    !code_tool?
   end
 
   # Setting up, in order: link Hackatime, then which Hackatime project this is, add a repo (or say you'll add it before

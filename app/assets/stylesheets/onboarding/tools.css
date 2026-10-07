@@ -73,13 +73,29 @@
     }
   }
 
-  .onboarding-tool__name {
+  .onboarding-tool__label {
     flex: 1;
     min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .onboarding-tool__name,
+  .onboarding-tool__tracker {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .onboarding-tool__name {
     font: 700 18px/1.2 var(--font-cell);
+  }
+
+  /* Where the hours come from: Lapse, or the Hackatime plugin. */
+  .onboarding-tool__tracker {
+    font: 12px/1.3 var(--font-chrome);
+    color: var(--text-secondary);
   }
 
   .onboarding-tool__go {
@@ -98,7 +114,76 @@
     }
   }
 
-  /* "Other", once tapped: its name strip becomes a field. */
+  /* "Other", once tapped: its scene makes way for quick answers and Clippy's verdict on what you type, and its name
+     strip becomes a field. */
+  .onboarding-tool__advice {
+    flex: 1;
+    min-block-size: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 12px 0;
+    overflow: hidden;
+
+    [data-editing] > & {
+      display: flex;
+    }
+  }
+
+  [data-editing] > .onboarding-tool__button {
+    display: none;
+  }
+
+  .onboarding-tool__chips {
+    min-block-size: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .onboarding-tool__chip {
+    block-size: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--grey-600);
+    border-radius: 13px;
+    background: var(--white);
+    font: 500 12px var(--font-chrome);
+    color: var(--text-primary);
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--selection);
+      background: #f1f4f9;
+    }
+  }
+
+  .onboarding-tool__verdict {
+    flex: none;
+    font: 13px/1.35 var(--font-chrome);
+    color: var(--text-primary);
+
+    &[data-kind="engine"] {
+      color: var(--red-800);
+    }
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .onboarding-tool__mood {
+    flex: none;
+    font: 11px var(--font-mono);
+    color: var(--text-secondary);
+
+    &:empty {
+      display: none;
+    }
+  }
+
   .onboarding-tool__other {
     flex: none;
     display: flex;
@@ -294,6 +379,11 @@
 /* Phones: two tiles to a row, each a fixed height, and the stage grows to fit them. */
 @layer sections {
   @media (width <= 600px) {
+    /* A tile's too short for the quick answers and a verdict both: once there's a verdict, the answers go. */
+    .onboarding-tool__advice:has(.onboarding-tool__verdict:not(:empty)) .onboarding-tool__chips {
+      display: none;
+    }
+
     .onboarding-tools {
       block-size: auto;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -307,6 +397,10 @@
 
     .onboarding-tool__name {
       font-size: 15px;
+    }
+
+    .onboarding-tool__tracker {
+      font-size: 11px;
     }
   }
 }

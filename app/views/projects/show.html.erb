@@ -65,7 +65,7 @@
               </ul>
             <% else %>
               <span class="project__linked-none">
-                <%= @project.waiting_for_hackatime_project? ? "nothing yet. Your first Hackatime project links itself once you log time." : "nothing yet. Pick your Hackatime project so your hours count." %>
+                <%= @project.waiting_for_hackatime_project? ? "nothing yet. #{project_links_itself(@project)}" : "nothing yet. Pick your Hackatime project so your hours count." %>
               </span>
             <% end %>
             <%= link_to @project.tracking? ? "Change" : "Pick", project_path(step: "hackatime_project"),

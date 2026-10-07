@@ -192,6 +192,13 @@
     color: var(--text-secondary);
   }
 
+  /* Where the pledge's hours will come from: Lapse, or the Hackatime plugin. */
+  .onboarding-pledge__tracker {
+    margin-block-start: -10px;
+    font: 14px/1.4 var(--font-chrome);
+    color: var(--text-secondary);
+  }
+
   /* The signature line only shows once there's something on it, but always keeps its room, so the button
      below doesn't move out from under your finger as you hold it. */
   .onboarding-pledge__signature {

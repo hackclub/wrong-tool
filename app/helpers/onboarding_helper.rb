@@ -3,7 +3,7 @@ module OnboardingHelper
   def onboarding_steps
     [
       { label: "Platform", question: "Pick your platform.",
-        help: "Anything not built for games. You can switch later." },
+        help: "Anything not made for making games counts. Game engines don't. You can switch later." },
       { label: "Project", question: "What are you building?",
         help: "You can switch it later. Just start something for now :)" },
       { label: "Prize", question: "Pick your prize.",
@@ -13,22 +13,43 @@ module OnboardingHelper
     ]
   end
 
-  # Each wrong tool, and the endings the idea slot machine rolls for it.
+  # Each wrong tool, the endings the idea slot machine rolls for it, and how its hours are tracked (Lapse recordings,
+  # or the Hackatime editor plugin for code; Other decides by the name you give it).
   def onboarding_tools
     [
-      { id: "spreadsheet", name: "Spreadsheet", extension: ".xlsx",
+      { id: "spreadsheet", name: "Spreadsheet", extension: ".xlsx", tracker: "lapse",
         phrases: [ "in Google Sheets", "in an Excel workbook", "drawn with conditional formatting", "where every cell is a pixel",
                    "that runs on checkboxes", "powered by iterative calc" ] },
-      { id: "figma", name: "Figma", extension: ".fig",
+      { id: "figma", name: "Figma", extension: ".fig", tracker: "lapse",
         phrases: [ "in Figma prototypes", "where frames are rooms", "run on Figma variables", "played in Present mode" ] },
-      { id: "email", name: "Email", extension: ".eml",
+      { id: "email", name: "Email", extension: ".eml", tracker: "lapse",
         phrases: [ "played over email", "where every reply is a turn", "run by inbox filters", "in your drafts folder" ] },
-      { id: "ssh", name: "SSH", extension: ".sh",
+      { id: "ssh", name: "SSH", extension: ".sh", tracker: "hackatime",
         phrases: [ "over SSH", "in a login shell", "hiding in .bash_profile", "for a bare terminal" ] },
-      { id: "shaders", name: "Shaders", extension: ".glsl",
+      { id: "shaders", name: "Shaders", extension: ".glsl", tracker: "hackatime",
         phrases: [ "in one fragment shader", "where state is pixels", "in a single GLSL file", "running only on the GPU" ] },
-      { id: "other", name: "Other", extension: ".???", phrases: [] }
-    ].map { |tool| tool.merge(preposition: Project.preposition_for(tool[:id])) }
+      { id: "other", name: "Other", extension: ".???", tracker: nil, phrases: [] }
+    ].map { |tool| tool.merge(preposition: Project.preposition_for(tool[:id]), tracker_label: onboarding_tracker_label(tool[:tracker])) }
+  end
+
+  # Tools made for making games: the one answer to "does X count?" that's no. Matched as whole words in what you
+  # type under Other.
+  def onboarding_engines
+    [ "unity", "unreal", "godot", "gamemaker", "game maker", "construct", "rpg maker", "pygame", "phaser", "love2d",
+      "pico-8", "pico8", "scratch", "roblox", "bevy", "monogame", "libgdx", "cocos", "defold", "playcanvas", "babylon",
+      "kaboom", "kaplay", "gdevelop", "stencyl", "renpy", "ren'py", "twine", "bitsy", "cryengine", "o3de", "flax",
+      "game engine", "arcade library", "ursina", "panda3d", "heaps", "haxeflixel", "flixel", "melonjs", "excalibur" ]
+  end
+
+  # Quick answers under Other: the tools people keep asking about. Tapping one picks it.
+  def onboarding_other_chips
+    [ "Google Slides", "Google Docs", "PowerPoint", "Discord", "Notion", "CMake" ]
+  end
+
+  # What a tile says about its hours. Code in an editor counts through the Hackatime plugin; everything else is
+  # recorded with Lapse, and one project can have both (Apps Script in an editor, formulas in the sheet).
+  def onboarding_tracker_label(tracker)
+    tracker == "hackatime" ? "Hackatime plugin" : "Lapse, or Hackatime for code"
   end
 
   # A4's answers: minutes a day (with how the chip reads), and when you usually build (with when Clippy checks in).

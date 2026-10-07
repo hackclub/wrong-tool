@@ -43,10 +43,28 @@ module ProjectsHelper
       "done by #{project_date(project.finish_on)}", project_prize_name(project) ].join(" · ")
   end
 
-  # Your hours always come from Hackatime; if you're writing code (or might be), that's its editor extension.
+  # Your hours always come through Hackatime: from its editor plugin if you're writing code (over SSH, that's on the
+  # machine you SSH into), or from Lapse recordings, which sync to it.
   def project_hackatime_how(project)
-    if project.code_tool? then "Install the Hackatime extension in your editor."
-    elsif project.tool == "other" then "Use the editor extension, or record with Lapse. Lapse syncs to Hackatime."
+    if project.tool == "ssh" then "Install the Hackatime plugin in the editor on the machine you SSH into, not just your laptop. That's where your hours come from."
+    elsif project.code_tool? then "Install the Hackatime plugin in your editor. That's where your hours come from."
+    else "Record your sessions with Lapse. Any code you write in an editor counts through the Hackatime plugin instead. Both land on Hackatime, so linking is how your hours reach us."
+    end
+  end
+
+  # How to get your first time onto Hackatime, by tool, while there's nothing there to pick.
+  def project_first_time_how(project)
+    if project.tool == "ssh" then "Write a line of code over SSH with the plugin on. It shows up here and links itself."
+    elsif project.code_tool? then "Write a line of code with the plugin on. It shows up here and links itself."
+    else "Record a session of building with Lapse, or write some code with the Hackatime plugin on. Either lands on Hackatime as a project and links itself."
+    end
+  end
+
+  # "Don't see it?" for the Hackatime projects dropdown, by tool.
+  def project_hackatime_refresh_hint(project)
+    if project.tool == "ssh" then "Don't see it? Write a line of code over SSH with the plugin on, then refresh."
+    elsif project.code_tool? then "Don't see it? Write a line of code with the plugin on, then refresh."
+    else "Don't see it? Record a minute with Lapse, or write a line of code with the plugin on, then refresh."
     end
   end
 
@@ -71,15 +89,17 @@ module ProjectsHelper
 
   # The setup steps as the page shows them. The one you're on (the step you picked, if you can still do it, or the
   # first one left) opens to show how to do it. Picking your Hackatime project waits its turn while there's nothing on
-  # Hackatime to pick (it links itself once there is).
+  # Hackatime to pick (it links itself once there is), but stays open too, so how to get that first time there (record
+  # with Lapse, or log some code) is in view.
   def project_steps(project, step: nil)
     current = project.step_open?(step.to_s) ? step.to_s : Project::SETUP_STEPS.find { |key| !project.step_settled?(key) && !project.step_locked?(key) }
     Project::SETUP_STEPS.map do |key|
       # A step you reopen (the repo you'd put off) reads as still to do.
       done = project.step_done?(key) && key != current
       title, note = project_step_label(project, key, done)
+      waiting = key == "hackatime_project" && project.waiting_for_hackatime_project? && project.hackatime_projects.none?
       { key:, number: Project::SETUP_STEPS.index(key) + 1, title:, note:, done:, locked: project.step_locked?(key),
-        current: key == current, openable: key != current && project.step_open?(key) }
+        current: key == current, openable: key != current && project.step_open?(key), waiting: }
     end
   end
 
@@ -88,8 +108,8 @@ module ProjectsHelper
     if !project.hackatime_linked? then "Nothing's linked yet, so your hours won't count."
     elsif project.hackatime_projects.none? && !project.waiting_for_hackatime_project? then "Hackatime's linked. Which project is yours?"
     elsif !project.setup_finished?
-      project.tracking? ? "Hours count now. A couple of quick things and you're in." : "Hackatime's linked. Your project links itself once you log time."
-    elsif project.waiting_for_hackatime_project? then "All set. Start building and your Hackatime project links itself."
+      project.tracking? ? "Hours count now. A couple of quick things and you're in." : "Hackatime's linked. #{project_links_itself(project)}"
+    elsif project.waiting_for_hackatime_project? then "All set. #{project_links_itself(project)}"
     elsif project.streak.positive? then "#{pluralize(project.streak, "day")} in a row. 20 min today keeps it going."
     else "All set. 20 min today starts your streak."
     end
@@ -232,6 +252,11 @@ module ProjectsHelper
   end
 
 
+  # "Record with Lapse and your project links itself.", or for code, once you log time.
+  def project_links_itself(project)
+    project.lapse_tool? ? "Record with Lapse and your project links itself." : "Start building and your project links itself once you log time."
+  end
+
   private
     # Your buddy, once the two of you have done a pomodoro together.
     def leaderboard_buddy(project)
@@ -246,7 +271,8 @@ module ProjectsHelper
         if project.hackatime_projects.any? && done then [ "Linked to #{project.hackatime_projects.to_sentence}" ]
         elsif project.hackatime_projects.any? then [ "Change your Hackatime projects" ]
         elsif project.step_locked?(key) then [ "Link your Hackatime project", "after Hackatime" ]
-        elsif project.waiting_for_hackatime_project? then [ "Link your Hackatime project", "links itself once you log time" ]
+        elsif project.waiting_for_hackatime_project? && project.lapse_tool? then [ "Record your first session with Lapse", "it links itself" ]
+        elsif project.waiting_for_hackatime_project? then [ "Log your first time on Hackatime", "it links itself" ]
         else [ "Link your Hackatime project", "so your hours count" ]
         end
       when "repo"
