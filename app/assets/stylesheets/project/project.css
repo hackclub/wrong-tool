@@ -451,20 +451,24 @@
       background: #f1f4f9;
     }
 
+    &:hover .project__picker-box:not(:checked) {
+      border-color: var(--blue-700);
+    }
+
     &:has(:checked) {
       background: #f1f6fe;
     }
   }
 
-  /* A checkbox like the design's: grey outline, blue with a white tick when on. */
+  /* A checkbox like the design's: dark grey outline (light grey was easy to miss), blue with a white tick when on. */
   .project__picker-box {
     flex: none;
-    inline-size: 18px;
-    block-size: 18px;
+    inline-size: 20px;
+    block-size: 20px;
     margin: 0;
     display: grid;
     place-items: center;
-    border: 2px solid var(--grey-500);
+    border: 2px solid var(--grey-700);
     border-radius: 3px;
     background: var(--white);
     appearance: none;

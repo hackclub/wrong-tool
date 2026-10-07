@@ -146,7 +146,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "rhythm-game", "beat-sheet-art", "dotfiles" ], css_select(".project__picker-name").map(&:text)
     assert_equal [ "1.5 hrs", "0.3 hrs", "3.1 hrs" ], css_select(".project__picker-note").map(&:text)
     assert_select ".project__picker-box[checked]", count: 0
-    assert_select "button[disabled]", "Pick a project"
+    assert_select "button[disabled]", "Tick a project above"
 
     patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game", "dotfiles" ] } }
     follow_redirect!
@@ -165,6 +165,21 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select ".project__step[data-state=current] .project__step-error", /don't include someone-elses-game on Hackatime/
     assert_equal [ "rhythm-game", "dotfiles" ], projects(:orpheus).reload.hackatime_projects
+  end
+
+  test "with only Hackatime's catch-all Other to pick, the step says what Other is and how to get a project of your own" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_baseline: %w[Other rhythm-game beat-sheet-art dotfiles])
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+
+    with_only_hackatime_projects(Hackatime::Project.new("Other", 600)) { get project_path }
+    assert_equal [ "Other" ], css_select(".project__picker-name").map(&:text)
+    assert_select ".project__step-waiting", /"Other" is Hackatime's name for time with no project name/
+    assert_select ".project__step-waiting", /Record a session of building with Lapse/
+    assert_select "button[disabled]", "Tick a project above"
+
+    with_hackatime_projects(Hackatime::Project.new("Other", 600)) { get project_path }
+    assert_select ".project__step-waiting", count: 0
   end
 
   test "the first new Hackatime project you log time on links itself, until you keep it or change it" do
