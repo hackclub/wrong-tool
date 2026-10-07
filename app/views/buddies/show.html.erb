@@ -52,7 +52,7 @@
                 <span class="buddy-card__note"><%= buddy.title %> · Day <%= buddy.day_number %></span>
               </span>
             </div>
-            <% if (shot = buddy.screenshot).attached? && shot.blob.persisted? %>
+            <% if (shot = buddy.stored_screenshot) %>
               <%= image_tag url_for(shot), alt: "Screenshot of #{buddy.title}", class: "buddy-card__shot" %>
             <% end %>
           </section>

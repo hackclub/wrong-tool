@@ -213,7 +213,7 @@ module ProjectsHelper
       mine = project == you
       { rank:, you: mine, name: mine ? "You" : project.user.public_name,
         user: project.user, building: project.title, off: !project.set_up?,
-        screenshot: (project.screenshot if project.screenshot.attached? && project.screenshot.blob.persisted?),
+        screenshot: project.stored_screenshot,
         hours: project.hours_this_week, streak: project.streak,
         flame: project.streak >= Reward.definition("flame")[:days], buddy: leaderboard_buddy(project) }
     end

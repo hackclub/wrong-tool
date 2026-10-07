@@ -1,11 +1,11 @@
 <%# locals: (project:) %>
 <%# A screenshot of your game: pick one and it uploads; click it again to replace it. %>
-<% saved = project.screenshot.attached? && project.screenshot.blob.persisted? %>
+<% saved = project.stored_screenshot %>
 <%= form_with model: project, url: project_path, method: :patch, multipart: true, class: "project__shot",
       data: { controller: "project-screenshot" } do |form| %>
   <label class="project__shot-slot" <%= "data-filled" if saved %>>
     <% if saved %>
-      <%= image_tag url_for(project.screenshot), alt: "Screenshot of #{project.title}", class: "project__shot-image" %>
+      <%= image_tag url_for(saved), alt: "Screenshot of #{project.title}", class: "project__shot-image" %>
       <span class="project__shot-replace">Replace screenshot</span>
     <% else %>
       <span class="project__shot-placeholder">Add a screenshot</span>
