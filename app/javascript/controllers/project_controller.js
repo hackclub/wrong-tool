@@ -7,13 +7,15 @@ export default class extends Controller {
   static values = { clippy: String, mood: String, sounds: Object }
 
   connect() {
+    if (!this.hasSpriteTarget) return
+
     this.clippy = new Clippy(this.spriteTarget, this.soundsValue)
     this.clippy.feel(this.moodValue || "idle", { first: this.clippyValue === "congratulate" ? "Congratulate" : null })
     if (this.clippyValue) this.#hop()
   }
 
   disconnect() {
-    this.clippy.stop()
+    this.clippy?.stop()
     clearTimeout(this.hopTimer)
   }
 
