@@ -85,43 +85,45 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "setup walks you through every step after Hackatime, one at a time, and Clippy congratulates you at the end" do
-    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
-    mock_hackatime
-    post "/auth/hackatime"
-    follow_redirect!
-    assert_equal "hop", flash[:clippy]
-    assert projects(:orpheus).set_up?, "linking Hackatime is all setup needs to unlock things"
+    with_hackatime_hours(1.5) do
+      sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+      mock_hackatime
+      post "/auth/hackatime"
+      follow_redirect!
+      assert_equal "hop", flash[:clippy]
+      assert projects(:orpheus).set_up?, "linking Hackatime is all setup needs to unlock things"
 
-    get project_path
-    assert_select ".project__setup-count", "3 optional steps left"
-    assert_select ".project__step[data-state=current] .project__step-title", /Link your Hackatime project/
-    assert_no_match(/#wrong\b/, css_select(".project__steps").text, "everyone's added to #wrong for them")
+      get project_path
+      assert_select ".project__setup-count", "3 optional steps left"
+      assert_select ".project__step[data-state=current] .project__step-title", /Link your Hackatime project/
+      assert_no_match(/#wrong\b/, css_select(".project__steps").text, "everyone's added to #wrong for them")
 
-    patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game" ] } }
-    follow_redirect!
-    assert_select ".project__step[data-state=current] .project__step-title", /Add your git repo/
-    assert_select ".project__say", "Hours count now. A couple of quick things and you're in."
-    assert_select ".project__schedule", count: 0
+      patch project_path, params: { project: { hackatime_project_names: [ "rhythm-game" ] } }
+      follow_redirect!
+      assert_select ".project__step[data-state=current] .project__step-title", /Add your git repo/
+      assert_select ".project__say", "Hours count now. A couple of quick things and you're in."
+      assert_select ".project__schedule", count: 0
 
-    patch project_path, params: { project: { repo_later: true } }
-    follow_redirect!
-    assert_select ".project__step[data-state=current] .project__step-title", /Bring a buddy/
+      patch project_path, params: { project: { repo_later: true } }
+      follow_redirect!
+      assert_select ".project__step[data-state=current] .project__step-title", /Bring a buddy/
 
-    patch project_path, params: { project: { buddy_skipped: true } }
-    assert_equal "congratulate", flash[:clippy]
-    follow_redirect!
-    assert_select ".project__say", "All set. 20 min today starts your streak."
-    assert_select ".formula-bar__content", /TRUE/
-    assert_select ".project__setup-summary", "Setup done"
-    assert_equal [ "1.5 of 10 hrs", "45 min", "Oct 19" ], css_select(".project__goal-value").map(&:text)
-    assert_equal [ "5 hrs · shoutout", "10 hrs · handheld", "20 hrs · +$85" ], css_select(".project__track-label").map(&:text)
-    assert_select ".project__day-cell[data-state=party]", /Party/
-    assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
-    assert_select ".project__event[data-kind=ship] .project__event-day", "19"
-    assert_select ".project__stair[data-you]", /You/
-    assert_select ".project__stairs-note", "Hours this week. You're in first."
-    assert_equal [ "Gold star for Clippy", "Flame on the leaderboard", "1 skip day", "Shoutout in #wrong" ],
-                 css_select(".project__reward-label").map(&:text)
+      patch project_path, params: { project: { buddy_skipped: true } }
+      assert_equal "congratulate", flash[:clippy]
+      follow_redirect!
+      assert_select ".project__say", "1 day in a row. 20 min today keeps it going.", "the 1.5 hours yesterday count"
+      assert_select ".formula-bar__content", /TRUE/
+      assert_select ".project__setup-summary", "Setup done"
+      assert_equal [ "1.5 of 10 hrs", "45 min", "Oct 19" ], css_select(".project__goal-value").map(&:text)
+      assert_equal [ "5 hrs · shoutout", "10 hrs · handheld", "20 hrs · +$85" ], css_select(".project__track-label").map(&:text)
+      assert_select ".project__day-cell[data-state=party]", /Party/
+      assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
+      assert_select ".project__event[data-kind=ship] .project__event-day", "19"
+      assert_select ".project__stair[data-you]", /You/
+      assert_select ".project__stairs-note", "Hours this week. You're in first."
+      assert_equal [ "Gold star for Clippy", "Flame on the leaderboard", "1 skip day", "Shoutout in #wrong" ],
+                   css_select(".project__reward-label").map(&:text)
+    end
   end
 
   test "adding your game to the play party queue" do
@@ -280,12 +282,13 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game", "dotfiles" ], repo_later: true, buddy_skipped: true)
     sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
 
-    get hours_project_path(refresh: 1)
+    with_hackatime_hours(4.6) { get hours_project_path(refresh: 1) }
     assert_response :success
     assert_equal [ 4.6, "4.6 of 10 hrs", true ], response.parsed_body.values_at("hours", "label", "tracking")
 
     get project_path
-    assert_select ".project__goal-value", "4.6 of 10 hrs"
+    assert_select ".project__goal-value", "4.6 of 10 hrs", "what the refresh synced, without asking Hackatime again"
+    assert_select ".project__stair[data-you] .project__stair-hours", "4.6h", "the leaderboard counts the same hours"
     assert_select ".project__length input[checked]" do |inputs|
       assert_equal "25", inputs.first["value"]
     end

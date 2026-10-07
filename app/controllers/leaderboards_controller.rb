@@ -7,5 +7,6 @@ class LeaderboardsController < ApplicationController
     return redirect_to onboarding_path unless @project
 
     @sort = SORTS.include?(params[:sort]) ? params[:sort] : "week"
+    current_user.sync_streak_if_stale!
   end
 end

@@ -1,8 +1,9 @@
 require "net/http"
 
 # Hackatime, where hours come from. Once you've linked it (OAuth, see HackatimeLinksController), your token gets an
-# API key that reads your own stats, private or not: the projects you've logged time on since Program::HACKATIME_START. Both are cached for a
-# while; Refresh on the project page asks again.
+# API key that reads your own stats, private or not: the projects you've logged time on since
+# Program::HACKATIME_START (to pick from; cached for a while, and Refresh on the project page asks again) and the
+# spans of time you built on them (for your streak days, which every number of hours comes from: StreakActivity).
 module Hackatime
   Project = Data.define(:name, :seconds) do
     def hours = (seconds / 3600.0).round(1)

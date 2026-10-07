@@ -1,6 +1,6 @@
 # Everything a nudge needs to know about someone right now: where they are in their local day, which bucket they're
-# in, and the values Clippy's copy fills in. Hours come from Hackatime; today, streaks and who else built come from
-# their synced streak days (StreakActivity), brought up to date by refresh!.
+# in, and the values Clippy's copy fills in. Hours, streaks and who else built come from their synced streak days
+# (StreakActivity), brought up to date from Hackatime by refresh!.
 class Nudge::Context
   # No streak day with any building in this many days makes you lapsed.
   LAPSED_AFTER_DAYS = 2

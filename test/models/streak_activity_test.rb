@@ -75,6 +75,40 @@ class StreakActivityTest < ActiveSupport::TestCase
     end
   end
 
+  test "tonight's building counts today, even where Hackatime's day has already ended" do
+    @user.update!(timezone: "America/Los_Angeles")
+    asked = nil
+    spans = Hackatime.method(:heartbeat_spans)
+    Hackatime.define_singleton_method(:heartbeat_spans) { |user, names, start_date:, end_date:| asked = [ start_date, end_date ]; spans.call(user, names, start_date:, end_date:) }
+
+    # 8pm on the 11th in Los Angeles: already the 12th by Hackatime's clock.
+    travel_to Time.utc(2026, 10, 12, 3, 30) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 12, 3), 30) ] }
+      StreakActivity.sync_for_user!(@user)
+
+      assert_equal [ Date.new(2026, 10, 5), Date.new(2026, 10, 13) ], asked, "a day either side of the streak days"
+      assert_equal 30 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).coded_seconds
+      assert_equal 0.5, @user.project.hours_logged
+      assert_equal 0.5, @user.project.hours_this_week
+    end
+  ensure
+    Hackatime.define_singleton_method(:heartbeat_spans, spans)
+  end
+
+  test "the next sync goes over the day before too, in case Hackatime's spans moved" do
+    travel_to Time.utc(2026, 10, 12, 12) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 11, 15), 30) ] }
+      StreakActivity.sync_for_user!(@user)
+      assert_equal 30 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).coded_seconds
+    end
+
+    travel_to Time.utc(2026, 10, 12, 18) do
+      Hackatime.stubbed_spans = { "1001" => [ span(Time.utc(2026, 10, 11, 15), 45) ] }
+      StreakActivity.sync_for_user!(@user)
+      assert_equal 45 * 60, @user.streak_activities.find_by(activity_date: Date.new(2026, 10, 11)).coded_seconds
+    end
+  end
+
   test "nothing syncs until you've picked Hackatime projects to track" do
     @user.project.update!(hackatime_projects: [])
     Hackatime.stubbed_spans = { "1001" => [ span(Time.current - 1.hour, 30) ] }

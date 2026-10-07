@@ -17,16 +17,20 @@ class StreakActivity < ApplicationRecord
   end
 
   class << self
-    # Rewrites every day since the last sync (or since Hackatime time started counting) from Hackatime's heartbeat
-    # spans, then the streak. Nothing happens without Hackatime linked and projects picked.
+    # Rewrites every day since the day before the last sync (or since Hackatime time started counting) from
+    # Hackatime's heartbeat spans, then the streak. Nothing happens without Hackatime linked and projects picked.
     def sync_for_user!(user)
       project = user.project
       return unless project&.tracking?
 
       today = streak_date_for(Time.current, user.timezone)
-      start_date = user.streak_synced_at ? streak_date_for(user.streak_synced_at, user.timezone) : Program::HACKATIME_START
+      synced_on = streak_date_for(user.streak_synced_at, user.timezone) - 1 if user.streak_synced_at
+      start_date = [ synced_on || Program::HACKATIME_START, Program::HACKATIME_START ].max
 
-      spans = Hackatime.heartbeat_spans(user, project.hackatime_projects, start_date:, end_date: today + 1.day)
+      # Hackatime bounds spans by its own calendar days (midnight to midnight, its time), while streak days run 2am
+      # to 2am in yours: so it's asked for a day either side, or tonight's building would be tomorrow by its clock
+      # and left out until the next sync.
+      spans = Hackatime.heartbeat_spans(user, project.hackatime_projects, start_date: start_date - 1, end_date: today + 2)
       daily_seconds = bucket_spans_by_streak_day(spans, user.timezone)
 
       (start_date..today).each do |date|

@@ -128,43 +128,45 @@ class ProjectTest < ApplicationSystemTestCase
   end
 
   test "a pomodoro: lock in for as long as you pick, pause, end it, then back to the project" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_and_open_project
-    assert_checked_field "25", visible: :all
-    find(".project__length", text: "15").click
-    click_on "Start pomodoro"
+    with_hackatime_hours(1.5) do
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_and_open_project
+      assert_checked_field "25", visible: :all
+      find(".project__length", text: "15").click
+      click_on "Start pomodoro"
 
-    assert_selector ".focus__label", text: "LOCKED IN · ROUND 1"
-    assert_selector ".focus__clock", text: /\A(15:00|14:5\d)\z/
-    assert_selector ".focus__title", text: "A rhythm game in Spreadsheet"
-    assert_selector ".focus__tracked", text: "1.5 of 10 hrs"
-    assert_selector ".focus__synced", text: "just now"
-    assert_no_selector ".focus__note-text"
-    assert_selector ".focus__track-name", text: "Morning Coffee"
-    find("button[aria-label='Refresh hours from Hackatime']").click
-    assert_selector ".focus__synced", text: "just now"
-    click_on "Pause"
-    assert_selector ".focus__label", text: "PAUSED · ROUND 1"
-    click_on "Resume"
-    click_on "End pomodoro"
+      assert_selector ".focus__label", text: "LOCKED IN · ROUND 1"
+      assert_selector ".focus__clock", text: /\A(15:00|14:5\d)\z/
+      assert_selector ".focus__title", text: "A rhythm game in Spreadsheet"
+      assert_selector ".focus__tracked", text: "1.5 of 10 hrs"
+      assert_selector ".focus__synced", text: "just now"
+      assert_no_selector ".focus__note-text"
+      assert_selector ".focus__track-name", text: "Morning Coffee"
+      find("button[aria-label='Refresh hours from Hackatime']").click
+      assert_selector ".focus__synced", text: "just now"
+      click_on "Pause"
+      assert_selector ".focus__label", text: "PAUSED · ROUND 1"
+      click_on "Resume"
+      click_on "End pomodoro"
 
-    assert_selector ".focus__label", text: "POMODORO DONE"
-    assert_selector ".focus__title", text: "Pomodoro done."
-    click_on "Take a 5 min break"
-    assert_selector ".focus__label", text: "BREAK"
-    assert_selector ".focus__clock", text: /\A(05:00|04:5\d)\z/
-    click_on "Skip break"
-    assert_selector ".focus__label", text: "LOCKED IN · ROUND 2"
-    find("button[aria-label='Next track']").click
-    assert_selector ".focus__track-name", text: "Glad To Be Stuck Inside"
+      assert_selector ".focus__label", text: "POMODORO DONE"
+      assert_selector ".focus__title", text: "Pomodoro done."
+      click_on "Take a 5 min break"
+      assert_selector ".focus__label", text: "BREAK"
+      assert_selector ".focus__clock", text: /\A(05:00|04:5\d)\z/
+      click_on "Skip break"
+      assert_selector ".focus__label", text: "LOCKED IN · ROUND 2"
+      find("button[aria-label='Next track']").click
+      assert_selector ".focus__track-name", text: "Glad To Be Stuck Inside"
 
-    click_on "Exit"
-    assert_no_selector ".focus"
-    assert_selector ".project__title", text: "A rhythm game in Spreadsheet"
+      click_on "Exit"
+      assert_no_selector ".focus"
+      assert_selector ".project__title", text: "A rhythm game in Spreadsheet"
 
-    visit project_path
-    assert_checked_field "15", visible: :all # remembered
+      visit project_path
+      assert_checked_field "15", visible: :all # remembered
+    end
   end
 
   test "picking a pomodoro length with the sheet scrolled doesn't scroll the menus away" do

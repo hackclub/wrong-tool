@@ -15,10 +15,11 @@ class ProjectsController < ApplicationController
     current_user.sync_streak_if_stale!
   end
 
-  # Your hours from Hackatime, for the pomodoro to keep up to date (and, before you've linked a Hackatime project,
-  # for your project page to notice when one links itself); ?refresh=1 asks Hackatime now.
+  # Your hours, for the pomodoro to keep up to date (and, before you've linked a Hackatime project, for your project
+  # page to notice when one links itself); ?refresh=1 asks Hackatime now, otherwise a sync's queued if it's time.
   def hours
     flash[:clippy] = "hop" if auto_link_hackatime_project(refresh: params[:refresh].present?)
+    current_user.sync_streak_if_stale! unless params[:refresh].present?
     hours = @project.hours_logged(refresh: params[:refresh].present?)
     render json: { hours:, label: helpers.project_hours_label(@project, hours), tracking: @project.tracking?,
                    checked_at: Time.current.iso8601 }

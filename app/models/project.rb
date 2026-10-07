@@ -210,14 +210,16 @@ class Project < ApplicationRecord
   end
 
   # Hours on your linked Hackatime projects since Hackatime time started counting (Program::HACKATIME_START), to a
-  # tenth. Nothing if Hackatime isn't linked or can't be reached right now. `refresh` asks Hackatime again.
+  # tenth, from your synced streak days: the same days your weekly hours and the leaderboard count, so they always
+  # agree. Nothing until Hackatime's linked and a project picked. `refresh` brings the days up to date from Hackatime
+  # first (what we last saw, if it can't be reached right now).
   def hours_logged(refresh: false)
+    return 0 unless tracking?
+
     @hours_logged = nil if refresh
     @hours_logged ||= begin
-      seconds = tracking? ? Hackatime.projects(user, refresh:).select { |project| hackatime_projects.include?(project.name) }.sum(&:seconds) : 0
-      (seconds / 3600.0).round(1)
-    rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
-      0
+      refresh_hours if refresh
+      user.hours_in(Program::HACKATIME_START..)
     end
   end
 
@@ -257,6 +259,12 @@ class Project < ApplicationRecord
   private
     def refresh_streak
       user.refresh_streak!
+    end
+
+    def refresh_hours
+      user.sync_streak_now!
+    rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
+      nil
     end
 
     def picking_hackatime_projects_you_have

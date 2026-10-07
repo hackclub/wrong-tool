@@ -50,6 +50,21 @@ module HackatimeHelpers
   def link_hackatime(user, token: "token-#{user.first_name.downcase}")
     user.update!(hackatime_uid: Hackatime.stubbed_users.fetch(token), hackatime_access_token: token)
   end
+
+  # A span of `minutes` starting at `at`, as Hackatime sends it.
+  def hackatime_span(at, minutes)
+    { "start_time" => at.to_f, "end_time" => (at + minutes.minutes).to_f, "duration" => minutes * 60 }
+  end
+
+  # What Hackatime says Orpheus built, for the block: `hours` of it, on wrong tool's first day (so every number of
+  # hours has it). The block runs on the day after, so that day's over whatever the time is now.
+  def with_hackatime_hours(hours, uid: "1001")
+    before = Hackatime.stubbed_spans
+    Hackatime.stubbed_spans = before.merge(uid => [ hackatime_span(Time.utc(2026, 10, 6, 15), (hours * 60).round) ])
+    travel_to(Time.utc(2026, 10, 7, 12)) { yield }
+  ensure
+    Hackatime.stubbed_spans = before
+  end
 end
 
 ActiveSupport::TestCase.include HackClubAuthHelpers

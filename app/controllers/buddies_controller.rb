@@ -6,5 +6,6 @@ class BuddiesController < ApplicationController
     return redirect_to onboarding_path unless @project
 
     @buddy = @project.buddy
+    current_user.sync_streak_if_stale!
   end
 end

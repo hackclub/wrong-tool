@@ -7,7 +7,8 @@ class NudgeTest < ActiveSupport::TestCase
     @user = users(:orpheus)
     @user.update!(timezone: "America/New_York")
     link_hackatime(@user)
-    @user.project.update!(hackatime_projects: [ "rhythm-game" ], repo_later: true) # 1.5 hours on Hackatime
+    @user.project.update!(hackatime_projects: [ "rhythm-game" ], repo_later: true)
+    Hackatime.stubbed_spans = { "1001" => [ span(at_slot(7, hour: 17), 90) ] } # 1.5 hours, on day two
 
     @sent = []
     sent = @sent
@@ -59,7 +60,7 @@ class NudgeTest < ActiveSupport::TestCase
 
   test "the bandit picks an arm that fits where you are, and logs the odds it picked it at" do
     sent!("first_session", kind: "milestone")
-    nudge = deliver
+    nudge = deliver(at_slot(10))
 
     assert_equal "lapsed", nudge.bucket # 1.5 hours, but nothing in the last couple of days
     assert_includes Nudge::Bandit::ARMS["lapsed"], nudge.arm

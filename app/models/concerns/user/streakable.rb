@@ -5,7 +5,7 @@ module User::Streakable
   extend ActiveSupport::Concern
 
   # How long a sync holds off the next one, so every page load doesn't ask Hackatime.
-  STREAK_SYNC_THROTTLE = 15.minutes
+  STREAK_SYNC_THROTTLE = 5.minutes
 
   # How long hitting Refresh holds off the next one, so mashing it doesn't hammer Hackatime.
   MANUAL_STREAK_SYNC_THROTTLE = 20.seconds
@@ -35,11 +35,15 @@ module User::Streakable
 
   def earned?(key) = rewards.any? { |reward| reward.key == key }
 
-  # Queues a sync, unless one went out in the last STREAK_SYNC_THROTTLE.
+  # Queues a sync, unless one went out in the last STREAK_SYNC_THROTTLE. Your first (nothing synced yet) runs now
+  # instead, so the page that asked shows your hours rather than none until the job's done. If Hackatime can't be
+  # reached, the job tries again.
   def sync_streak_if_stale!
     return unless project&.tracking?
     return if Rails.cache.read(streak_sync_throttle_key)
 
+    streak_synced_at ? sync_streak! : sync_streak_now!
+  rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
     sync_streak!
   end
 
