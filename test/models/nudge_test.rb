@@ -1,6 +1,8 @@
 require "test_helper"
 
 class NudgeTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   SlackMessage = Struct.new(:channel, :ts)
 
   setup do
@@ -79,6 +81,8 @@ class NudgeTest < ActiveSupport::TestCase
 
     assert_equal [ "rhythm-game" ], @user.project.reload.hackatime_projects
     assert_not_equal "hackatime_project", nudge&.arm
+    dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ORPHEUS" }
+    assert_match(/linked to \*A rhythm game in Spreadsheet\* now/, dm[:args].second)
   end
 
   test "nothing on hackatime to pick means nothing to ask" do

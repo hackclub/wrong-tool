@@ -188,6 +188,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert project.step_done?("hackatime_project")
     assert_select ".project__auto-linked-title", "New time on Hackatime for wrong-tool-game"
     assert_select ".project__auto-linked a[href=?]", project_path(step: "hackatime_project"), "Change"
+    dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ORPHEUS" }
+    assert_match(/new time from you on \*wrong-tool-game\*, so it's linked to \*A rhythm game in Spreadsheet\*/, dm[:args].second)
 
     patch project_path, params: { project: { hackatime_auto_linked: false } }
     assert_redirected_to project_path

@@ -200,8 +200,11 @@ class Project < ApplicationRecord
 
   # Your first new Hackatime project links itself. The first time we look after you link Hackatime, we note the
   # projects you already have there (that's all this does then); if one you didn't have shows up before you've picked
-  # any, it's linked for you (the one with the most time, if a few did) until you keep it or change it. Returns its
-  # name if it linked one just now.
+  # any, it's linked for you (the one with the most time, if a few did) until you keep it or change it, and Clippy
+  # DMs you to say so. Returns its name if it linked one just now.
+  AUTO_LINKED_DM = "Hackatime has new time from you on *%{hackatime_project}*, so it's linked to *%{title}* now. Your hours " \
+                   "count from here. Not the right one? Change it on your project page.\n📎 clippy is doing a little happy wiggle."
+
   def auto_link_hackatime_project(available)
     return unless hackatime_linked? && hackatime_projects.none?
 
@@ -216,6 +219,7 @@ class Project < ApplicationRecord
 
     update_columns(hackatime_projects: [ newest.name ], hackatime_auto_linked: true)
     refresh_streak
+    dm_about_auto_link(newest.name)
     newest.name
   end
 
@@ -269,6 +273,13 @@ class Project < ApplicationRecord
   private
     def refresh_streak
       user.refresh_streak!
+    end
+
+    # A DM from Clippy's bot, if they're on Slack and haven't stopped his messages.
+    def dm_about_auto_link(hackatime_project)
+      return if user.slack_id.blank? || user.slack_muted_at.present?
+      SlackMessageJob.perform_later(user.slack_id, format(AUTO_LINKED_DM, hackatime_project:, title:),
+                                    link: [ "Open wrong tool", "#{Rails.configuration.x.app_url}/project" ])
     end
 
     def refresh_hours
