@@ -38,7 +38,18 @@ class Reward < ApplicationRecord
   validates :key, inclusion: { in: KEYS }
   validate :belongs_to_one
 
-  after_create_commit -> { RewardNotifier.earned(self) }
+  after_create_commit -> { RewardNotifier.earned(self) unless Reward.quiet }
+
+  # Rewards earned inside the block don't tell anyone, so a backfill can post one roundup instead of a flood
+  # (bin/rails rewards:backfill_hours_shoutouts).
+  thread_mattr_accessor :quiet, default: false
+
+  def self.quietly
+    self.quiet = true
+    yield
+  ensure
+    self.quiet = false
+  end
 
   def self.definition(key) = (STREAK + HOURS + PAIR).find { |reward| reward[:key] == key }
 
