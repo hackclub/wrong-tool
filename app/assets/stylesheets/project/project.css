@@ -847,7 +847,9 @@
     }
   }
 
-  /* Your schedule: a cell per build day, today ringed in blue and ship day in green. */
+  /* Your schedule: a cell per build day. The days gone are filled in by how they went (green for your pace, pale
+     green for some, pink for none, yellow for a skip day), today's ringed in blue, the party in red and the day
+     your hours would be in, in green. */
 
   .project__schedule {
     display: flex;
@@ -891,7 +893,7 @@
       color: var(--blue-700);
     }
 
-    &[data-state="ship"] {
+    &[data-state="goal"] {
       box-shadow: inset 0 0 0 2px var(--green);
       color: var(--green);
     }
@@ -899,6 +901,30 @@
     &[data-state="party"] {
       box-shadow: inset 0 0 0 2px var(--red);
       color: var(--red-800);
+    }
+
+    &[data-state="hit"] {
+      box-shadow: none;
+      background: var(--green);
+      color: var(--white);
+    }
+
+    &[data-state="some"] {
+      box-shadow: none;
+      background: #cfe8d7;
+      color: var(--text-primary);
+    }
+
+    &[data-state="missed"] {
+      box-shadow: inset 0 0 0 1px #f5b5bf;
+      background: var(--red-50);
+      color: var(--red-800);
+    }
+
+    &[data-state="skip"] {
+      box-shadow: inset 0 0 0 1px #e0d68a;
+      background: var(--yellow-100);
+      color: var(--amber-900);
     }
   }
 

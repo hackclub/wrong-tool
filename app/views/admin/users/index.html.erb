@@ -1,0 +1,88 @@
+<% content_for :title, "People · Wrong Tool admin" %>
+
+<%# Everyone who's signed in, newest first: who they are, what they pledged, where they've got to, and a button to
+    see the site as them. Real names and emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=USERS(wrong tool)  →  #{@total}" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <h1 class="project__title">Everyone who's signed in</h1>
+        <p class="leaderboard__note">
+          Newest first. "View as" shows you the site as they see it, until you stop from the strip at the bottom; nothing
+          you do as them is marked as yours, so look, don't touch. You can't view as yourself or another admin.
+        </p>
+        <%= form_with url: admin_users_path, method: :get, class: "admin__search" do |form| %>
+          <%= form.search_field :q, value: @query, placeholder: "Name, email, Slack or Hack Club ID", aria: { label: "Search people" },
+                autocomplete: "off", spellcheck: false %>
+          <%= form.button "Search", type: "submit" %>
+          <% if @query.present? %><%= link_to "Clear", admin_users_path %><% end %>
+        <% end %>
+      </header>
+
+      <% if @users.empty? %>
+        <p class="leaderboard__note">Nobody<%= " matches that" if @query.present? %>.</p>
+      <% else %>
+        <% if @total > @users.size %>
+          <p class="leaderboard__note">The newest <%= @users.size %> of <%= @total %>. Search for the rest.</p>
+        <% end %>
+        <div class="admin__scroll">
+          <table class="leaderboard__table admin__table admin__table--users">
+            <thead>
+              <tr>
+                <th scope="col">Who</th>
+                <th scope="col">Slack</th>
+                <th scope="col">Project</th>
+                <th class="leaderboard__number" scope="col">Streak</th>
+                <th scope="col">Signed in</th>
+                <th scope="col"><span class="visually-hidden">View as</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @users.each do |user| %>
+                <% project = user.project %>
+                <tr id="<%= dom_id(user) %>">
+                  <th scope="row">
+                    <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
+                    <%= user.name.presence || user.public_name %>
+                    <small class="admin__muted"><%= user.email %> · <%= user.hca_id %></small>
+                  </th>
+                  <td>
+                    <%= user.slack_display_name.presence || "—" %>
+                    <% if user.slack_id.present? %><small class="admin__muted"><%= user.slack_id %></small><% end %>
+                  </td>
+                  <td>
+                    <% if project %>
+                      <%= project.title %>
+                      <small class="admin__muted">
+                        <%= project.tool_name %> · <%= project.pace_minutes %> min
+                        <% if project.tracking? %>· tracking<% elsif project.hackatime_linked? %>· Hackatime linked<% else %>· no Hackatime<% end %>
+                      </small>
+                    <% else %>
+                      <span class="admin__muted">no pledge yet</span>
+                    <% end %>
+                  </td>
+                  <td class="leaderboard__number"><%= user.current_streak %></td>
+                  <td>
+                    <%= user.created_at.strftime("%b %-d") %>
+                    <% if user.streak_synced_at %><small class="admin__muted">synced <%= time_ago_in_words(user.streak_synced_at) %> ago</small><% end %>
+                  </td>
+                  <td class="admin__actions">
+                    <% if user.impersonable_by?(current_user) && !impersonating? %>
+                      <%= button_to "View as", admin_user_impersonation_path(user), method: :post, class: "admin__button",
+                            form: { data: { turbo: false } } %>
+                    <% elsif user.listed_admin? %>
+                      <small class="admin__muted">admin</small>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </main>
+</div>

@@ -64,7 +64,23 @@ class User < ApplicationRecord
   end
 
   def admin?
-    Rails.env.development? || (slack_id.present? && Rails.configuration.x.admin_slack_ids.include?(slack_id))
+    Rails.env.development? || listed_admin?
+  end
+
+  # On the list of admins (config/initializers), rather than an admin because it's development.
+  def listed_admin?
+    slack_id.present? && Rails.configuration.x.admin_slack_ids.include?(slack_id)
+  end
+
+  # Whether an admin can see the site as you (Admin::ImpersonationsController): not themselves, not another admin.
+  def impersonable_by?(admin)
+    admin.present? && admin != self && !listed_admin?
+  end
+
+  # Name, email, Slack (display name or ID) or Hack Club ID, any part of it, for the admin's list of users.
+  def self.search(query)
+    pattern = "%#{sanitize_sql_like(query)}%"
+    where("name ILIKE :q OR email ILIKE :q OR slack_display_name ILIKE :q OR slack_id ILIKE :q OR hca_id ILIKE :q", q: pattern)
   end
 
   # Used by posthog-rails to associate automatic exception reports with this user. Outside production it's

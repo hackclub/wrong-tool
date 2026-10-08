@@ -131,14 +131,21 @@ module ProjectsHelper
     "=SETUP(hackatime, project)  →  #{result}"
   end
 
-  # Hours logged, your daily pace (which you can change) and when you ship.
+  # Hours logged, your daily pace (which you can change) and when you'd be done at it. (Ship day's the program's
+  # deadline, on the Events card: this is the day your hours would be in.)
   def project_goal(project)
     [
       { label: "Logged", value: project_hours_label(project), note: "for the #{project_prize_name(project)}" },
       { label: "Daily pace", value: project_pace_label(project.pace_minutes), note: BUILD_TIME_LABELS.fetch(project.build_time),
         pace: true },
-      { label: "Ship by", value: project_date(project.finish_on), note: "if you keep pace" }
+      { label: "Done by", value: project_date(project.finish_on), note: "at this pace" }
     ]
+  end
+
+  # "14 sessions of 45 min gets you there by Oct 16. Ship any time up to Oct 20."
+  def project_schedule_note(project)
+    "#{pluralize(project.build_days.size, "session")} of #{project_pace_label(project.pace_minutes)} gets you there by " \
+      "#{project_date(project.finish_on)}. Ship any time up to #{project_date(Program::DATES.end)}."
   end
 
   # The milestones along your hours track (which runs to the last one), and whether you've reached each. The
@@ -156,17 +163,35 @@ module ProjectsHelper
     [ project.hours_logged * 100.0 / Program::MILESTONES.keys.max, 100 ].min
   end
 
-  # Your build days, with today, the play party and ship day marked.
-  def project_schedule(project, today: Date.current)
+  # Your build days as cells. The days gone show how they went, from Hackatime: "hit" with your pace's minutes on
+  # your linked projects (or more), "some" with less, "missed" with none, or "skip" for the one your skip day
+  # covered. Then today, and ahead of it the play party and the day your hours would be in ("goal"). Days run on
+  # streak time (2am to 2am where you are), like the streak does.
+  def project_schedule(project, today: project.user.streak_today_date)
     days = project.build_days
+    seconds = project.user.streak_activities.for_range(days.first...today).pluck(:activity_date, :coded_seconds).to_h
+    skipped_on = project.user.streak_skip_used_on
     days.map.with_index do |day, index|
       label = index.zero? || day.day == 1 ? project_date(day) : day.day.to_s
-      state = if day == today then "today"
-      elsif index == days.size - 1 then "ship"
-      elsif day == Program::PLAY_PARTY_ON then "party"
-      end
-      { date: label, state:, value: { "today" => "Today", "ship" => "Ship", "party" => "Party" }[state] }
+      state, value =
+        if day == today then [ "today", "Today" ]
+        elsif day < today && day == skipped_on then [ "skip", "Skip" ]
+        elsif day < today
+          built = seconds.fetch(day, 0)
+          if built.zero? then [ "missed", "0" ]
+          else [ built >= project.pace_minutes * 60 ? "hit" : "some", project_day_time(built) ]
+          end
+        elsif index == days.size - 1 then [ "goal", "Goal" ]
+        elsif day == Program::PLAY_PARTY_ON then [ "party", "Party" ]
+        end
+      { date: label, state:, value: }
     end
+  end
+
+  # A day's building, short enough for its cell: "45m" under an hour, "1.5h" from there.
+  def project_day_time(seconds)
+    minutes = seconds / 60
+    minutes < 60 ? "#{minutes}m" : "#{project_hours((seconds / 360.0).round / 10.0)}h"
   end
 
   # A calendar-page date for the Events card: "OCT" over "8".

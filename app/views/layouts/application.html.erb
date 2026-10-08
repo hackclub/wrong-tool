@@ -33,7 +33,9 @@
     <%= render "layouts/posthog" %>
   </head>
 
-  <%= tag.body data: { posthog_user_id: current_user&.posthog_distinct_id } do %>
+  <%# While an admin's viewing as someone, the browser isn't identified as them: it's the admin's. %>
+  <%= tag.body data: { posthog_user_id: impersonating? ? nil : current_user&.posthog_distinct_id } do %>
     <%= yield %>
+    <%= render "layouts/impersonation" if impersonating? %>
   <% end %>
 </html>

@@ -78,10 +78,7 @@
           <section class="project__schedule" aria-labelledby="project-schedule-title">
             <div>
               <h2 class="project__schedule-title" id="project-schedule-title">Your schedule</h2>
-              <p class="project__schedule-note">
-                <%= pluralize(build_days.size, "session") %> of <%= project_pace_label(@project.pace_minutes) %>.
-                Ship day is <%= project_date(@project.finish_on) %>.
-              </p>
+              <p class="project__schedule-note"><%= project_schedule_note(@project) %></p>
             </div>
             <div class="project__plan">
               <div class="project__goal-cells">
@@ -266,10 +263,10 @@
                 </div>
               </div>
               <div class="project__event" data-kind="ship">
-                <span class="project__event-date"><%= project_event_date(@project.finish_on) %></span>
+                <span class="project__event-date"><%= project_event_date(Program::DATES.end) %></span>
                 <div class="project__event-text">
-                  <h3 class="project__event-title">Ship day</h3>
-                  <p class="project__event-note">Your deadline. Hit Ship once it's playable.</p>
+                  <h3 class="project__event-title">Deadline</h3>
+                  <p class="project__event-note">Hit Ship any time up to then, once it's playable. You can keep building after you ship.</p>
                 </div>
               </div>
             </section>
