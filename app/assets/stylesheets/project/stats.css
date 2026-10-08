@@ -1,9 +1,17 @@
-/* The public stats page (/stats): headline tiles, hours per day as columns, and the funnel, tools and streaks as
-   bar tables. One series everywhere, so one colour (the brand green); text stays in text colours. */
+/* The public stats page (/stats): headline tiles, hours per day as columns, who's building each day (the growth
+   model: stacked columns, lines, a projection), and the funnel, tools and streaks as bar tables. One series
+   nearly everywhere, so one colour (the brand green); the growth charts add up to four more, in a fixed order
+   that stays apart with colour blindness. Text stays in text colours. */
 @layer sections {
   .stats {
     --stats-mark: var(--green);
     --stats-track: var(--grey-75);
+    --series-1: var(--green);
+    --series-2: #2a78d6;
+    --series-3: #eb6834;
+    --series-4: #4a3aa7;
+    --series-5: #eda100;
+    --ink: var(--grey-900);
 
     position: relative;
     max-inline-size: 1000px;
@@ -246,5 +254,242 @@
       inline-size: 40%;
       white-space: normal;
     }
+  }
+
+  /* Who's building each day. */
+  .stats__subheading {
+    margin: 20px 0 4px;
+    font: 600 14px var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .stats__subheading + .leaderboard__note {
+    margin-block-start: 0;
+  }
+
+  .stats__tiles--row {
+    margin-block: 12px 0;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .stats__tile abbr {
+    text-decoration: none;
+    color: var(--text-placeholder);
+  }
+
+  /* A column stacked by state: segments from the baseline up, a 2px gap of the surface between them, the top
+     one rounded. Today's is faded: it's still filling in. */
+  .stats__stack {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    inline-size: 100%;
+    max-inline-size: 24px;
+    block-size: 100%;
+  }
+
+  .stats__segment {
+    flex: 0 0 auto;
+    block-size: calc(var(--value) / var(--axis-max) * 100%);
+    min-block-size: 2px;
+    background: var(--series);
+  }
+
+  .stats__stack .stats__column-label + .stats__segment,
+  .stats__stack .stats__segment:first-child {
+    border-radius: 4px 4px 0 0;
+  }
+
+  .stats__column:hover .stats__segment,
+  .stats__column:focus-visible .stats__segment {
+    filter: brightness(1.15);
+  }
+
+  .stats__column[data-so-far] .stats__segment {
+    opacity: 0.45;
+  }
+
+  .stats__column[data-future] .stats__stack {
+    visibility: hidden;
+  }
+
+  .stats__stack .stats__column-label {
+    position: static;
+    margin-block-end: 4px;
+  }
+
+  /* Line charts: the same slots and gridlines as the columns, the lines as one stretched SVG, the ends labelled,
+     and an invisible column per day for the tooltip (with a hairline where you are). */
+  .stats__lines {
+    position: relative;
+    block-size: 220px;
+    padding-inline-start: 36px;
+    padding-block: 12px 20px;
+  }
+
+  .stats__lines-svg,
+  .stats__lines-ends {
+    position: absolute;
+    inset: 12px 0 20px 36px;
+    inline-size: calc(100% - 36px);
+    block-size: calc(100% - 32px);
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .stats__line {
+    fill: none;
+    stroke: var(--series);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .stats__line-end {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    translate: -4px -50%;
+    font: 600 11px var(--font-cell);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--text-primary);
+
+    i {
+      flex: 0 0 auto;
+      inline-size: 8px;
+      block-size: 8px;
+      border-radius: 50%;
+      background: var(--series);
+      box-shadow: 0 0 0 2px var(--surface-grid);
+    }
+  }
+
+  .stats__line-end--flip {
+    flex-direction: row-reverse;
+    translate: calc(-100% + 4px) -50%;
+  }
+
+  .stats__hits {
+    position: absolute;
+    inset: 12px 0 0 36px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .stats__hit {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    cursor: default;
+    outline-offset: -2px;
+  }
+
+  .stats__hit::before {
+    content: "";
+    position: absolute;
+    inset-block: 0 20px;
+    inset-inline-start: 50%;
+    border-inline-start: 1px solid var(--border-header);
+    opacity: 0;
+  }
+
+  .stats__hit:hover::before,
+  .stats__hit:focus-visible::before {
+    opacity: 1;
+  }
+
+  .stats__hit .stats__column-date {
+    position: static;
+  }
+
+  .stats__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 8px 0 0 36px;
+    padding: 0;
+    list-style: none;
+    font: 12px var(--font-cell);
+    color: var(--text-secondary);
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .stats__legend-key {
+    inline-size: 14px;
+    block-size: 0;
+    border-block-start: 2px solid var(--series);
+  }
+
+  .stats__legend-key--dashed {
+    border-block-start-style: dashed;
+  }
+
+  .stats__legend-key--fill {
+    inline-size: 10px;
+    block-size: 10px;
+    border: 0;
+    border-radius: 2px;
+    background: var(--series);
+  }
+
+  .stats__panels {
+    margin-block-start: 8px;
+  }
+
+  .stats__panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+
+  .stats__toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-header);
+    border-radius: 4px;
+    font: 12px var(--font-cell);
+  }
+
+  .stats__toggle-option {
+    padding: 4px 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+
+    &:hover { background: var(--hover-chrome); }
+  }
+
+  .stats__toggle-option--active {
+    background: var(--selection-header-bg);
+    color: var(--selection-header-fg);
+    font-weight: 600;
+  }
+
+  .stats__levers {
+    margin-block-start: 8px;
+    max-inline-size: 640px;
+  }
+
+  .stats__definitions {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    margin: 8px 0 0;
+
+    dt { font-weight: 600; color: var(--text-primary); }
+    dd { margin: 0; color: var(--text-secondary); }
   }
 }
