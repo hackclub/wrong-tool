@@ -46,40 +46,25 @@ class RewardTest < ActiveSupport::TestCase
     assert_equal 1, @orpheus.rewards.where(key: "hours_shoutout").count
   end
 
-  test "rewards earned quietly say nothing, so a backfill can post one roundup" do
+  test "shoutouts in #wrong each get their own slot, 10 minutes after the last" do
     [ @orpheus, @ana ].each do |user|
       user.project.update!(hackatime_projects: [ "game" ])
       user.update!(hackatime_uid: "hackatime-#{user.id}", hackatime_access_token: "token")
       built(user, 6..8, minutes: 120)
     end
-    Reward.quietly { [ @orpheus, @ana ].each { |user| travel_to(Time.utc(2026, 10, 8, 12)) { user.recalculate_streak! } } }
-    assert_empty slack_messages
-    assert_not Reward.quiet
+    now = Time.utc(2026, 10, 8, 12)
+    travel_to(now) { [ @orpheus, @ana ].each(&:recalculate_streak!) }
 
-    RewardNotifier.roundup_hours_shoutouts(Reward.where(key: "hours_shoutout").order(:user_id).to_a)
-    assert_equal 1, slack_messages.count { |channel, _| channel == Program::SLACK_CHANNEL_ID }
-    assert_includes slack_messages, [ Program::SLACK_CHANNEL_ID, ":yay: 5 hours logged since kickoff, by <@U0ORPHEUS> (*#{@orpheus.project.title}*) and " \
-                                                                  "<@U0ANA> (*#{@ana.project.title}*). halfway to a handheld, every one of them.\n_clippy is overwhelmed. :cat-woah:_" ]
-    assert_equal 2, slack_messages.count { |channel, _| channel != Program::SLACK_CHANNEL_ID }
-  end
+    assert_equal [ now, now + 10.minutes ], [ @orpheus, @ana ].map { |user| user.rewards.find_by(key: "hours_shoutout").announce_at }
+    posts = enqueued_jobs.select { |job| job[:job] == SlackMessageJob && job[:args].first == Program::SLACK_CHANNEL_ID }
+    assert_equal [ now, now + 10.minutes ].map(&:to_f), posts.map { |job| job[:at] }
+    dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ANA" && job[:args].second.start_with?("5 hours") }
+    assert_equal (now + 10.minutes).to_f, dm[:at]
 
-  test "the backfill syncs everyone, awards the shoutouts, and posts one roundup" do
-    @orpheus.project.update!(hackatime_projects: [ "rhythm-game" ])
-    link_hackatime(@orpheus)
-    at = Time.utc(2026, 10, 7, 12)
-    Hackatime.stubbed_spans = { "1001" => [ hackatime_span(at, 200), hackatime_span(at + 1.day, 200) ] } # 6.7 hours
-    require "rake"
-    Rails.application.load_tasks unless Rake::Task.task_defined?("rewards:backfill_hours_shoutouts")
-
-    travel_to(Time.utc(2026, 10, 8, 15)) { capture_io { Rake::Task["rewards:backfill_hours_shoutouts"].execute } }
-
-    assert @orpheus.reload.earned?("hours_shoutout")
-    assert_not @ana.earned?("hours_shoutout")
-    posts = slack_messages.select { |channel, _| channel == Program::SLACK_CHANNEL_ID }
-    assert_equal 1, posts.size
-    assert_match(/by <@U0ORPHEUS> \(\*.*\*\)\. halfway/, posts.first.last)
-  ensure
-    Hackatime.stubbed_spans = {}
+    later = Time.utc(2026, 10, 15, 12) # a 10-day streak, long after the last slot: so its slot is now
+    travel_to(later) { built(@orpheus, 9..15); @orpheus.recalculate_streak! }
+    assert_equal later, @orpheus.rewards.find_by(key: "streak_shoutout").announce_at
+    assert_nil @orpheus.rewards.find_by(key: "gold_star").announce_at
   end
 
   test "hours don't count towards a shoutout without Hackatime linked" do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -126,6 +126,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
     t.string "key", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "announce_at"
     t.index ["key"], name: "index_rewards_on_desktop", unique: true, where: "((key)::text = 'desktop'::text)"
     t.index ["pair_id", "key"], name: "index_rewards_on_pair_id_and_key", unique: true
     t.index ["pair_id"], name: "index_rewards_on_pair_id"

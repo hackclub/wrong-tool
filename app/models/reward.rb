@@ -38,18 +38,12 @@ class Reward < ApplicationRecord
   validates :key, inclusion: { in: KEYS }
   validate :belongs_to_one
 
-  after_create_commit -> { RewardNotifier.earned(self) unless Reward.quiet }
+  # A shoutout should feel like its own moment, so the ones posted in #wrong go out at least this far apart: each
+  # takes the slot after the last one's, or now if that's passed.
+  ANNOUNCE_GAP = 10.minutes
 
-  # Rewards earned inside the block don't tell anyone, so a backfill can post one roundup instead of a flood
-  # (bin/rails rewards:backfill_hours_shoutouts).
-  thread_mattr_accessor :quiet, default: false
-
-  def self.quietly
-    self.quiet = true
-    yield
-  ensure
-    self.quiet = false
-  end
+  before_create :take_announce_slot, if: -> { RewardNotifier.posted?(key) }
+  after_create_commit -> { RewardNotifier.earned(self) }
 
   def self.definition(key) = (STREAK + HOURS + PAIR).find { |reward| reward[:key] == key }
 
@@ -93,6 +87,11 @@ class Reward < ApplicationRecord
   def users = pair ? pair.projects.map(&:user) : [ user ]
 
   private
+    def take_announce_slot
+      last = self.class.where.not(announce_at: nil).maximum(:announce_at)
+      self.announce_at = [ Time.current, last && last + ANNOUNCE_GAP ].compact.max
+    end
+
     def belongs_to_one
       errors.add(:base, "belongs to a user or a pair") unless user.nil? ^ pair.nil?
     end

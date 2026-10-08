@@ -1,5 +1,6 @@
 # Telling people on Slack they've earned a reward (Reward): a DM to each of you, and for shoutouts and the desktop
-# background, a post in #wrong. Posts are a plain line about them, then how Clippy feels about it.
+# background, a post in #wrong. Posts are a plain line about them, then how Clippy feels about it, and go out at the
+# reward's slot (Reward#announce_at), with the DM, so no two shoutouts land together.
 module RewardNotifier
   # The DM. %{buddy} is the other half of a pair.
   DMS = {
@@ -26,35 +27,18 @@ module RewardNotifier
                  "They'll pick Kartikey's desktop background."
   }.freeze
 
-  # One post for a batch of hours shoutouts earned before the reward existed (bin/rails rewards:backfill_hours_shoutouts).
-  ROUNDUP = ":yay: %{hours} hours logged since kickoff, by %{people}. halfway to a handheld, every one of them.\n" \
-            "_clippy is overwhelmed. :cat-woah:_"
+  def self.posted?(key) = POSTS.key?(key)
 
   def self.earned(reward)
-    dm(reward)
-    post(reward)
-  end
-
-  def self.dm(reward)
     projects = reward.users.map(&:project)
+    messages = reward.announce_at ? SlackMessageJob.set(wait_until: reward.announce_at) : SlackMessageJob
     projects.each do |project|
       next if project.user.slack_id.blank?
       vars = vars_for(project, (projects - [ project ]).first)
-      SlackMessageJob.perform_later(project.user.slack_id, format(DMS.fetch(reward.key), vars), link: [ "Open wrong tool", project_url ])
+      messages.perform_later(project.user.slack_id, format(DMS.fetch(reward.key), vars), link: [ "Open wrong tool", project_url ])
     end
-  end
 
-  def self.post(reward)
-    return unless POSTS.key?(reward.key)
-    SlackMessageJob.perform_later(Program::SLACK_CHANNEL_ID, format(POSTS.fetch(reward.key), vars_for(*reward.users.map(&:project))))
-  end
-
-  # The DM each, then the one post naming everyone: "@a (*title*), @b (*title*) and @c (*title*)".
-  def self.roundup_hours_shoutouts(rewards)
-    return if rewards.empty?
-    rewards.each { |reward| dm(reward) }
-    people = rewards.map { |reward| "#{mention(reward.user.project)} (*#{reward.user.project.title}*)" }.to_sentence
-    SlackMessageJob.perform_later(Program::SLACK_CHANNEL_ID, format(ROUNDUP, hours: Program::MILESTONES.key("shoutout"), people:))
+    messages.perform_later(Program::SLACK_CHANNEL_ID, format(POSTS.fetch(reward.key), vars_for(*projects))) if posted?(reward.key)
   end
 
   def self.vars_for(project, buddy = nil)
