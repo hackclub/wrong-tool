@@ -1,0 +1,57 @@
+<% content_for :title, "Numbers · Wrong Tool admin" %>
+<% latest = @days.last %>
+<% show = ->(value, cumulative) { value.nil? ? "—" : (cumulative || value != value.floor ? value : value.to_i).to_s.sub(/\.0$/, "") } %>
+
+<%# Wrong tool's numbers day by day (Metric): a row per number, a column per day, so a change shows in what came
+    after it. Cumulative ones carry the day's change beside them. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=HISTORY(wrong tool)  →  #{@days.size} days" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <h1 class="project__title">Wrong tool's numbers, day by day</h1>
+        <p class="leaderboard__note">
+          Each day's taken as of the end of it (UTC); today's is rewritten hourly. Totals show the day's change beside them.
+          A dash is a day before the snapshots started, for the numbers nothing dates. PostHog has the events to rebuild more.
+        </p>
+      </header>
+
+      <% if @days.empty? %>
+        <p class="leaderboard__note">No snapshots yet. The hourly job takes the first, or <code>bin/rails metrics:backfill</code> rebuilds every day so far.</p>
+      <% else %>
+        <div class="admin__scroll">
+          <table class="leaderboard__table admin__table admin__table--history">
+            <thead>
+              <tr>
+                <th scope="col">Number</th>
+                <% @days.each do |day| %>
+                  <th class="leaderboard__number" scope="col" <%= "data-latest" if day == latest %>><%= day.strftime("%b %-d") %></th>
+                <% end %>
+              </tr>
+            </thead>
+            <tbody>
+              <% Metric::DEFINITIONS.each do |definition| %>
+                <% values = @values.fetch(definition.key, {}) %>
+                <tr>
+                  <th scope="row"><%= definition.label %></th>
+                  <% @days.each_with_index do |day, index| %>
+                    <% value = values[day] %>
+                    <% before = index.positive? ? values[@days[index - 1]] : nil %>
+                    <td class="leaderboard__number" <%= "data-latest" if day == latest %>>
+                      <%= show.(value, definition.cumulative) %>
+                      <% if definition.cumulative && value && before && value != before %>
+                        <small class="admin__muted admin__change" data-up="<%= value > before %>"><%= value > before ? "+" : "" %><%= show.(value - before, true) %></small>
+                      <% end %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </main>
+</div>

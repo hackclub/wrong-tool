@@ -29,9 +29,10 @@ Rails.application.routes.draw do
   post "n/:token/stop" => "nudge_links#mute"
   delete "n/:token/stop" => "nudge_links#unmute"
 
-  # How Clippy's nudges are doing, and what the bandit's learned. Admins only.
+  # How Clippy's nudges are doing, and what the bandit's learned, and wrong tool's numbers day by day. Admins only.
   namespace :admin do
     resources :nudges, only: :index
+    resources :metrics, only: :index
   end
 
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.

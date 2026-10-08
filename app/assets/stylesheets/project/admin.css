@@ -180,6 +180,36 @@
     display: block;
   }
 
+  /* The numbers page (/admin/metrics): a column per day, scrolling sideways, with today's marked. */
+  .admin__scroll {
+    overflow-x: auto;
+  }
+
+  .admin__table--history {
+    th[scope="row"] {
+      position: sticky;
+      inset-inline-start: 0;
+      background: var(--surface-grid);
+    }
+
+    td,
+    th[scope="col"] {
+      white-space: nowrap;
+    }
+
+    [data-latest] {
+      background: var(--green-50);
+    }
+  }
+
+  .admin__change {
+    font-size: 0.75em;
+
+    &[data-up="true"] {
+      color: var(--green);
+    }
+  }
+
   @media (max-width: 700px) {
     .admin__table {
       display: block;

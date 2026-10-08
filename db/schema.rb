@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,6 +52,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
     t.datetime "updated_at", null: false
     t.index ["pair_id"], name: "index_buddy_pomodoros_on_pair_id"
     t.index ["started_by_id"], name: "index_buddy_pomodoros_on_started_by_id"
+  end
+
+  create_table "metric_snapshots", force: :cascade do |t|
+    t.date "day", null: false
+    t.string "key", null: false
+    t.float "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["day", "key"], name: "index_metric_snapshots_on_day_and_key", unique: true
   end
 
   create_table "nudges", force: :cascade do |t|
