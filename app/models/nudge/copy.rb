@@ -99,6 +99,8 @@ module Nudge::Copy
   FIXED = {
     # Setup, one missing step at a time.
     "hackatime" => [ "your hours start counting once hackatime is linked. it takes about 2 minutes." ],
+    "lapse" => [ "nothing from you has reached hackatime yet. record your next session on %{title} with lapse and it links itself." ],
+    "plugin" => [ "nothing from you has reached hackatime yet. turn the hackatime plugin on in your editor and write a line: %{title} links itself." ],
     "hackatime_project" => [ "hackatime has time from you, but %{title} isn't linked to any of it yet. pick your project and your hours count." ],
     "repo" => [ "add your repo link to %{title} so it counts when you ship." ],
 
@@ -134,7 +136,7 @@ module Nudge::Copy
     "overtake" => "excited",
     "cheer_done" => "proud", "cheer_progress" => "proud", "cheer_streak" => "excited", "cheer_tomorrow" => "hopeful",
     "cheer_social" => "excited",
-    "hackatime" => "hopeful", "hackatime_project" => "hopeful", "repo" => "hopeful",
+    "hackatime" => "hopeful", "lapse" => "hopeful", "plugin" => "hopeful", "hackatime_project" => "hopeful", "repo" => "hopeful",
     "first_session" => "emotional", "halfway" => "excited", "done" => "emotional",
     "kickoff" => "excited", "three_days_left" => "hopeful", "three_days_left_done" => "proud",
     "last_day" => "emotional", "last_day_done" => "emotional", "streak_saver" => "hopeful"
@@ -155,6 +157,8 @@ module Nudge::Copy
     "cheer_tomorrow" => [ "open your project", :project ],
     "cheer_social" => [ "show #wrong", :slack ],
     "hackatime" => [ "link hackatime", :hackatime ],
+    "lapse" => [ "get lapse", :lapse ],
+    "plugin" => [ "set up the plugin", :hackatime_site ],
     "hackatime_project" => [ "pick your project", :project ],
     "repo" => [ "add your repo", :project ],
     "first_session" => [ "see your progress", :project ],

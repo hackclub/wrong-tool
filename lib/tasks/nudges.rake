@@ -13,7 +13,7 @@ namespace :nudges do
              next_reward: "flame on the leaderboard", days_to_reward: 1, peers: 6, days_idle: 3,
              minutes: 48, day: "today", next_day: "tomorrow", rank: 12, above: "pixelana", gap_minutes: 25, passed_by: "pixelana", places_lost: 2 }
 
-    %w[progress tiny_step streak social overtake done dramatic cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social].each do |arm|
+    %w[progress tiny_step streak social overtake lapse done dramatic cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social].each do |arm|
       nudge = user.nudges.new(kind: "test", arm:)
       nudge.deliver!(vars)
       puts "#{arm} (#{nudge.mood}): #{nudge.delivered ? "sent" : "not sent"}, #{nudge.link_url}"

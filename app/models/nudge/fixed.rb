@@ -31,15 +31,15 @@ module Nudge::Fixed
     build(context, kind: "milestone", arm: key)
   end
 
-  # One step at a time, in the order the project page lists them, and not every day. Picking your Hackatime project
-  # is only asked for when there's something to pick: if there's one new project to link, it's linked for you
-  # instead (Project#auto_link_hackatime_project, the same as opening your project page would), and with nothing on
-  # Hackatime yet there's nothing to ask.
+  # One step at a time, in the order the project page lists them, and not every day. After linking Hackatime comes
+  # getting time onto it: with nothing there since wrong tool started, Clippy says how (Lapse, or the editor plugin
+  # for code); with time there and no project picked, he asks you to pick one, unless there's one new project, which
+  # is linked for you instead (Project#auto_link_hackatime_project, the same as opening your project page would).
   def self.setup_nudge(context)
     project = context.project
     step =
       if !project.hackatime_linked? then "hackatime"
-      elsif project.hackatime_projects.none? && hackatime_project_to_pick?(context) then "hackatime_project"
+      elsif (hackatime_step = hackatime_project_step(context)) then hackatime_step
       elsif project.repo_url.blank? && !project.repo_later? then "repo"
       end
     return unless step
@@ -47,14 +47,18 @@ module Nudge::Fixed
     build(context, kind: "setup", arm: step)
   end
 
-  # Whether they have Hackatime projects to pick from and none got linked for them just now. If Hackatime can't be
-  # reached, not today.
-  def self.hackatime_project_to_pick?(context)
+  # Picking your Hackatime project, or getting time onto Hackatime first (lapse or plugin, by tool): whichever's
+  # next, or nothing once a project's picked, one got linked for you just now, or Hackatime can't be reached today.
+  def self.hackatime_project_step(context)
+    project = context.project
+    return if project.hackatime_projects.any?
+
     available = Hackatime.projects(context.user)
-    return false if context.project.auto_link_hackatime_project(available)
-    available.any? { |each| each.seconds.positive? }
+    return if project.auto_link_hackatime_project(available)
+    return "hackatime_project" if available.any? { |each| each.seconds.positive? }
+    project.lapse_tool? ? "lapse" : "plugin"
   rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
-    false
+    nil
   end
 
   def self.streak_saver(context)

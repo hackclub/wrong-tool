@@ -113,15 +113,25 @@ class Nudge < ApplicationRecord
   end
 
   # Whether the step a setup nudge asked for is done now. Nothing records when it was done, so a setup nudge is
-  # scored on the state when its window closes: a step done after that goes to the next one for it, if any.
+  # scored on the state when its window closes: a step done after that goes to the next one for it, if any. Getting
+  # time onto Hackatime (lapse, plugin) is done once Hackatime has a project with time, picked or not.
   def step_done?
     project = user.project
     case arm
     when "hackatime" then user.hackatime_linked?
+    when "lapse", "plugin" then project.present? && (project.hackatime_projects.any? || hackatime_has_time?)
     when "hackatime_project" then project.present? && project.hackatime_projects.any?
     when "repo" then project.present? && (project.repo_url.present? || project.repo_later?)
     else false
     end
+  end
+
+  # Whether Hackatime has any time from them since wrong tool started. Unavailable is left to raise, so the scoring
+  # tries again next hour.
+  def hackatime_has_time?
+    Hackatime.projects(user).any? { |each| each.seconds.positive? }
+  rescue Hackatime::NotLinked, Hackatime::Expired
+    false
   end
 
   # Time on their linked Hackatime projects in the window. Nothing linked, or Hackatime not linked any more, is none.
@@ -152,6 +162,8 @@ class Nudge < ApplicationRecord
     case Nudge::Copy.link_for(arm).last
     when :slack then "https://hackclub.slack.com/archives/#{Program::SLACK_CHANNEL_ID}"
     when :leaderboard then "#{Rails.configuration.x.app_url}/leaderboard"
+    when :lapse then ApplicationController.helpers.lapse_url
+    when :hackatime_site then ApplicationController.helpers.hackatime_url
     else "#{Rails.configuration.x.app_url}/project" # Linking Hackatime, picking your project and adding a repo are on the project page too.
     end
   end

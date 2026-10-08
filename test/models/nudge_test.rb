@@ -85,13 +85,42 @@ class NudgeTest < ActiveSupport::TestCase
     assert_match(/linked to \*A rhythm game in Spreadsheet\* now/, dm[:args].second)
   end
 
-  test "nothing on hackatime to pick means nothing to ask" do
+  test "nothing on hackatime yet, and Clippy says how to get time there: lapse, or the plugin for code" do
     sent!("first_session", kind: "milestone")
     @user.project.update!(hackatime_projects: [], repo_later: false)
     before = Hackatime.stubbed_projects
-    Hackatime.stubbed_projects = before.merge("1001" => [])
+    Hackatime.stubbed_projects = before.merge("1001" => [ Hackatime::Project.new("scratch", 0) ])
 
-    assert_equal "repo", deliver(at_slot(9)).arm
+    nudge = deliver(at_slot(9))
+    assert_equal [ "setup", "lapse" ], [ nudge.kind, nudge.arm ]
+    assert_match(/record your next session on a rhythm game in Spreadsheet with lapse/, nudge.text)
+    assert_equal "https://lapse.hackclub.com/", nudge.destination_url
+    assert_equal "bandit", deliver(at_slot(10)).kind, "said once, it waits a few days before saying it again"
+
+    @user.nudges.delete_all
+    @user.project.update!(tool: "ssh", tool_name: "Bash")
+    nudge = deliver(at_slot(9))
+    assert_equal "plugin", nudge.arm
+    assert_equal "https://hackatime.hackclub.com/", nudge.destination_url
+
+    @user.nudges.delete_all
+    Hackatime.stubbed_projects = before.merge("1001" => [])
+    assert_equal "plugin", deliver(at_slot(9)).arm, "the hackatime project step itself is never asked for with nothing to pick"
+  ensure
+    Hackatime.stubbed_projects = before
+  end
+
+  test "a lapse or plugin nudge worked once hackatime has time from you" do
+    nudge = sent!("lapse", kind: "setup", at: at_slot(8))
+    @user.project.update!(hackatime_projects: [])
+    before = Hackatime.stubbed_projects
+    Hackatime.stubbed_projects = before.merge("1001" => [ Hackatime::Project.new("scratch", 0) ])
+    travel_to(at_slot(11)) { Nudge.score_due }
+    assert_equal 0, nudge.reload.reward
+
+    Hackatime.stubbed_projects = before
+    nudge.score!
+    assert_equal 1, nudge.reload.reward
   ensure
     Hackatime.stubbed_projects = before
   end
