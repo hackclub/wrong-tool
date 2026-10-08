@@ -7,6 +7,7 @@ module RewardNotifier
     "flame" => "5-day streak. You have a 🔥 next to your name on the leaderboard while your streak lasts.",
     "skip_day" => "7-day streak. You've earned a skip day: if you miss a day, your streak won't reset.",
     "streak_shoutout" => "10-day streak. We posted %{title} in #wrong.",
+    "hours_shoutout" => "#{Program::MILESTONES.key("shoutout")} hours logged. We posted %{title} in #wrong.",
     "pair_listed" => "You and %{buddy} finished a pomodoro together, so you're shown as a pair on the leaderboard now.",
     "stickers" => "You and %{buddy} both logged #{Pair::WEEKLY_HOURS}h this week. You'll each get a sticker sheet with your handheld.",
     "pair_shoutout" => "You and %{buddy} both logged #{Pair::WEEKLY_HOURS}h in both weeks. We shared your games in #wrong.",
@@ -17,6 +18,7 @@ module RewardNotifier
   # The post in #wrong, for the ones that have one.
   POSTS = {
     "streak_shoutout" => "%{you} has a 10-day streak, building %{title} in %{tool}.",
+    "hours_shoutout" => "%{you} has logged #{Program::MILESTONES.key("shoutout")} hours building %{title} in %{tool}.",
     "pair_shoutout" => "%{you} and %{buddy} built together through both weeks of wrong tool: " \
                        "%{title} in %{tool}, and %{buddy_title} in %{buddy_tool}.",
     "desktop" => "%{you} and %{buddy} were the first pair to log #{Reward::DESKTOP_HOURS}h each. " \

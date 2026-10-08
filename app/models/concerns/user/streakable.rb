@@ -19,11 +19,12 @@ module User::Streakable
     StreakActivity.streak_date_for(Time.current, timezone)
   end
 
-  # Your streak, and then whatever streak rewards it's reached (and your pair's, since your hours moved).
+  # Your streak, and then whatever streak and hours rewards you've reached (and your pair's, since your hours moved).
   def recalculate_streak!
     streak, skipped_on = calculate_current_streak
     update_columns(current_streak: streak, streak_skip_used_on: skipped_on)
     Reward.award_streak!(self)
+    Reward.award_hours!(self)
     project&.pair&.then { |pair| Reward.award_pair!(pair) }
   end
 

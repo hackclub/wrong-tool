@@ -27,6 +27,30 @@ class RewardTest < ActiveSupport::TestCase
     assert_equal 2, @orpheus.rewards.count
   end
 
+  test "5 logged hours earns a shoutout in #wrong, once" do
+    @orpheus.project.update!(hackatime_projects: [ "rhythm-game" ])
+    link_hackatime(@orpheus)
+    built(@orpheus, 6..8, minutes: 90) # 4.5 hours
+    travel_to(Time.utc(2026, 10, 8, 12)) { @orpheus.recalculate_streak! }
+    assert_not @orpheus.earned?("hours_shoutout")
+
+    built(@orpheus, [ 9 ], minutes: 30)
+    travel_to(Time.utc(2026, 10, 9, 12)) { @orpheus.recalculate_streak! }
+
+    assert @orpheus.reload.earned?("hours_shoutout")
+    assert_includes slack_messages, [ "U0ORPHEUS", "5 hours logged. We posted *#{@orpheus.project.title}* in #wrong." ]
+    assert_includes slack_messages, [ Program::SLACK_CHANNEL_ID, "<@U0ORPHEUS> has logged 5 hours building *#{@orpheus.project.title}* in #{@orpheus.project.tool_name}." ]
+
+    travel_to(Time.utc(2026, 10, 9, 13)) { @orpheus.recalculate_streak! }
+    assert_equal 1, @orpheus.rewards.where(key: "hours_shoutout").count
+  end
+
+  test "hours don't count towards a shoutout without Hackatime linked" do
+    built(@orpheus, 6..8, minutes: 120)
+    travel_to(Time.utc(2026, 10, 8, 12)) { @orpheus.recalculate_streak! }
+    assert_not @orpheus.earned?("hours_shoutout")
+  end
+
   test "after 7 days, the first day you miss is covered, and the next one isn't" do
     built(@orpheus, [ *6..12, 14, 15 ])
     travel_to(Time.utc(2026, 10, 15, 12)) do

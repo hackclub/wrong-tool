@@ -141,13 +141,14 @@ module ProjectsHelper
     ]
   end
 
-  # The milestones along your hours track (which runs to the last one), and whether you've reached each.
+  # The milestones along your hours track (which runs to the last one), and whether you've reached each. The
+  # shoutout reads "posted" once it has been (Reward::HOURS), which follows the next sync after you reach it.
   def project_milestones(project)
     most = Program::MILESTONES.keys.max
     Program::MILESTONES.map do |hours, reward|
       reached = project.hours_logged >= hours
-      { hours:, label: "#{hours} hrs · #{reached && reward == "shoutout" ? "posted" : reward}", reached:,
-        at: hours * 100.0 / most, last: hours == most }
+      posted = reward == "shoutout" && project.user.earned?("hours_shoutout")
+      { hours:, label: "#{hours} hrs · #{posted ? "posted" : reward}", reached:, at: hours * 100.0 / most, last: hours == most }
     end
   end
 
