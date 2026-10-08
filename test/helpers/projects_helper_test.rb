@@ -44,12 +44,29 @@ class ProjectsHelperTest < ActionView::TestCase
     assert_equal [ "hit", "some", "skip", "hit", "today", nil ], days.first(6).map { _1[:state] }
     assert_equal [ "45m", "20m", "Skip", "1.5h", "Today", nil ], days.first(6).map { _1[:value] }
     assert_equal [ "Oct 6", "7", "8", "9", "10", "11" ], days.first(6).map { _1[:date] }
-    assert_equal({ state: "goal", value: "Goal" }, days.last.slice(:state, :value))
-    assert_equal 14, days.size
+    assert_equal({ state: "goal", value: "Goal" }, days[13].slice(:state, :value))
+    assert_equal({ date: "20", state: "due", value: "Due" }, days.last, "the deadline's the day after the goal, so no gap")
+    assert_equal 15, days.size
 
+    user.streak_activities.create!(activity_date: Date.new(2026, 10, 10), coded_seconds: 50 * 60)
+    today = project_schedule(project, today: Date.new(2026, 10, 10))[4]
+    assert_equal({ date: "10", state: "today", value: "50m", built: "hit" }, today, "today shows its time, and fills in")
+
+    project.update!(pace_minutes: 60)
+    days = project_schedule(project, today: Date.new(2026, 10, 10))
+    assert_equal [ "goal", nil, "due" ], days.last(3).map { _1[:state] }
+    assert days[-2][:gap], "days skipped between the goal and the deadline"
+    assert_equal 12, days.size, "10 sessions, the gap and the deadline"
+
+    project.update!(pace_minutes: 20)
+    days = project_schedule(project, today: Date.new(2026, 10, 10))
+    assert_equal "due", days.find { _1[:date] == "20" }[:state], "the deadline sits among your days when they run past it"
+    assert_equal "goal", days.last[:state]
+
+    project.update!(pace_minutes: 45)
     days = project_schedule(project, today: Date.new(2026, 10, 12))
-    assert_equal [ "hit", "some", "skip", "hit", "missed", "missed", "today" ], days.first(7).map { _1[:state] }
-    assert_equal "0", days[4][:value]
+    assert_equal [ "hit", "some", "skip", "hit", "hit", "missed", "today" ], days.first(7).map { _1[:state] }
+    assert_equal "0", days[5][:value]
     assert_equal "party", project_schedule(project, today: Date.new(2026, 10, 6))[2][:state]
   end
 

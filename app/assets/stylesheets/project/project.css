@@ -848,8 +848,8 @@
   }
 
   /* Your schedule: a cell per build day. The days gone are filled in by how they went (green for your pace, pale
-     green for some, pink for none, yellow for a skip day), today's ringed in blue, the party in red and the day
-     your hours would be in, in green. */
+     green for some, pink for none, yellow for a skip day), today's ringed in blue (and filled the same way once
+     you've built), the party in red, the day your hours would be in in green, and the deadline dashed. */
 
   .project__schedule {
     display: flex;
@@ -891,6 +891,23 @@
     &[data-state="today"] {
       box-shadow: inset 0 0 0 2px var(--blue-600);
       color: var(--blue-700);
+
+      &[data-built="some"] {
+        background: #cfe8d7;
+      }
+
+      &[data-built="hit"] {
+        background: var(--green);
+        color: var(--white);
+      }
+    }
+
+    /* The deadline: dashed, so it reads as a line to beat rather than a day to build. */
+    &[data-state="due"] {
+      box-shadow: none;
+      border: 2px dashed var(--grey-700);
+      padding: 2px 3px;
+      color: var(--grey-900);
     }
 
     &[data-state="goal"] {
@@ -926,6 +943,16 @@
       background: var(--yellow-100);
       color: var(--amber-900);
     }
+  }
+
+  /* The days skipped between your last build day and the deadline. */
+  .project__day-gap {
+    align-self: center;
+    inline-size: 24px;
+    font: 700 12px var(--font-cell);
+    text-align: center;
+    letter-spacing: 1px;
+    color: var(--grey-500);
   }
 
   .project__day-date {

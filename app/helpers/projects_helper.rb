@@ -165,27 +165,33 @@ module ProjectsHelper
 
   # Your build days as cells. The days gone show how they went, from Hackatime: "hit" with your pace's minutes on
   # your linked projects (or more), "some" with less, "missed" with none, or "skip" for the one your skip day
-  # covered. Then today, and ahead of it the play party and the day your hours would be in ("goal"). Days run on
-  # streak time (2am to 2am where you are), like the streak does.
+  # covered. Today shows its time so far (and fills in the same way, under its ring) once there is some. Ahead of it
+  # are the play party, the day your hours would be in ("goal") and the deadline ("due"): on its own after a gap
+  # when your days end before it, or in among them when they run on past it. Days run on streak time (2am to 2am
+  # where you are), like the streak does.
   def project_schedule(project, today: project.user.streak_today_date)
     days = project.build_days
-    seconds = project.user.streak_activities.for_range(days.first...today).pluck(:activity_date, :coded_seconds).to_h
+    seconds = project.user.streak_activities.for_range(days.first..today).pluck(:activity_date, :coded_seconds).to_h
     skipped_on = project.user.streak_skip_used_on
-    days.map.with_index do |day, index|
+    cells = days.map.with_index do |day, index|
       label = index.zero? || day.day == 1 ? project_date(day) : day.day.to_s
+      built = seconds.fetch(day, 0)
+      how = if built.zero? then "missed" elsif built >= project.pace_minutes * 60 then "hit" else "some" end
       state, value =
-        if day == today then [ "today", "Today" ]
+        if day == today then [ "today", built.zero? ? "Today" : project_day_time(built) ]
         elsif day < today && day == skipped_on then [ "skip", "Skip" ]
-        elsif day < today
-          built = seconds.fetch(day, 0)
-          if built.zero? then [ "missed", "0" ]
-          else [ built >= project.pace_minutes * 60 ? "hit" : "some", project_day_time(built) ]
-          end
+        elsif day < today then [ how, built.zero? ? "0" : project_day_time(built) ]
+        elsif day == Program::DATES.end then [ "due", "Due" ]
         elsif index == days.size - 1 then [ "goal", "Goal" ]
         elsif day == Program::PLAY_PARTY_ON then [ "party", "Party" ]
         end
-      { date: label, state:, value: }
+      { date: label, state:, value:, built: (how if day == today && !built.zero?) }
     end
+    if days.last < Program::DATES.end
+      cells << { gap: true } if days.last < Program::DATES.end - 1
+      cells << { date: Program::DATES.end.day.to_s, state: "due", value: "Due" }
+    end
+    cells
   end
 
   # A day's building, short enough for its cell: "45m" under an hour, "1.5h" from there.

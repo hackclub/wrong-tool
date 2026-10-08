@@ -111,10 +111,14 @@
               <div class="project__plan-body">
                 <ol class="project__days">
                   <% project_schedule(@project).each do |day| %>
-                    <li class="project__day-cell" data-state="<%= day[:state] %>">
-                      <span class="project__day-date"><%= day[:date] %></span>
-                      <span class="project__day-value"><%= day[:value] %></span>
-                    </li>
+                    <% if day[:gap] %>
+                      <li class="project__day-gap" aria-hidden="true">···</li>
+                    <% else %>
+                      <li class="project__day-cell" data-state="<%= day[:state] %>" <%= tag.attributes(data: { built: day[:built] }) %>>
+                        <span class="project__day-date"><%= day[:date] %></span>
+                        <span class="project__day-value"><%= day[:value] %></span>
+                      </li>
+                    <% end %>
                   <% end %>
                 </ol>
                 <div class="project__track" role="img" aria-label="<%= @project.hours_logged %> hours logged">
