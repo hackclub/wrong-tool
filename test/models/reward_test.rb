@@ -40,7 +40,7 @@ class RewardTest < ActiveSupport::TestCase
     assert @orpheus.reload.earned?("hours_shoutout")
     assert_includes slack_messages, [ "U0ORPHEUS", "5 hours logged. We posted *#{@orpheus.project.title}* in #wrong." ]
     assert_includes slack_messages, [ Program::SLACK_CHANNEL_ID, ":yay: <@U0ORPHEUS> just logged 5 hours on *#{@orpheus.project.title}*, built in " \
-                                                                  "#{@orpheus.project.tool_name}. halfway to a handheld.\n_clippy is doing a little dance. :dino-bbq:_" ]
+                                                                  "#{@orpheus.project.tool_name}. halfway to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_" ]
 
     travel_to(Time.utc(2026, 10, 9, 13)) { @orpheus.recalculate_streak! }
     assert_equal 1, @orpheus.rewards.where(key: "hours_shoutout").count
@@ -117,7 +117,7 @@ class RewardTest < ActiveSupport::TestCase
 
     assert_equal pair, Reward.desktop_pair
     assert_includes slack_messages,
-                    [ "C0C5UHLAAP5", "<@U0ANA> and <@U0ORPHEUS> were the first pair to log 10h each. They'll pick Kartikey's desktop background." ]
+                    [ "C0C5UHLAAP5", ":blob_hype: <@U0ANA> and <@U0ORPHEUS> were the first pair to log 10h each. They'll pick Kartikey's desktop background.\n_:clippy-excited: clippy can't sit still. :blob-wiggle:_" ]
     assert_raises(ActiveRecord::RecordNotUnique) { Reward.create!(pair: Pair.new, key: "desktop") }
   end
 

@@ -1,6 +1,7 @@
 # Telling people on Slack they've earned a reward (Reward): a DM to each of you, and for shoutouts and the desktop
 # background, a post in #wrong. Posts are a plain line about them, then how Clippy feels about it, and go out at the
-# reward's slot (Reward#announce_at), with the DM, so no two shoutouts land together.
+# reward's slot (Reward#announce_at), with the DM, so no two shoutouts land together. The emotes are Hack Club Slack's
+# own (:yay:, :dino-bbq:, Clippy's :clippy-<mood>: and friends), so they only mean anything there.
 module RewardNotifier
   # The DM. %{buddy} is the other half of a pair.
   DMS = {
@@ -18,13 +19,13 @@ module RewardNotifier
 
   # The post in #wrong, for the ones that have one.
   POSTS = {
-    "streak_shoutout" => "%{you} has a 10-day streak, building %{title} in %{tool}.",
+    "streak_shoutout" => "🔥 %{you} has a 10-day streak, building %{title} in %{tool}.\n_:clippy-excited: clippy is vibrating. :ultrafastparrot:_",
     "hours_shoutout" => ":yay: %{you} just logged #{Program::MILESTONES.key("shoutout")} hours on %{title}, built in %{tool}. " \
-                        "halfway to a handheld.\n_clippy is doing a little dance. :dino-bbq:_",
-    "pair_shoutout" => "%{you} and %{buddy} built together through both weeks of wrong tool: " \
-                       "%{title} in %{tool}, and %{buddy_title} in %{buddy_tool}.",
-    "desktop" => "%{you} and %{buddy} were the first pair to log #{Reward::DESKTOP_HOURS}h each. " \
-                 "They'll pick Kartikey's desktop background."
+                        "halfway to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_",
+    "pair_shoutout" => ":partyparrot: %{you} and %{buddy} built together through both weeks of wrong tool: " \
+                       "%{title} in %{tool}, and %{buddy_title} in %{buddy_tool}.\n_:clippy-emotional: clippy is crying. happy tears. :heavysob:_",
+    "desktop" => ":blob_hype: %{you} and %{buddy} were the first pair to log #{Reward::DESKTOP_HOURS}h each. " \
+                 "They'll pick Kartikey's desktop background.\n_:clippy-excited: clippy can't sit still. :blob-wiggle:_"
   }.freeze
 
   def self.posted?(key) = POSTS.key?(key)

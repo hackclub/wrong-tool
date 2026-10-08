@@ -55,7 +55,7 @@ module Nudge::Copy
     # Clippy being a bit much, on purpose: the whole message is the bit, so there's no mood line. Capped at
     # Nudge::DRAMATIC_CAP per person.
     "dramatic" => [
-      "clippy has been staring at your empty %{tool_name} for %{days_idle} days. clippy is fine. clippy is totally fine. 📎",
+      "clippy has been staring at your empty %{tool_name} for %{days_idle} days. clippy is fine. clippy is totally fine. :clippy-dramatic:",
       "it looks like you're trying to win a %{prize}. would you like help with that?",
       "clippy has started telling the other paperclips about %{title}. they have questions. clippy has no answers.",
       "breaking: local paperclip refreshes your hackatime again. still nothing. more at %{local_time}."
@@ -123,12 +123,18 @@ module Nudge::Copy
   # How Clippy feels, the small line under every message, with a picture of him acting it out. Picked at random
   # within the mood, so it isn't something the bandit learns (it does go with the arm, so an arm's results include
   # its mood). The big ones are for moments that earn them. Dramatic's mood is the whole message, so it has no line.
+  # Each starts with Clippy's own emote for the mood (:clippy-<mood>:, the same animation as his picture, added in
+  # #emojibot from script/clippy_emoji.py) and ends with a Hack Club Slack emote acting it out, so these are
+  # Slack-only (the main line sticks to unicode, since it's also the notification text).
   MOODS = {
-    "hopeful" => [ "📎 clippy believes in you.", "📎 clippy is rooting for you.", "📎 clippy saved you a seat.",
-                   "📎 clippy believes in you. (clippy has to, it's a paperclip.)" ],
-    "proud" => [ "📎 clippy is quietly proud.", "📎 clippy is doing a little happy wiggle.", "📎 clippy did the math. clippy loves math." ],
-    "excited" => [ "📎 clippy is vibrating.", "📎 clippy can't sit still.", "📎 clippy is very excited about this." ],
-    "emotional" => [ "📎 clippy is crying. happy tears.", "📎 clippy is emotional.", "📎 clippy will tell its grandchildren about this." ]
+    "hopeful" => [ ":clippy-hopeful: clippy believes in you.", ":clippy-hopeful: clippy is rooting for you. :blob_salute:", ":clippy-hopeful: clippy saved you a seat.",
+                   ":clippy-hopeful: clippy believes in you. (clippy has to, it's a paperclip.) :blobby-linked_paperclips:" ],
+    "proud" => [ ":clippy-proud: clippy is quietly proud. :blob-yay:", ":clippy-proud: clippy is doing a little happy wiggle. :blob-wiggle:",
+                 ":clippy-proud: clippy did the math. clippy loves math. :clawd-math:" ],
+    "excited" => [ ":clippy-excited: clippy is vibrating. :ultrafastparrot:", ":clippy-excited: clippy can't sit still. :blob_hype:",
+                   ":clippy-excited: clippy is very excited about this. :partyparrot:" ],
+    "emotional" => [ ":clippy-emotional: clippy is crying. happy tears. :heavysob:", ":clippy-emotional: clippy is emotional. :crying_dino:",
+                     ":clippy-emotional: clippy will tell its grandchildren about this. :yay:" ]
   }.freeze
 
   MOOD_FOR = {

@@ -203,7 +203,7 @@ class Project < ApplicationRecord
   # any, it's linked for you (the one with the most time, if a few did) until you keep it or change it, and Clippy
   # DMs you to say so. Returns its name if it linked one just now.
   AUTO_LINKED_DM = "Hackatime has new time from you on *%{hackatime_project}*, so it's linked to *%{title}* now. Your hours " \
-                   "count from here. Not the right one? Change it on your project page.\n📎 clippy is doing a little happy wiggle."
+                   "count from here. Not the right one? Change it on your project page.\n:clippy-proud: clippy is doing a little happy wiggle. :blob-wiggle:"
 
   def auto_link_hackatime_project(available)
     return unless hackatime_linked? && hackatime_projects.none?
