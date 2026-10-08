@@ -11,9 +11,9 @@ namespace :nudges do
              hours_left: 6.5, percent: 35, sessions_left: 9, session_percent: 8, pace: 45, build_time: "evening",
              finish_on: "Oct 17", local_time: "7pm", days_left: 9, streak: 4, streak_next: 5,
              next_reward: "flame on the leaderboard", days_to_reward: 1, peers: 6, days_idle: 3,
-             minutes: 48, day: "today", next_day: "tomorrow" }
+             minutes: 48, day: "today", next_day: "tomorrow", rank: 12, above: "pixelana", gap_minutes: 25, passed_by: "pixelana", places_lost: 2 }
 
-    %w[progress tiny_step streak social done dramatic cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social].each do |arm|
+    %w[progress tiny_step streak social overtake done dramatic cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social].each do |arm|
       nudge = user.nudges.new(kind: "test", arm:)
       nudge.deliver!(vars)
       puts "#{arm} (#{nudge.mood}): #{nudge.delivered ? "sent" : "not sent"}, #{nudge.link_url}"

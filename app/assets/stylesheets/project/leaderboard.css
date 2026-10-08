@@ -108,6 +108,22 @@
     }
   }
 
+  /* Moved since yesterday: up in green, down in red, under the row number. */
+  .leaderboard__change {
+    display: block;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+
+    &[data-direction="up"] {
+      color: var(--green);
+    }
+
+    &[data-direction="down"] {
+      color: var(--red);
+    }
+  }
+
   .leaderboard__building {
     color: var(--text-secondary);
   }

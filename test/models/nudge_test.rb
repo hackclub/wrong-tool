@@ -58,6 +58,75 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal "bandit", deliver(at_slot(10)).kind, "the repo nudge waits a few days before saying it again"
   end
 
+  test "with time on hackatime and no project picked, Clippy asks you to pick one" do
+    sent!("first_session", kind: "milestone")
+    @user.project.update!(hackatime_projects: [], repo_later: false)
+
+    nudge = deliver(at_slot(9))
+
+    assert_equal [ "setup", "hackatime_project" ], [ nudge.kind, nudge.arm ]
+    assert_match(/pick your project/, nudge.text)
+    assert_equal "#{Rails.configuration.x.app_url}/project", nudge.destination_url
+    assert_equal Hackatime.stubbed_projects["1001"].map(&:name), @user.project.reload.hackatime_baseline, "noted what you had, like opening your project page would"
+    assert_equal "bandit", deliver(at_slot(10)).kind, "the project step waits a few days before saying it again"
+  end
+
+  test "a new hackatime project gets linked for you instead of asked about" do
+    sent!("first_session", kind: "milestone")
+    @user.project.update!(hackatime_projects: [], hackatime_baseline: [ "dotfiles" ])
+
+    nudge = deliver(at_slot(9))
+
+    assert_equal [ "rhythm-game" ], @user.project.reload.hackatime_projects
+    assert_not_equal "hackatime_project", nudge&.arm
+  end
+
+  test "nothing on hackatime to pick means nothing to ask" do
+    sent!("first_session", kind: "milestone")
+    @user.project.update!(hackatime_projects: [], repo_later: false)
+    before = Hackatime.stubbed_projects
+    Hackatime.stubbed_projects = before.merge("1001" => [])
+
+    assert_equal "repo", deliver(at_slot(9)).arm
+  ensure
+    Hackatime.stubbed_projects = before
+  end
+
+  test "a pick-your-project nudge worked once a project's picked" do
+    nudge = sent!("hackatime_project", kind: "setup", at: at_slot(8))
+    travel_to(at_slot(11)) { Nudge.score_due }
+    assert_equal 1, nudge.reload.reward
+
+    @user.project.update!(hackatime_projects: [])
+    nudge.score!
+    assert_equal 0, nudge.reload.reward
+  end
+
+  test "the overtake copy knows who's just above you when they're within a session" do
+    ana = users(:ana)
+    ana.update!(hackatime_uid: "1002", hackatime_access_token: "token-heidi")
+    ana.project.update!(hackatime_projects: [ "heidis-game" ])
+    Hackatime.stubbed_spans["1002"] = [ span(at_slot(7, hour: 17), 120) ] # half an hour ahead of Orpheus
+    at = at_slot(8)
+    travel_to(at) do
+      StreakActivity.sync_for_user!(ana)
+      vars = Nudge::Context.new(@user.reload, at).tap(&:refresh!).vars
+      assert_equal({ rank: 2, above: "pixelana", gap_minutes: 30 }, vars.slice(:rank, :above, :gap_minutes, :passed_by, :places_lost))
+      assert Nudge::Copy.renderable?("overtake", vars)
+      assert_includes Nudge::Bandit.new("behind").available_arms(Nudge::Context.new(@user, at)), "overtake"
+
+      @user.project.update_columns(week_rank: 1, week_rank_on: at.to_date - 1) # Orpheus was first yesterday
+      vars = Nudge::Context.new(@user.reload, at).vars
+      assert_equal({ passed_by: "pixelana", places_lost: 1 }, vars.slice(:passed_by, :places_lost))
+
+      Hackatime.stubbed_spans["1002"] = [ span(at_slot(7, hour: 17), 180) ] # too far ahead
+      StreakActivity.sync_for_user!(ana.reload)
+      vars = Nudge::Context.new(@user.reload, at).vars
+      assert_equal({ rank: 2 }, vars.slice(:rank, :above, :gap_minutes, :passed_by))
+      assert_not Nudge::Copy.renderable?("overtake", vars)
+    end
+  end
+
   test "the bandit picks an arm that fits where you are, and logs the odds it picked it at" do
     sent!("first_session", kind: "milestone")
     nudge = deliver(at_slot(10))

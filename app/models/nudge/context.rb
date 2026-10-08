@@ -8,6 +8,8 @@ class Nudge::Context
   MIN_PEERS = 3
   # A setup nudge for the same step waits this long before saying it again.
   SETUP_EVERY = 3.days
+  # Overtake copy only when the one above you is within a session's reach.
+  GAP_MINUTES = 60
 
   attr_reader :user, :project, :now, :local_now, :built_on
 
@@ -142,8 +144,23 @@ class Nudge::Context
         days_to_reward: (upcoming[:days] - streak if upcoming && streak.positive?),
         peers: (peers if peers >= MIN_PEERS),
         days_idle: ((today - last_built_on).to_i if last_built_on && lapsed?),
+        **leaderboard_vars,
         **cheer_vars
       }.compact
+    end
+
+    # Where you are on this week's board, for the overtake copy: your rank, who's just above you and how many
+    # minutes would pass them, when that's one session's worth (GAP_MINUTES). Only once you have hours this week:
+    # at zero everyone's tied, and a rank among ties means nothing. passed_by is who went past you since
+    # yesterday's snapshot, if you've dropped and they're now the one above.
+    def leaderboard_vars
+      return {} unless project.set_up? && project.hours_this_week.positive?
+      place = Leaderboard.place_of(project) or return {}
+      gap = place.gap_minutes
+      close = gap && gap.positive? && gap <= GAP_MINUTES
+      dropped = place.change&.negative?
+      { rank: place.rank, above: (place.above.user.public_name if close), gap_minutes: (gap if close),
+        passed_by: (place.above.user.public_name if close && dropped), places_lost: (-place.change if dropped) }
     end
 
     # For a cheer: how long they built on the day it's for, and which day that is from where they are now ("today"

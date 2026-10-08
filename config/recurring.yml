@@ -25,3 +25,7 @@ production:
   slack_profiles_sync:
     class: SlackProfilesSyncJob
     schedule: at 3:30am every day
+  # Once a day, so the board's arrows mean "since yesterday".
+  leaderboard_snapshot:
+    class: LeaderboardSnapshotJob
+    schedule: at 9am every day

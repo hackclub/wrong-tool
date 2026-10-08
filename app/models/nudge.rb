@@ -118,6 +118,7 @@ class Nudge < ApplicationRecord
     project = user.project
     case arm
     when "hackatime" then user.hackatime_linked?
+    when "hackatime_project" then project.present? && project.hackatime_projects.any?
     when "repo" then project.present? && (project.repo_url.present? || project.repo_later?)
     else false
     end
@@ -150,7 +151,8 @@ class Nudge < ApplicationRecord
   def destination_url
     case Nudge::Copy.link_for(arm).last
     when :slack then "https://hackclub.slack.com/archives/#{Program::SLACK_CHANNEL_ID}"
-    else "#{Rails.configuration.x.app_url}/project" # Linking Hackatime and adding a repo are on the project page too.
+    when :leaderboard then "#{Rails.configuration.x.app_url}/leaderboard"
+    else "#{Rails.configuration.x.app_url}/project" # Linking Hackatime, picking your project and adding a repo are on the project page too.
     end
   end
 

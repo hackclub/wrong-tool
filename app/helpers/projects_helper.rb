@@ -204,18 +204,19 @@ module ProjectsHelper
     end
   end
 
-  # Everyone set up, ranked by hours this week or streak, and you (last, with dashes, until you're set up). A streak
-  # long enough for the flame reward shows one, and a pair that's done a pomodoro together shows your buddy.
+  # Everyone set up, ranked by hours this week or streak (Leaderboard), and you (last, with dashes, until you're set
+  # up). A streak long enough for the flame reward shows one, a pair that's done a pomodoro together shows your
+  # buddy, and the week board shows how far you've moved since yesterday's snapshot.
   def leaderboard(you, sort: "week")
-    key = sort == "streak" ? :streak : :hours_this_week
-    others = Project.includes(:user, screenshot_attachment: :blob).where.not(id: you.id).select(&:set_up?)
-    ranked = (others + [ you ]).sort_by { |project| [ project.set_up? ? 0 : 1, -project.public_send(key), project.id ] }
-    ranked.map.with_index(1) do |project, rank|
+    places = Leaderboard.places(sort:)
+    places << Leaderboard::Place.new(project: you, rank: places.size + 1, above: nil) unless you.set_up?
+    places.map do |place|
+      project = place.project
       mine = project == you
-      { rank:, you: mine, name: mine ? "You" : project.user.public_name,
+      { rank: place.rank, you: mine, name: mine ? "You" : project.user.public_name,
         user: project.user, building: project.title, off: !project.set_up?,
         screenshot: (project.screenshot if project.screenshot.attached? && project.screenshot.blob.persisted?),
-        hours: project.hours_this_week, streak: project.streak,
+        hours: project.hours_this_week, streak: project.streak, change: (place.change if sort == "week" && project.set_up?),
         flame: project.streak >= Reward.definition("flame")[:days], buddy: leaderboard_buddy(project) }
     end
   end

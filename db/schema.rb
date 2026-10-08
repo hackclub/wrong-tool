@@ -116,6 +116,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
     t.boolean "buddy_skipped", default: false, null: false
     t.json "hackatime_baseline"
     t.boolean "hackatime_auto_linked", default: false, null: false
+    t.integer "week_rank"
+    t.date "week_rank_on"
     t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
   end

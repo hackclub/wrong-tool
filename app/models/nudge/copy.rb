@@ -43,6 +43,15 @@ module Nudge::Copy
       "people are shipping games in tools never meant for games. %{title} could be next.",
       "#wrong is busy today. come share %{title}."
     ],
+    # The leaderboard: who's just above you and how little it takes to pass them. Only when you have hours this
+    # week and they're within a session (Nudge::Context#leaderboard_vars). The last one's for when they went past
+    # you since yesterday.
+    "overtake" => [
+      "%{above} is %{gap_minutes} minutes ahead of you on the leaderboard. one session passes them.",
+      "you're #%{rank} this week. %{gap_minutes} minutes puts you past %{above}.",
+      "%{gap_minutes} minutes between you and %{above}. that's less than one session.",
+      "%{passed_by} passed you since yesterday. %{gap_minutes} minutes takes the spot back."
+    ],
     # Clippy being a bit much, on purpose: the whole message is the bit, so there's no mood line. Capped at
     # Nudge::DRAMATIC_CAP per person.
     "dramatic" => [
@@ -90,6 +99,7 @@ module Nudge::Copy
   FIXED = {
     # Setup, one missing step at a time.
     "hackatime" => [ "your hours start counting once hackatime is linked. it takes about 2 minutes." ],
+    "hackatime_project" => [ "hackatime has time from you, but %{title} isn't linked to any of it yet. pick your project and your hours count." ],
     "repo" => [ "add your repo link to %{title} so it counts when you ship." ],
 
     # Milestones.
@@ -121,9 +131,10 @@ module Nudge::Copy
 
   MOOD_FOR = {
     "progress" => "proud", "streak" => "excited", "pledge" => "hopeful", "tiny_step" => "hopeful", "social" => "excited",
+    "overtake" => "excited",
     "cheer_done" => "proud", "cheer_progress" => "proud", "cheer_streak" => "excited", "cheer_tomorrow" => "hopeful",
     "cheer_social" => "excited",
-    "hackatime" => "hopeful", "repo" => "hopeful",
+    "hackatime" => "hopeful", "hackatime_project" => "hopeful", "repo" => "hopeful",
     "first_session" => "emotional", "halfway" => "excited", "done" => "emotional",
     "kickoff" => "excited", "three_days_left" => "hopeful", "three_days_left_done" => "proud",
     "last_day" => "emotional", "last_day_done" => "emotional", "streak_saver" => "hopeful"
@@ -136,6 +147,7 @@ module Nudge::Copy
     "pledge" => [ "open your project", :project ],
     "tiny_step" => [ "start 20 minutes", :project ],
     "social" => [ "see what people built", :slack ],
+    "overtake" => [ "see the leaderboard", :leaderboard ],
     "dramatic" => [ "make clippy happy", :project ],
     "cheer_done" => [ "see your progress", :project ],
     "cheer_progress" => [ "see your progress", :project ],
@@ -143,6 +155,7 @@ module Nudge::Copy
     "cheer_tomorrow" => [ "open your project", :project ],
     "cheer_social" => [ "show #wrong", :slack ],
     "hackatime" => [ "link hackatime", :hackatime ],
+    "hackatime_project" => [ "pick your project", :project ],
     "repo" => [ "add your repo", :project ],
     "first_session" => [ "see your progress", :project ],
     "halfway" => [ "see your progress", :project ],

@@ -6,9 +6,9 @@ class Nudge::Bandit
   # Which arms make sense in each state. A streak message to someone with no streak is a wasted send.
   ARMS = {
     "zero_hours" => %w[pledge tiny_step social dramatic],
-    "on_pace" => %w[streak progress pledge],
-    "behind" => %w[progress tiny_step pledge social],
-    "lapsed" => %w[tiny_step dramatic social pledge],
+    "on_pace" => %w[streak progress pledge overtake],
+    "behind" => %w[progress tiny_step pledge social overtake],
+    "lapsed" => %w[tiny_step dramatic social pledge overtake],
     "cheer" => %w[cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social]
   }.freeze
 
@@ -59,14 +59,14 @@ class Nudge::Bandit
     [ winner, propensity, false ]
   end
 
-  # Arms for this state that this person can actually get: streak copy needs a streak, social needs peers, and
-  # dramatic Clippy is capped.
+  # Arms for this state that this person can actually get: streak copy needs a streak, social needs peers, overtake
+  # needs someone within reach above you, and dramatic Clippy is capped.
   def available_arms(context)
     vars = context.vars
     ARMS.fetch(state).select do |arm|
       case arm
       when "streak", "cheer_streak" then vars.key?(:streak)
-      when "social", "cheer_social" then Nudge::Copy.renderable?(arm, vars)
+      when "social", "cheer_social", "overtake" then Nudge::Copy.renderable?(arm, vars)
       when "dramatic" then context.dramatic_left?
       else true
       end

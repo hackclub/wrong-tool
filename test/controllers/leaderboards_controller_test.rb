@@ -28,6 +28,13 @@ class LeaderboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr[data-you] .leaderboard__rank", "1"
     assert_select "tr[data-you]", /0 hrs/
     assert_select ".leaderboard__note", "Most hours built this week."
+    assert_select ".leaderboard__change", false, "no arrows without a snapshot"
     assert_select ".formula-bar__content", /=RANK\(you, week_hours\) → 1/
+
+    projects(:orpheus).update!(week_rank: 3, week_rank_on: Date.current)
+    get leaderboard_path
+    assert_select "tr[data-you] .leaderboard__change[data-direction=up]", "▲2"
+    get leaderboard_path(sort: "streak")
+    assert_select ".leaderboard__change", false, "arrows are for the week board"
   end
 end

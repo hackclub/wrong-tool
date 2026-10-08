@@ -37,7 +37,15 @@
         <tbody>
           <% rows.each do |row| %>
             <tr <%= "data-you" if row[:you] %>>
-              <td class="leaderboard__rank"><%= row[:rank] %></td>
+              <td class="leaderboard__rank">
+                <%= row[:rank] %>
+                <% if row[:change]&.nonzero? %>
+                  <span class="leaderboard__change" data-direction="<%= row[:change].positive? ? "up" : "down" %>"
+                        title="<%= row[:change].positive? ? "Up" : "Down" %> <%= pluralize(row[:change].abs, "place") %> since yesterday">
+                    <%= row[:change].positive? ? "▲" : "▼" %><%= row[:change].abs %>
+                  </span>
+                <% end %>
+              </td>
               <td>
                 <span class="leaderboard__builder">
                   <%= avatar_tag(row[:user], "leaderboard__avatar") %>
