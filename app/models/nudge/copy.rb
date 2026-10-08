@@ -130,7 +130,7 @@ module Nudge::Copy
     "hopeful" => [ ":clippy-hopeful: clippy believes in you.", ":clippy-hopeful: clippy is rooting for you. :blob_salute:", ":clippy-hopeful: clippy saved you a seat.",
                    ":clippy-hopeful: clippy believes in you. (clippy has to, it's a paperclip.) :blobby-linked_paperclips:" ],
     "proud" => [ ":clippy-proud: clippy is quietly proud. :blob-yay:", ":clippy-proud: clippy is doing a little happy wiggle. :blob-wiggle:",
-                 ":clippy-proud: clippy did the math. clippy loves math. :clawd-math:" ],
+                 ":clippy-proud: clippy did the math. clippy loves math. :nerd-orpheus:" ],
     "excited" => [ ":clippy-excited: clippy is vibrating. :ultrafastparrot:", ":clippy-excited: clippy can't sit still. :blob_hype:",
                    ":clippy-excited: clippy is very excited about this. :partyparrot:" ],
     "emotional" => [ ":clippy-emotional: clippy is crying. happy tears. :heavysob:", ":clippy-emotional: clippy is emotional. :crying_dino:",
