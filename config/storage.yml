@@ -6,13 +6,19 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
-# amazon:
-#   service: S3
-#   access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-#   secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
-#   region: us-east-1
-#   bucket: your_own_bucket-<%= Rails.env %>
+# Cloudflare R2, through its S3 API: where screenshots live in production, so they outlive a deploy (the container's
+# disk doesn't). Set r2.account_id, r2.access_key_id, r2.secret_access_key and r2.bucket with bin/rails
+# credentials:edit; the keys come from an R2 API token with object read and write on the bucket. R2 rejects the
+# newer checksum headers the SDK sends by default, hence the two checksum settings.
+cloudflare:
+  service: S3
+  endpoint: https://<%= Rails.application.credentials.dig(:r2, :account_id) %>.r2.cloudflarestorage.com
+  access_key_id: <%= Rails.application.credentials.dig(:r2, :access_key_id) %>
+  secret_access_key: <%= Rails.application.credentials.dig(:r2, :secret_access_key) %>
+  bucket: <%= Rails.application.credentials.dig(:r2, :bucket) %>
+  region: auto
+  request_checksum_calculation: when_required
+  response_checksum_validation: when_required
 
 # Remember not to checkin your GCS keyfile to a repository
 # google:
