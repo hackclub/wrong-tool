@@ -50,6 +50,39 @@ module Nudge::Copy
       "it looks like you're trying to win a %{prize}. would you like help with that?",
       "clippy has started telling the other paperclips about %{title}. they have questions. clippy has no answers.",
       "breaking: local paperclip refreshes your hackatime again. still nothing. more at %{local_time}."
+    ],
+
+    # Cheers, sent right after the day's 20 minutes (Nudge::Cheer). %{day} is "today" or "yesterday", and
+    # %{next_day} "tomorrow" or "today", so a cheer held for the morning still reads right.
+    # Just that they did it.
+    "cheer_done" => [
+      "%{minutes} minutes on %{title} %{day}. that's a build day.",
+      "you built %{day}. %{minutes} minutes, logged and counted.",
+      "%{day} counts. %{minutes} minutes on %{title}.",
+      "%{minutes} minutes in %{tool_name} %{day}. that's not nothing. that's a lot, actually."
+    ],
+    # What it added up to.
+    "cheer_progress" => [
+      "%{minutes} minutes %{day}. that's %{hours} of 10 hours, %{hours_left} to a %{prize}.",
+      "%{day}'s %{minutes} minutes put you at %{percent}%% of a %{prize}.",
+      "%{hours} hours on %{title} so far. %{sessions_left} more sessions at your pace and it's a %{prize}."
+    ],
+    # The streak it kept going. Only for people with one.
+    "cheer_streak" => [
+      "🔥 %{streak} days in a row on %{title}. %{next_day} makes it %{streak_next}.",
+      "that's %{streak} days running. %{days_to_reward} more and you unlock %{next_reward}.",
+      "🔥 %{streak}. %{minutes} minutes %{day} kept it going."
+    ],
+    # The next one.
+    "cheer_tomorrow" => [
+      "%{minutes} minutes %{day}. same again %{next_day}? %{build_time}, %{pace} minutes.",
+      "you built %{day}. the hard part of %{next_day} is done already: you know it works.",
+      "%{day}: done. %{next_day}: %{build_time}. clippy will be there."
+    ],
+    # Who else did.
+    "cheer_social" => [
+      "%{peers} people built in %{tool_name} %{day}. you're one of them.",
+      "you and %{peers} others logged time %{day}. #wrong would like to see %{title}."
     ]
   }.freeze
 
@@ -88,6 +121,8 @@ module Nudge::Copy
 
   MOOD_FOR = {
     "progress" => "proud", "streak" => "excited", "pledge" => "hopeful", "tiny_step" => "hopeful", "social" => "excited",
+    "cheer_done" => "proud", "cheer_progress" => "proud", "cheer_streak" => "excited", "cheer_tomorrow" => "hopeful",
+    "cheer_social" => "excited",
     "hackatime" => "hopeful", "repo" => "hopeful",
     "first_session" => "emotional", "halfway" => "excited", "done" => "emotional",
     "kickoff" => "excited", "three_days_left" => "hopeful", "three_days_left_done" => "proud",
@@ -102,6 +137,11 @@ module Nudge::Copy
     "tiny_step" => [ "start 20 minutes", :project ],
     "social" => [ "see what people built", :slack ],
     "dramatic" => [ "make clippy happy", :project ],
+    "cheer_done" => [ "see your progress", :project ],
+    "cheer_progress" => [ "see your progress", :project ],
+    "cheer_streak" => [ "see your streak", :project ],
+    "cheer_tomorrow" => [ "open your project", :project ],
+    "cheer_social" => [ "show #wrong", :slack ],
     "hackatime" => [ "link hackatime", :hackatime ],
     "repo" => [ "add your repo", :project ],
     "first_session" => [ "see your progress", :project ],

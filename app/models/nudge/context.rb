@@ -1,6 +1,6 @@
 # Everything a nudge needs to know about someone right now: where they are in their local day, which bucket they're
 # in, and the values Clippy's copy fills in. Hours, streaks and who else built come from their synced streak days
-# (StreakActivity), brought up to date from Hackatime by refresh!.
+# (StreakActivity), brought up to date from Hackatime by refresh!. For a cheer, built_on is the streak day it's for.
 class Nudge::Context
   # No streak day with any building in this many days makes you lapsed.
   LAPSED_AFTER_DAYS = 2
@@ -9,13 +9,14 @@ class Nudge::Context
   # A setup nudge for the same step waits this long before saying it again.
   SETUP_EVERY = 3.days
 
-  attr_reader :user, :project, :now, :local_now
+  attr_reader :user, :project, :now, :local_now, :built_on
 
-  def initialize(user, now = Time.current)
+  def initialize(user, now = Time.current, built_on: nil)
     @user = user
     @project = user.project
     @now = now
     @local_now = now.in_time_zone(user.timezone.presence || "UTC")
+    @built_on = built_on
   end
 
   def today
@@ -43,12 +44,33 @@ class Nudge::Context
     local_now.hour >= Nudge::QUIET_FROM || local_now.hour < Nudge::QUIET_UNTIL
   end
 
+  # The next morning Clippy may speak: today's, or tomorrow's once it's late.
+  def quiet_ends_at
+    morning = local_now.change(hour: Nudge::QUIET_UNTIL, min: 0)
+    local_now < morning ? morning : morning + 1.day
+  end
+
+  # Clippy can reach them: on Slack, not stopped, and the DM has worked before.
+  def reachable?
+    user.slack_id.present? && user.slack_muted_at.nil? && user.slack_dm_failed_at.nil?
+  end
+
   # During wrong tool, not quiet hours, Clippy not stopped, under the caps, and they haven't built today already.
+  # Cheers aren't counted against the caps: they're earned, and they only go once the day's building is done.
   def may_nudge?
-    return false unless Program::DATES.cover?(today)
-    return false if quiet? || user.slack_id.blank? || user.slack_muted_at || user.slack_dm_failed_at
-    return false if sent_today.exists? || user.nudges.delivered.where(sent_at: now - 7.days..).count >= Nudge::WEEKLY_CAP
+    return false unless Program::DATES.cover?(today) && reachable?
+    return false if quiet? || sent_today.exists?
+    return false if user.nudges.delivered.where.not(kind: "cheer").where(sent_at: now - 7.days..).count >= Nudge::WEEKLY_CAP
     minutes_today < Nudge::REWARD_MINUTES
+  end
+
+  # A cheer for built_on: during wrong tool, not quiet hours, Clippy not stopped, the day's still today or
+  # yesterday with its 20 minutes still there, and no cheer for that day, or any today, yet.
+  def may_cheer?
+    return false unless built_on && Program::DATES.cover?(today) && reachable?
+    return false if quiet? || !(today - 1..today).cover?(built_on) || minutes_on(built_on) < Nudge::REWARD_MINUTES
+    cheers = user.nudges.delivered.cheers
+    !cheers.where(built_on:).or(cheers.where(sent_at: local_now.beginning_of_day..)).exists?
   end
 
   def sent_today
@@ -79,12 +101,13 @@ class Nudge::Context
 
   def hours = @hours ||= project.hours_logged
   def streak = user.current_streak
-  def minutes_today = @minutes_today ||= user.streak_activities.find_by(activity_date: user.streak_today_date)&.coded_seconds.to_i / 60
+  def minutes_today = minutes_on(user.streak_today_date)
+  def minutes_on(date) = user.streak_activities.find_by(activity_date: date)&.coded_seconds.to_i / 60
   def last_built_on = @last_built_on ||= user.streak_activities.where(coded_seconds: 1..).maximum(:activity_date)
 
-  # People on the same tool who built today.
+  # People on the same tool who built today (or on the day a cheer's for).
   def peers
-    @peers ||= StreakActivity.where(activity_date: user.streak_today_date, coded_seconds: 1..).where.not(user_id: user.id)
+    @peers ||= StreakActivity.where(activity_date: built_on || user.streak_today_date, coded_seconds: 1..).where.not(user_id: user.id)
                              .joins(user: :project).where(projects: { tool: project.tool }).count
   end
 
@@ -118,8 +141,16 @@ class Nudge::Context
         next_reward: (upcoming[:label].downcase if upcoming && streak.positive?),
         days_to_reward: (upcoming[:days] - streak if upcoming && streak.positive?),
         peers: (peers if peers >= MIN_PEERS),
-        days_idle: ((today - last_built_on).to_i if last_built_on && lapsed?)
+        days_idle: ((today - last_built_on).to_i if last_built_on && lapsed?),
+        **cheer_vars
       }.compact
+    end
+
+    # For a cheer: how long they built on the day it's for, and which day that is from where they are now ("today"
+    # or "yesterday", so a cheer held for the morning still reads right).
+    def cheer_vars
+      return {} unless built_on
+      { minutes: minutes_on(built_on), day: built_on == today ? "today" : "yesterday", next_day: built_on == today ? "tomorrow" : "today" }
     end
 
     def helpers

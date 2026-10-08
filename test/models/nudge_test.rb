@@ -110,6 +110,31 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal [ 1, 0, Nudge::OPT_OUT_PENALTY ], [ worked, didnt, opted_out ].map { |nudge| nudge.reload.reward }
   end
 
+  test "a setup nudge worked if the step it asked for got done, whether or not they built" do
+    linked = sent!("hackatime", kind: "setup", at: at_slot(8)) # Hackatime's linked in setup
+    no_repo = sent!("repo", kind: "setup", at: at_slot(9))
+    @user.project.update!(repo_later: false)
+    Hackatime.stubbed_spans = { "1001" => [ span(at_slot(9, hour: 20), 30) ] } # built, but no repo added
+
+    travel_to(at_slot(11)) { Nudge.score_due }
+
+    assert_equal [ 1, 0 ], [ linked, no_repo ].map { |nudge| nudge.reload.reward }
+  end
+
+  test "setup nudges scored on building can be rescored on their step" do
+    linked = sent!("hackatime", kind: "setup", at: at_slot(8))
+    linked.update!(reward: 0, rewarded_at: at_slot(9))
+    stopped = sent!("repo", kind: "setup", at: at_slot(8))
+    stopped.update!(reward: Nudge::OPT_OUT_PENALTY, opted_out_at: at_slot(8, hour: 20), rewarded_at: at_slot(9))
+    unscored = sent!("repo", kind: "setup", at: at_slot(10))
+
+    require "rake"
+    Rails.application.load_tasks unless Rake::Task.task_defined?("nudges:rescore_setup")
+    travel_to(at_slot(11)) { capture_io { Rake::Task["nudges:rescore_setup"].execute } }
+
+    assert_equal [ 1, Nudge::OPT_OUT_PENALTY, nil ], [ linked, stopped, unscored ].map { |nudge| nudge.reload.reward }
+  end
+
   test "scoring tells PostHog how the nudge did" do
     nudge = sent!("tiny_step", at: at_slot(8))
     Hackatime.stubbed_spans = { "1001" => [ span(at_slot(8, hour: 21), 25) ] }

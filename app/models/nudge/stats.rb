@@ -44,13 +44,13 @@ class Nudge::Stats
   end
 
   def fixed
-    grouped(nudges.where.not(kind: "bandit"), :kind, :arm).sort_by { |_, row| -row.sent }
+    grouped(nudges.where.not(kind: Nudge::LEARNED), :kind, :arm).sort_by { |_, row| -row.sent }
   end
 
   # Sends per day, bandit and not, for the last two weeks or so.
   def daily
     nudges.where(sent_at: 15.days.ago..).group(Arel.sql("DATE(sent_at)"), :kind).count
-          .each_with_object(Hash.new { |hash, day| hash[day] = Hash.new(0) }) { |((day, kind), count), days| days[day][kind == "bandit" ? "bandit" : "fixed"] += count }
+          .each_with_object(Hash.new { |hash, day| hash[day] = Hash.new(0) }) { |((day, kind), count), days| days[day][Nudge::LEARNED.include?(kind) ? "bandit" : "fixed"] += count }
           .sort.to_h
   end
 

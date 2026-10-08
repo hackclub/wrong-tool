@@ -13,6 +13,7 @@ class Admin::NudgesControllerTest < ActionDispatch::IntegrationTest
     ana.nudges.create!(kind: "bandit", bucket: "lapsed", arm: "tiny_step", holdout: true, mood: "hopeful", text: "one small task.",
                        propensity: 1.0, delivered: true, sent_at: 1.hour.ago)
     ana.nudges.create!(kind: "milestone", arm: "first_session", mood: "emotional", text: "first session logged.", delivered: true, sent_at: 2.hours.ago)
+    ana.nudges.create!(kind: "setup", arm: "repo", mood: "hopeful", text: "add your repo link.", delivered: true, sent_at: 9.hours.ago, reward: 1)
   end
 
   teardown { Rails.configuration.x.admin_slack_ids = @admins }
@@ -22,14 +23,16 @@ class Admin::NudgesControllerTest < ActionDispatch::IntegrationTest
     get admin_nudges_path
 
     assert_response :success
-    assert_select ".admin__tile", text: /Sent\s*4/
-    assert_select ".admin__tile", text: /Worked\s*50%\s*1 of 2 scored/
+    assert_select ".admin__tile", text: /Sent\s*5/
+    assert_select ".admin__tile", text: /Worked\s*67%\s*2 of 3 scored/
     assert_select "h2", "Lapsed"
     assert_select "h2", "Zero hours"
     assert_select "tr[data-leading] th", "Tiny step"
     assert_select "tr", text: /Holdout\s*1/
-    assert_select ".admin__table--recent tbody tr", 4
+    assert_select ".admin__table--recent tbody tr", 5
     assert_select ".admin__table--recent td", text: "stopped"
+    assert_select ".admin__table--recent td", text: "did it"
+    assert_select "tr", text: /Repo\s*setup\s*1\s*.*100%/
   end
 
   test "nobody else can see it" do

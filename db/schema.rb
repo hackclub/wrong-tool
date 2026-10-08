@@ -10,7 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -75,7 +78,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.datetime "rewarded_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "built_on"
     t.index ["token"], name: "index_nudges_on_token", unique: true
+    t.index ["user_id", "built_on"], name: "index_nudges_on_user_id_and_built_on"
     t.index ["user_id", "sent_at"], name: "index_nudges_on_user_id_and_sent_at"
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
@@ -121,7 +126,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.string "key", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_rewards_on_desktop", unique: true, where: "key = 'desktop'"
+    t.index ["key"], name: "index_rewards_on_desktop", unique: true, where: "((key)::text = 'desktop'::text)"
     t.index ["pair_id", "key"], name: "index_rewards_on_pair_id_and_key", unique: true
     t.index ["pair_id"], name: "index_rewards_on_pair_id"
     t.index ["user_id", "key"], name: "index_rewards_on_user_id_and_key", unique: true
@@ -143,20 +148,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|
-    t.binary "channel", limit: 1024, null: false
-    t.binary "payload", limit: 536870912, null: false
+    t.binary "channel", null: false
+    t.binary "payload", null: false
     t.datetime "created_at", null: false
-    t.integer "channel_hash", limit: 8, null: false
+    t.bigint "channel_hash", null: false
     t.index ["channel_hash"], name: "index_solid_cable_messages_on_channel_hash"
     t.index ["created_at"], name: "index_solid_cable_messages_on_created_at"
   end
 
   create_table "solid_cache_entries", force: :cascade do |t|
-    t.binary "key", limit: 1024, null: false
-    t.binary "value", limit: 536870912, null: false
+    t.binary "key", null: false
+    t.binary "value", null: false
     t.datetime "created_at", null: false
-    t.integer "key_hash", limit: 8, null: false
-    t.integer "byte_size", limit: 4, null: false
+    t.bigint "key_hash", null: false
+    t.integer "byte_size", null: false
     t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
     t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
     t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true

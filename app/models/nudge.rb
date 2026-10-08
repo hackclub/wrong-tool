@@ -3,14 +3,18 @@
 #
 # Every 15 minutes (NudgeDeliveryJob), anyone whose local time just reached the slot for when they said they'd build
 # gets at most one: a fixed one if anything applies (Nudge::Fixed), otherwise whatever the bandit picks
-# (Nudge::Bandit). Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built.
+# (Nudge::Bandit). And whenever a sync shows someone's just built their 20 minutes for the day, Clippy cheers
+# (Nudge::Cheer). Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built, or for
+# a setup nudge, whether they did the step it asked for.
 # What it says is Nudge::Copy, the Slack message is Nudge::Message, and its links are NudgeLinksController.
 class Nudge < ApplicationRecord
-  # Only bandit nudges are learned from. The rest always send when they apply, bar test ones (bin/rails nudges:test),
-  # which are never scored or counted.
-  KINDS = %w[bandit setup milestone program streak_saver test].freeze
+  # Bandit nudges and cheers are learned from. The rest always send when they apply, bar test ones
+  # (bin/rails nudges:test), which are never scored or counted.
+  KINDS = %w[bandit cheer setup milestone program streak_saver test].freeze
+  LEARNED = %w[bandit cheer].freeze
 
-  # Building this long after a nudge counts as it working. Same as what keeps a streak going.
+  # Building this long after a nudge counts as it working. Same as what keeps a streak going. A cheer's window is
+  # the whole of the next streak day instead (see #window).
   REWARD_MINUTES = 20
   REWARD_WINDOW = 6.hours
   # Stopping Clippy's messages from a nudge counts as this many failures.
@@ -36,7 +40,8 @@ class Nudge < ApplicationRecord
 
   validates :kind, inclusion: { in: KINDS }
 
-  scope :bandit, -> { where(kind: "bandit") }
+  scope :bandit, -> { where(kind: LEARNED) }
+  scope :cheers, -> { where(kind: "cheer") }
   scope :delivered, -> { where(delivered: true) }
   scope :real, -> { where.not(kind: "test") }
   scope :scored, -> { where.not(reward: nil) }
@@ -68,28 +73,54 @@ class Nudge < ApplicationRecord
 
   def self.score_due(now = Time.current)
     unscored.real.where(sent_at: ..now - REWARD_WINDOW).find_each do |nudge|
+      next if nudge.window_closes_at > now
       nudge.score!
     rescue Hackatime::Unavailable
       # Tried again next hour.
     end
   end
 
-  def window_closes_at
-    sent_at + REWARD_WINDOW
+  def cheer? = kind == "cheer"
+  def setup? = kind == "setup"
+
+  # When building counts as this nudge working: the six hours after it, or for a cheer, the whole of the next streak
+  # day (2am to 2am in their timezone), since a cheer's job is getting them to come back.
+  def window
+    return sent_at..sent_at + REWARD_WINDOW unless cheer?
+
+    next_day = built_on + 1
+    from = ActiveSupport::TimeZone[user.timezone.presence || "UTC"].local(next_day.year, next_day.month, next_day.day, 2)
+    from..from + 1.day
   end
 
-  # 1 if they built REWARD_MINUTES in the window, 0 if not, OPT_OUT_PENALTY if this nudge made them stop Clippy's
-  # messages.
+  def window_closes_at
+    window.end
+  end
+
+  # 1 if they built REWARD_MINUTES in the window (or, for a setup nudge, did the step it asked for), 0 if not,
+  # OPT_OUT_PENALTY if this nudge made them stop Clippy's messages.
   def score!
     seconds = opted_out_at ? 0 : built_seconds
     reward =
       if opted_out_at then OPT_OUT_PENALTY
+      elsif setup? then step_done? ? 1 : 0
       elsif seconds >= REWARD_MINUTES * 60 then 1
       else 0
       end
     update!(reward:, rewarded_at: Time.current)
     capture("nudge_scored", reward:, worked: reward == 1, opted_out: opted_out_at.present?,
-                            built_minutes: seconds / 60, clicked: clicked_at.present?)
+                            built_minutes: seconds / 60, clicked: clicked_at.present?, step_done: setup? ? step_done? : nil)
+  end
+
+  # Whether the step a setup nudge asked for is done now. Nothing records when it was done, so a setup nudge is
+  # scored on the state when its window closes: a step done after that goes to the next one for it, if any.
+  def step_done?
+    project = user.project
+    case arm
+    when "hackatime" then user.hackatime_linked?
+    when "repo" then project.present? && (project.repo_url.present? || project.repo_later?)
+    else false
+    end
   end
 
   # Time on their linked Hackatime projects in the window. Nothing linked, or Hackatime not linked any more, is none.
@@ -97,7 +128,7 @@ class Nudge < ApplicationRecord
     project = user.project
     return 0 unless project&.tracking?
 
-    Hackatime.seconds_between(user, project.hackatime_projects, sent_at..window_closes_at)
+    Hackatime.seconds_between(user, project.hackatime_projects, window)
   rescue Hackatime::NotLinked, Hackatime::Expired
     0
   end
@@ -131,7 +162,7 @@ class Nudge < ApplicationRecord
 
   # What PostHog gets with this nudge's events.
   def analytics_properties
-    { nudge_id: id, kind:, arm:, variant:, mood:, bucket:, holdout:, propensity: }
+    { nudge_id: id, kind:, arm:, variant:, mood:, bucket:, holdout:, propensity:, built_on: }
   end
 
   def capture(event, properties = {})

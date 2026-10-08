@@ -1,10 +1,10 @@
 <% content_for :title, "Bandit · Wrong Tool admin" %>
 <% pct = ->(rate) { rate.nil? ? "—" : number_to_percentage(rate * 100, precision: 0) } %>
-<% result = { 1 => "built", 0 => "didn't", Nudge::OPT_OUT_PENALTY => "stopped" } %>
+<% result = ->(nudge) { { 1 => nudge.setup? ? "did it" : "built", 0 => "didn't", Nudge::OPT_OUT_PENALTY => "stopped" }.fetch(nudge.reward, nudge.reward) } %>
 <% totals = @stats.totals %>
 
 <%# How Clippy's nudges are doing and what the bandit's learned (Nudge::Stats), as a sheet. "Worked" means they
-    built Nudge::REWARD_MINUTES within Nudge::REWARD_WINDOW of it. %>
+    built Nudge::REWARD_MINUTES within Nudge::REWARD_WINDOW of it, or did the step a setup nudge asked for. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
   <%= render "onboarding/formula_bar", name_box: "A1", formula: "=BANDIT(clippy)  →  #{pct.(totals.work_rate)}" %>
@@ -15,6 +15,8 @@
         <h1 class="project__title">Clippy's bandit</h1>
         <p class="leaderboard__note">
           A nudge worked if they built <%= Nudge::REWARD_MINUTES %> minutes in the <%= Nudge::REWARD_WINDOW.inspect %> after it.
+          A cheer (sent once they've built their <%= Nudge::REWARD_MINUTES %> minutes) worked if they built again the next day.
+          A setup nudge worked if the step it asked for (linking Hackatime, adding a repo) was done by then.
           Stopping Clippy's messages counts as <%= Nudge::OPT_OUT_PENALTY.abs %> failures.
         </p>
       </header>
@@ -120,6 +122,7 @@
               <% end %>
             </tbody>
           </table>
+          <p class="leaderboard__note">Setup nudges worked if the step got done: Hackatime linked, or a repo added (or put off).</p>
         </section>
       </div>
 
@@ -167,7 +170,7 @@
                 <td class="admin__message"><%= nudge.text %><% if nudge.mood_text %> <small class="admin__muted"><%= nudge.mood_text %></small><% end %></td>
                 <td class="leaderboard__number"><%= nudge.propensity && pct.(nudge.propensity) %></td>
                 <td class="leaderboard__number"><%= nudge.clicks %></td>
-                <td><%= nudge.reward.nil? ? "waiting" : result.fetch(nudge.reward, nudge.reward) %></td>
+                <td><%= nudge.reward.nil? ? "waiting" : result.(nudge) %></td>
               </tr>
             <% end %>
           </tbody>

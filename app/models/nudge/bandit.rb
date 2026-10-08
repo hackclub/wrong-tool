@@ -1,18 +1,21 @@
 # Thompson sampling over how Clippy frames a nudge, learned separately per bucket (like "behind"). Each arm is a
 # Beta(successes, failures) guess at how often it gets someone building; we draw from each guess and send the
-# highest draw, so arms we're unsure about still get tried.
+# highest draw, so arms we're unsure about still get tried. Cheers (Nudge::Cheer) are their own bucket, learned on
+# whether they build again the next day.
 class Nudge::Bandit
   # Which arms make sense in each state. A streak message to someone with no streak is a wasted send.
   ARMS = {
     "zero_hours" => %w[pledge tiny_step social dramatic],
     "on_pace" => %w[streak progress pledge],
     "behind" => %w[progress tiny_step pledge social],
-    "lapsed" => %w[tiny_step dramatic social pledge]
+    "lapsed" => %w[tiny_step dramatic social pledge],
+    "cheer" => %w[cheer_done cheer_progress cheer_streak cheer_tomorrow cheer_social]
   }.freeze
 
   # What the holdout gets instead: our best guess, never learned. Comparing against them is how we know the bandit
   # helps at all.
-  HOLDOUT_ARMS = { "zero_hours" => "pledge", "on_pace" => "pledge", "behind" => "progress", "lapsed" => "tiny_step" }.freeze
+  HOLDOUT_ARMS = { "zero_hours" => "pledge", "on_pace" => "pledge", "behind" => "progress", "lapsed" => "tiny_step",
+                   "cheer" => "cheer_progress" }.freeze
   HOLDOUT_SHARE = 0.1
 
   # The first two days pick uniformly, so every arm has data before the bandit starts leaning.
@@ -22,11 +25,11 @@ class Nudge::Bandit
   # Thompson sampling has no closed-form propensity, so we estimate it by drawing this many times.
   DRAWS = 1_000
 
-  def self.nudge_for(context)
-    bandit = new(context.bucket)
+  def self.nudge_for(context, kind: "bandit", bucket: context.bucket)
+    bandit = new(bucket)
     arm, propensity, holdout = bandit.pick(context)
     return unless arm
-    context.user.nudges.new(kind: "bandit", bucket: context.bucket, arm:, propensity:, holdout:)
+    context.user.nudges.new(kind:, bucket:, arm:, propensity:, holdout:)
   end
 
   # Same people every time, from their id.
@@ -62,8 +65,8 @@ class Nudge::Bandit
     vars = context.vars
     ARMS.fetch(state).select do |arm|
       case arm
-      when "streak" then vars.key?(:streak)
-      when "social" then Nudge::Copy.renderable?(arm, vars)
+      when "streak", "cheer_streak" then vars.key?(:streak)
+      when "social", "cheer_social" then Nudge::Copy.renderable?(arm, vars)
       when "dramatic" then context.dramatic_left?
       else true
       end

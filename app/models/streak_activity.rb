@@ -18,7 +18,8 @@ class StreakActivity < ApplicationRecord
 
   class << self
     # Rewrites every day since the day before the last sync (or since Hackatime time started counting) from
-    # Hackatime's heartbeat spans, then the streak. Nothing happens without Hackatime linked and projects picked.
+    # Hackatime's heartbeat spans, then the streak. A day (today or yesterday) that's just reached its 20 minutes
+    # gets a cheer from Clippy (Nudge::Cheer). Nothing happens without Hackatime linked and projects picked.
     def sync_for_user!(user)
       project = user.project
       return unless project&.tracking?
@@ -37,7 +38,9 @@ class StreakActivity < ApplicationRecord
         seconds = daily_seconds.fetch(date, 0)
         record = find_or_initialize_by(user_id: user.id, activity_date: date)
         next if record.persisted? && record.coded_seconds == seconds
+        completed_before = record.persisted? && record.completed?
         record.update!(coded_seconds: seconds)
+        Nudge::Cheer.queue(user, date) if record.completed? && !completed_before && date >= today - 1
       end
 
       user.update_column(:streak_synced_at, Time.current)
