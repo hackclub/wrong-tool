@@ -82,9 +82,14 @@ module ProjectsHelper
     { projects: [], problem: "Couldn't reach Hackatime just now. Try refreshing." }
   end
 
-  # "Link project", "Link 2 projects", or "Pick a project" with none ticked.
+  # "Link project", "Link 2 projects", or what to do first with none ticked.
   def project_hackatime_link_label(count)
-    count.zero? ? "Pick a project" : "Link #{count == 1 ? "project" : "#{count} projects"}"
+    count.zero? ? "Tick a project above" : "Link #{count == 1 ? "project" : "#{count} projects"}"
+  end
+
+  # Hackatime files time with no project name under "Other". When that's all there is, it's not this build yet.
+  def project_hackatime_only_other?(choices)
+    choices.map { |choice| choice[:name] } == [ "Other" ]
   end
 
   # The setup steps as the page shows them. The one you're on (the step you picked, if you can still do it, or the
