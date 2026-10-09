@@ -1,0 +1,26 @@
+# Blazer (https://github.com/ankane/blazer): SQL against wrong tool's database, for admins (mounted in
+# config/routes.rb). It can read every table, Hackatime tokens included, so production should point
+# BLAZER_DATABASE_URL at a read-only user; without it, Blazer uses the app's own connection.
+
+data_sources:
+  main:
+    url: <%= ENV["BLAZER_DATABASE_URL"] %>
+    # seconds
+    timeout: 15
+
+    smart_columns:
+      user_id: "SELECT id, name FROM users WHERE id IN {value}"
+
+# who ran what
+audit: true
+
+time_zone: "UTC"
+
+user_class: User
+user_method: current_user
+user_name: name
+
+check_schedules:
+  - "1 day"
+  - "1 hour"
+  - "5 minutes"

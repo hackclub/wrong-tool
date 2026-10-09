@@ -86,3 +86,5 @@ gem "dotenv-rails", "~> 3.2"
 
 gem "slack-ruby-client", "~> 3.2"
 gem "slocks", "~> 0.1.2"
+
+gem "blazer", "~> 3.5"

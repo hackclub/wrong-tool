@@ -41,6 +41,12 @@ Rails.application.routes.draw do
     resource :impersonation, only: :destroy
   end
 
+  # SQL against the database (config/blazer.yml). Anyone who isn't an admin, or is viewing as someone, gets a not
+  # found, as with the admin pages.
+  constraints ->(request) { User.find_by(id: request.session[:user_id])&.admin? } do
+    mount Blazer::Engine, at: "admin/blazer"
+  end
+
   # Hack Club Auth. Signing in is a POST to /auth/hackclub (OmniAuth's middleware), which comes back here.
   # Linking Hackatime comes back here; it doesn't sign you in.
   get "auth/hackatime/callback" => "hackatime_links#create", as: :hackatime_link_callback
