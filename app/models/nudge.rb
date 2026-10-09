@@ -4,8 +4,10 @@
 # Every 15 minutes (NudgeDeliveryJob), anyone whose local time just reached the slot for when they said they'd build
 # gets at most one: a fixed one if anything applies (Nudge::Fixed), otherwise whatever the bandit picks
 # (Nudge::Bandit). And whenever a sync shows someone's just built their 20 minutes for the day, Clippy cheers
-# (Nudge::Cheer). Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built, or for
-# a setup nudge, whether they did the step it asked for.
+# (Nudge::Cheer). Nothing goes within MESSAGE_GAP of anything else Clippy DMed them (User#slack_dmed_at: nudges,
+# cheers, rewards, a project linking itself), so his messages never land together: a nudge's slot passes, a cheer
+# waits. Hourly (NudgeScoringJob), each one whose window has closed is scored on whether they built, or for a setup
+# nudge, whether they did the step it asked for.
 # What it says is Nudge::Copy, the Slack message is Nudge::Message, and its links are NudgeLinksController.
 class Nudge < ApplicationRecord
   # Bandit nudges and cheers are learned from. The rest always send when they apply, bar test ones
@@ -22,6 +24,8 @@ class Nudge < ApplicationRecord
 
   DAILY_CAP = 1
   WEEKLY_CAP = 5
+  # The least time between any two of Clippy's DMs to someone.
+  MESSAGE_GAP = 1.hour
   # Dramatic Clippy is a bit; it stops being funny the third time.
   DRAMATIC_CAP = 2
 
@@ -151,7 +155,9 @@ class Nudge < ApplicationRecord
     message = SlackBot.dm(user.slack_id, text:, blocks: Nudge::Message.new(self).blocks)
     user.update!(slack_dm_failed_at: Time.current) if message.nil? && Rails.configuration.x.slack_configured
     update!(delivered: message.present?, slack_channel: message&.channel, slack_ts: message&.ts, sent_at: Time.current)
-    capture("nudge_sent") if delivered
+    return unless delivered
+    user.slack_dmed!(sent_at)
+    capture("nudge_sent")
   end
 
   def link_url = "#{Rails.configuration.x.app_url}/n/#{token}"

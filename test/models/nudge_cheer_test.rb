@@ -46,6 +46,65 @@ class NudgeCheerTest < ActiveSupport::TestCase
     assert_no_enqueued_jobs(only: NudgeCheerJob) { built!(8, minutes: 50) }
   end
 
+  test "a first sync that finds yesterday and today both done cheers once, for today" do
+    assert_enqueued_with(job: NudgeCheerJob, args: [ @user.id, Date.new(2026, 10, 8) ]) { built!(7, 8) }
+    assert_equal 1, enqueued_jobs.count { |job| job[:job] == NudgeCheerJob }
+  end
+
+  test "a cheer right after the slot nudge waits the hour" do
+    Hackatime.stubbed_spans = {}
+    slot = at(8, hour: 19, min: 5)
+    assert travel_to(slot) { Nudge.deliver_to(@user.reload, slot) }.delivered
+
+    built!(8, now: at(8, hour: 19, min: 40))
+    assert_enqueued_with(job: NudgeCheerJob, args: [ @user.id, Date.new(2026, 10, 8) ], at: slot + 1.hour) do
+      cheer(Date.new(2026, 10, 8), at(8, hour: 19, min: 40))
+    end
+    assert_equal 1, @sent.size
+
+    assert cheer(Date.new(2026, 10, 8), slot + 1.hour).delivered
+    assert_equal 2, @sent.size
+  end
+
+  test "a reward's DM goes first, and the cheer an hour on" do
+    built!(6, 7, 8)
+    assert @user.rewards.exists?(key: "gold_star")
+    assert_equal at, @user.reload.slack_dmed_at
+
+    assert_enqueued_with(job: NudgeCheerJob, args: [ @user.id, Date.new(2026, 10, 8) ], at: at + 1.hour) { cheer }
+    assert_empty @sent
+    assert cheer(Date.new(2026, 10, 8), at + 1.hour).delivered
+  end
+
+  test "a project linking itself at your slot is the day's message: no nudge, one cheer, an hour on" do
+    @user.project.update!(hackatime_projects: [], hackatime_baseline: [ "dotfiles" ])
+    Hackatime.stubbed_spans = { "1001" => [ span(at(7, hour: 17), 51), span(at(8, hour: 17), 56) ] }
+    slot = at(8, hour: 19, min: 5)
+
+    nudge = nil
+    assert_enqueued_with(job: NudgeCheerJob, args: [ @user.id, Date.new(2026, 10, 8) ]) do
+      nudge = travel_to(slot) { Nudge.deliver_to(@user.reload, slot) }
+    end
+    assert_nil nudge
+    assert_empty @sent
+    assert_equal [ "rhythm-game" ], @user.project.reload.hackatime_projects
+    assert_equal 1, enqueued_jobs.count { |job| job[:job] == NudgeCheerJob }, "one cheer, not one for each day"
+    assert_equal 1, enqueued_jobs.count { |job| job[:job] == SlackMessageJob }
+
+    assert_enqueued_with(job: NudgeCheerJob, args: [ @user.id, Date.new(2026, 10, 8) ], at: slot + 1.hour) { cheer(Date.new(2026, 10, 8), slot) }
+    assert_empty @sent
+
+    assert cheer(Date.new(2026, 10, 8), slot + 1.hour).delivered
+    cheer(Date.new(2026, 10, 7), slot + 2.hours)
+    assert_equal 1, @sent.size, "yesterday's cheer never goes after today's"
+  end
+
+  test "a cheer that's stopped being owed isn't held around" do
+    built!(8)
+    cheer
+    assert_no_enqueued_jobs(only: NudgeCheerJob) { cheer(Date.new(2026, 10, 8), at(8, hour: 20, min: 30)) }
+  end
+
   test "a day under 20 minutes gets no cheer, and nor does one from before yesterday" do
     assert_no_enqueued_jobs(only: NudgeCheerJob) { built!(8, minutes: 15) }
     assert_no_enqueued_jobs(only: NudgeCheerJob) { built!(6, now: at(8)) }

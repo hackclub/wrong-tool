@@ -25,13 +25,27 @@ class Nudge::Context
     local_now.to_date
   end
 
-  # Their streak days, from Hackatime, as of now. If Hackatime can't be reached, what we last saw will do.
+  # Their streak days, from Hackatime, as of now. With no project picked yet, a new Hackatime project with time on it
+  # is linked for them first (Project#auto_link_hackatime_project, which DMs them about it), so its time is in the
+  # sync and everything after goes on what they've really built. If Hackatime can't be reached, what we last saw
+  # will do.
   def refresh!
+    if project.hackatime_linked? && project.hackatime_projects.none? && available_hackatime_projects
+      project.auto_link_hackatime_project(available_hackatime_projects)
+    end
     StreakActivity.sync_for_user!(user)
   rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
     nil
   ensure
     user.reload
+  end
+
+  # The Hackatime projects they could pick, or nil while Hackatime can't say.
+  def available_hackatime_projects
+    return @available_hackatime_projects if defined?(@available_hackatime_projects)
+    @available_hackatime_projects = Hackatime.projects(user)
+  rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
+    @available_hackatime_projects = nil
   end
 
   # Within the 15 minutes after their slot, on a day they build.
@@ -57,22 +71,41 @@ class Nudge::Context
     user.slack_id.present? && user.slack_muted_at.nil? && user.slack_dm_failed_at.nil?
   end
 
-  # During wrong tool, not quiet hours, Clippy not stopped, under the caps, and they haven't built today already.
-  # Cheers aren't counted against the caps: they're earned, and they only go once the day's building is done.
+  # Clippy DMed them something (anything: a nudge, a cheer, a reward, their project linking itself) within the last
+  # MESSAGE_GAP, so nothing else goes yet.
+  def just_messaged?
+    user.slack_dmed_at.present? && user.slack_dmed_at > now - Nudge::MESSAGE_GAP
+  end
+
+  # During wrong tool, not quiet hours, Clippy not stopped and not just heard from, under the caps, and they haven't
+  # built today already. Cheers aren't counted against the caps: they're earned, and they only go once the day's
+  # building is done.
   def may_nudge?
     return false unless Program::DATES.cover?(today) && reachable?
-    return false if quiet? || sent_today.exists?
+    return false if quiet? || just_messaged? || sent_today.exists?
     return false if user.nudges.delivered.where.not(kind: "cheer").where(sent_at: now - 7.days..).count >= Nudge::WEEKLY_CAP
     minutes_today < Nudge::REWARD_MINUTES
   end
 
-  # A cheer for built_on: during wrong tool, not quiet hours, Clippy not stopped, the day's still today or
-  # yesterday with its 20 minutes still there, and no cheer for that day, or any today, yet.
-  def may_cheer?
+  # A cheer for built_on is still owed: during wrong tool, Clippy not stopped, the day's still today or yesterday
+  # with its 20 minutes still there, and no cheer for that day, or any today, yet.
+  def cheer_due?
     return false unless built_on && Program::DATES.cover?(today) && reachable?
-    return false if quiet? || !(today - 1..today).cover?(built_on) || minutes_on(built_on) < Nudge::REWARD_MINUTES
+    return false if !(today - 1..today).cover?(built_on) || minutes_on(built_on) < Nudge::REWARD_MINUTES
     cheers = user.nudges.delivered.cheers
     !cheers.where(built_on:).or(cheers.where(sent_at: local_now.beginning_of_day..)).exists?
+  end
+
+  # Owed, and this is a moment Clippy can speak: not quiet hours, nothing else just said.
+  def may_cheer?
+    cheer_due? && cheer_waits_until.nil?
+  end
+
+  # When a cheer owed now can go instead, if not now: once quiet hours end, or MESSAGE_GAP after whatever Clippy
+  # last DMed them. Nil when now's fine.
+  def cheer_waits_until
+    return quiet_ends_at if quiet?
+    user.slack_dmed_at + Nudge::MESSAGE_GAP if just_messaged?
   end
 
   def sent_today

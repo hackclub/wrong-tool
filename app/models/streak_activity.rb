@@ -19,7 +19,9 @@ class StreakActivity < ApplicationRecord
   class << self
     # Rewrites every day since the day before the last sync (or since Hackatime time started counting) from
     # Hackatime's heartbeat spans, then the streak. A day (today or yesterday) that's just reached its 20 minutes
-    # gets a cheer from Clippy (Nudge::Cheer). Nothing happens without Hackatime linked and projects picked.
+    # gets a cheer from Clippy (Nudge::Cheer): one cheer, for the latest such day, when a first sync finds both.
+    # It's queued after the streak's rewards, so a reward's DM goes first and the cheer waits its hour. Nothing
+    # happens without Hackatime linked and projects picked.
     def sync_for_user!(user)
       project = user.project
       return unless project&.tracking?
@@ -34,17 +36,19 @@ class StreakActivity < ApplicationRecord
       spans = Hackatime.heartbeat_spans(user, project.hackatime_projects, start_date: start_date - 1, end_date: today + 2)
       daily_seconds = bucket_spans_by_streak_day(spans, user.timezone)
 
+      just_completed = []
       (start_date..today).each do |date|
         seconds = daily_seconds.fetch(date, 0)
         record = find_or_initialize_by(user_id: user.id, activity_date: date)
         next if record.persisted? && record.coded_seconds == seconds
         completed_before = record.persisted? && record.completed?
         record.update!(coded_seconds: seconds)
-        Nudge::Cheer.queue(user, date) if record.completed? && !completed_before && date >= today - 1
+        just_completed << date if record.completed? && !completed_before && date >= today - 1
       end
 
       user.update_column(:streak_synced_at, Time.current)
       user.recalculate_streak!
+      Nudge::Cheer.queue(user, just_completed.max) if just_completed.any?
     end
 
     def streak_date_for(time, timezone)

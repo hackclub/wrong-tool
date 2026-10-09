@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -359,6 +359,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_130000) do
     t.datetime "slack_muted_at"
     t.datetime "slack_dm_failed_at"
     t.string "slack_display_name"
+    t.datetime "slack_dmed_at"
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end

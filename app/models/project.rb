@@ -275,9 +275,11 @@ class Project < ApplicationRecord
       user.refresh_streak!
     end
 
-    # A DM from Clippy's bot, if they're on Slack and haven't stopped his messages.
+    # A DM from Clippy's bot, if they're on Slack and haven't stopped his messages. Noted as his latest DM as it's
+    # queued, so a nudge or cheer in the same minute holds off.
     def dm_about_auto_link(hackatime_project)
       return if user.slack_id.blank? || user.slack_muted_at.present?
+      user.slack_dmed!
       SlackMessageJob.perform_later(user.slack_id, format(AUTO_LINKED_DM, hackatime_project:, title:),
                                     link: [ "Open wrong tool", "#{Rails.configuration.x.app_url}/project" ])
     end

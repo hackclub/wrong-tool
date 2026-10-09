@@ -33,8 +33,8 @@ module Nudge::Fixed
 
   # One step at a time, in the order the project page lists them, and not every day. After linking Hackatime comes
   # getting time onto it: with nothing there since wrong tool started, Clippy says how (Lapse, or the editor plugin
-  # for code); with time there and no project picked, he asks you to pick one, unless there's one new project, which
-  # is linked for you instead (Project#auto_link_hackatime_project, the same as opening your project page would).
+  # for code); with time there and no project picked, he asks you to pick one. (A new project with time on it was
+  # linked for you before any of this, by Nudge::Context#refresh!, and that DM is the day's message.)
   def self.setup_nudge(context)
     project = context.project
     step =
@@ -48,17 +48,14 @@ module Nudge::Fixed
   end
 
   # Picking your Hackatime project, or getting time onto Hackatime first (lapse or plugin, by tool): whichever's
-  # next, or nothing once a project's picked, one got linked for you just now, or Hackatime can't be reached today.
+  # next, or nothing once a project's picked or while Hackatime can't be reached.
   def self.hackatime_project_step(context)
     project = context.project
     return if project.hackatime_projects.any?
 
-    available = Hackatime.projects(context.user)
-    return if project.auto_link_hackatime_project(available)
+    available = context.available_hackatime_projects or return
     return "hackatime_project" if available.any? { |each| each.seconds.positive? }
     project.lapse_tool? ? "lapse" : "plugin"
-  rescue Hackatime::NotLinked, Hackatime::Expired, Hackatime::Unavailable
-    nil
   end
 
   def self.streak_saver(context)

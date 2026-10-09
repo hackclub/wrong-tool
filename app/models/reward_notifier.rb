@@ -30,12 +30,15 @@ module RewardNotifier
 
   def self.posted?(key) = POSTS.key?(key)
 
+  # Each DM is noted as Clippy's latest as it's queued (User#slack_dmed!), so a cheer from the same sync waits for
+  # it. One held for a slot is noted when it goes (SlackMessageJob).
   def self.earned(reward)
     projects = reward.users.map(&:project)
     messages = reward.announce_at ? SlackMessageJob.set(wait_until: reward.announce_at) : SlackMessageJob
     projects.each do |project|
       next if project.user.slack_id.blank?
       vars = vars_for(project, (projects - [ project ]).first)
+      project.user.slack_dmed! unless reward.announce_at
       messages.perform_later(project.user.slack_id, format(DMS.fetch(reward.key), vars), link: [ "Open wrong tool", project_url ])
     end
 

@@ -73,16 +73,29 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal "bandit", deliver(at_slot(10)).kind, "the project step waits a few days before saying it again"
   end
 
-  test "a new hackatime project gets linked for you instead of asked about" do
+  test "a new hackatime project gets linked for you instead of asked about, and that DM is the day's message" do
     sent!("first_session", kind: "milestone")
     @user.project.update!(hackatime_projects: [], hackatime_baseline: [ "dotfiles" ])
 
     nudge = deliver(at_slot(9))
 
     assert_equal [ "rhythm-game" ], @user.project.reload.hackatime_projects
-    assert_not_equal "hackatime_project", nudge&.arm
+    assert_nil nudge
+    assert_empty @sent
     dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ORPHEUS" }
     assert_match(/linked to \*A rhythm game in Spreadsheet\* now/, dm[:args].second)
+    assert_equal 1.5, @user.project.hours_logged, "its time was synced before anything else was decided"
+    assert_equal at_slot(9), @user.reload.slack_dmed_at
+  end
+
+  test "nothing within the hour of anything else Clippy said" do
+    @user.update!(slack_dmed_at: at_slot - 30.minutes)
+    assert_nil deliver
+    assert_empty @sent
+
+    @user.update!(slack_dmed_at: at_slot - 2.hours)
+    assert deliver.delivered
+    assert_equal at_slot, @user.reload.slack_dmed_at
   end
 
   test "nothing on hackatime yet, and Clippy says how to get time there: lapse, or the plugin for code" do
@@ -98,12 +111,14 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal "bandit", deliver(at_slot(10)).kind, "said once, it waits a few days before saying it again"
 
     @user.nudges.delete_all
+    @user.update!(slack_dmed_at: nil)
     @user.project.update!(tool: "ssh", tool_name: "Bash")
     nudge = deliver(at_slot(9))
     assert_equal "plugin", nudge.arm
     assert_equal "https://hackatime.hackclub.com/", nudge.destination_url
 
     @user.nudges.delete_all
+    @user.update!(slack_dmed_at: nil)
     Hackatime.stubbed_projects = before.merge("1001" => [])
     assert_equal "plugin", deliver(at_slot(9)).arm, "the hackatime project step itself is never asked for with nothing to pick"
   ensure

@@ -63,6 +63,12 @@ class User < ApplicationRecord
     end
   end
 
+  # Clippy DMed you just now (or is about to: a queued one notes it as it's queued, so a cheer queued the same moment
+  # waits for it). Everything he sends keeps this, so his messages are spaced out (Nudge::MESSAGE_GAP).
+  def slack_dmed!(at = Time.current)
+    update_column(:slack_dmed_at, at) if slack_dmed_at.nil? || at > slack_dmed_at
+  end
+
   def admin?
     Rails.env.development? || listed_admin?
   end
