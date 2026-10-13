@@ -54,8 +54,7 @@ module Hackatime
     raise NotLinked unless user.hackatime_linked?
     return stubbed_spans.fetch(user.hackatime_uid, []) if stubbed_spans
 
-    path = "/api/v1/users/my/heartbeats/spans?#{{ start_date: start_date.iso8601, end_date: end_date.iso8601,
-                                                  filter_by_project: project_names.join(",") }.to_query}"
+    path = spans_path(project_names, start_date:, end_date:)
     response = get(path, bearer: api_key(user))
     if response.is_a?(Net::HTTPUnauthorized) # a stale API key: get a fresh one and try once more
       Rails.cache.delete([ "hackatime/api_key", user.hackatime_uid ])
@@ -89,6 +88,12 @@ module Hackatime
   # then aren't listed).
   def self.stats_path
     "/api/v1/users/my/stats?#{{ features: "projects", start_date: Program::HACKATIME_START.iso8601 }.to_query}"
+  end
+
+  # Spans on these projects between two dates. Each project goes as its own `project[]`, which Hackatime matches
+  # whole: its `filter_by_project` splits on commas, so a project called "Wrong 26, Snake, GS" would match nothing.
+  def self.spans_path(project_names, start_date:, end_date:)
+    "/api/v1/users/my/heartbeats/spans?#{{ start_date: start_date.iso8601, end_date: end_date.iso8601, project: project_names }.to_query}"
   end
 
   def self.stats(user)
