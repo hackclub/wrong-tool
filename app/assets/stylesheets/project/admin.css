@@ -280,6 +280,31 @@
 
   .admin__actions {
     white-space: nowrap;
+
+    form {
+      display: inline-block;
+      margin-inline-end: 6px;
+    }
+  }
+}
+
+/* The admin pages' nav, above every one of them. */
+@layer sections {
+  .admin__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-block-end: 12px;
+    font: 13px var(--font-cell);
+
+    a {
+      color: var(--blue-700);
+
+      &[aria-current] {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+    }
   }
 }
 
