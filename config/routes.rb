@@ -35,6 +35,7 @@ Rails.application.routes.draw do
     resources :nudges, only: :index
     resources :metrics, only: :index
     resources :ships, only: %i[index show update]
+    resources :projects, only: %i[index show]
     resources :users, only: :index do
       resource :impersonation, only: :create
     end

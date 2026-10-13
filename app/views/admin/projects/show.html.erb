@@ -1,0 +1,148 @@
+<% content_for :title, "#{@project.title} · Projects · Wrong Tool admin" %>
+<% user = @project.user %>
+<% ships = @project.ships.sort_by(&:created_at).reverse %>
+
+<%# One project in full: who, where they've got to, the pledge as they made it, what Hackatime's linked to, each day
+    they've built, their buddy, their ships and their screenshot. Real names and emails are here, so nothing on this
+    page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=PROJECT(#{project_file_name(@project)})  →  #{project_hours_label(@project)}" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <p class="leaderboard__note"><%= link_to "← All projects", admin_projects_path %></p>
+        <h1 class="project__title"><%= @project.title %></h1>
+        <p class="leaderboard__note">
+          By <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %><%= user.name.presence || user.public_name %>
+          (<%= user.email %><% if user.slack_display_name.present? %>, <%= user.slack_display_name %> on Slack<% end %>),
+          signed <%= project_date(@project.signed_on) %>, in <%= user.timezone.presence || "UTC" %>.
+          <% if user.streak_synced_at %>Hours synced <%= time_ago_in_words(user.streak_synced_at) %> ago.<% else %>Hours never synced.<% end %>
+        </p>
+        <% if user.impersonable_by?(current_user) && !impersonating? %>
+          <div class="admin__actions">
+            <%= button_to "View as #{user.first_name.presence || "them"}", admin_user_impersonation_path(user), method: :post, class: "admin__button",
+                  form: { data: { turbo: false } } %>
+          </div>
+        <% end %>
+      </header>
+
+      <section class="admin__tiles" aria-label="Where they've got to">
+        <div class="admin__tile"><span>Hours</span><strong><%= project_hours(@project.hours_logged) %></strong><small><%= project_hours_label(@project) %></small></div>
+        <div class="admin__tile"><span>Streak</span><strong><%= user.current_streak %></strong><small><%= pluralize(@days.size, "day") %> built</small></div>
+        <div class="admin__tile"><span>Day</span><strong><%= @project.day_number %></strong><small>of <%= @project.build_days.size %> · done by <%= project_date(@project.finish_on) %></small></div>
+        <div class="admin__tile">
+          <span>Ship</span>
+          <% if (ship = @project.ship_in_review) %>
+            <strong><%= link_to "In review", admin_ship_path(ship) %></strong><small>since <%= project_date(ship.created_at.to_date) %></small>
+          <% elsif @project.shipped? %>
+            <strong data-decision="approved">Approved</strong><small><%= link_to "see the ship", admin_ship_path(ships.first) %></small>
+          <% elsif ships.any? %>
+            <strong data-decision="rejected">Sent back</strong><small><%= link_to "see the ship", admin_ship_path(ships.first) %></small>
+          <% else %>
+            <strong>Not yet</strong><small><%= @project.tracking? ? "can ship" : "needs Hackatime first" %></small>
+          <% end %>
+        </div>
+      </section>
+
+      <section aria-labelledby="admin-project-pledge">
+        <h2 class="admin__heading" id="admin-project-pledge">The pledge</h2>
+        <dl class="admin__ship-details">
+          <dt>Tool</dt><dd><%= @project.tool_name %> <small class="admin__muted">(<%= @project.tool %>, hours via <%= @project.tracker %>)</small></dd>
+          <dt>Idea</dt><dd><%= @project.idea %></dd>
+          <% if @project.name.present? %><dt>Renamed to</dt><dd><%= @project.name %></dd><% end %>
+          <dt>Prize</dt><dd><%= project_prize_name(@project) %></dd>
+          <dt>Pace</dt><dd><%= project_pace_label(@project.pace_minutes) %> <%= @project.build_time == "weekends" ? "a session, weekends" : "a day, #{@project.build_time}" %></dd>
+          <dt>Repo</dt>
+          <dd>
+            <% if @project.repo_url.present? %><%= link_to @project.repo_url, @project.repo_url, target: "_blank", rel: "noopener" %>
+            <% elsif @project.repo_later %><span class="admin__muted">said they'd add one before shipping</span>
+            <% else %><span class="admin__muted">none yet</span><% end %>
+          </dd>
+          <dt>Hackatime</dt>
+          <dd>
+            <% if @project.tracking? %>
+              <%= @project.hackatime_projects.join(", ") %><% if @project.hackatime_auto_linked %> <small class="admin__muted">(linked itself)</small><% end %>
+            <% elsif @project.hackatime_linked? %><span class="admin__muted">linked, no project picked yet</span>
+            <% else %><span class="admin__muted">not linked</span><% end %>
+          </dd>
+          <dt>Buddy</dt>
+          <dd>
+            <% if (buddy = @project.buddy) %>
+              <%= link_to buddy.title, admin_project_path(buddy) %> <small class="admin__muted">(<%= buddy.user.name.presence || buddy.user.public_name %>, paired <%= project_date(@project.pair.started_on) %>)</small>
+            <% elsif @project.buddy_skipped %><span class="admin__muted">skipped</span>
+            <% elsif @project.buddy_invited %><span class="admin__muted">invited someone, nobody's accepted</span>
+            <% else %><span class="admin__muted">none</span><% end %>
+          </dd>
+          <dt>Slack</dt>
+          <dd>
+            <% if user.slack_id.present? %><%= user.slack_id %><% else %><span class="admin__muted">no Slack ID</span><% end %>
+            <% if user.slack_muted_at %><small class="admin__muted">· stopped Clippy's messages <%= project_date(user.slack_muted_at.to_date) %></small><% end %>
+            <% if user.slack_dm_failed_at %><small class="admin__muted">· a DM failed <%= project_date(user.slack_dm_failed_at.to_date) %></small><% end %>
+          </dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="admin-project-days">
+        <h2 class="admin__heading" id="admin-project-days">Days built</h2>
+        <% if @days.empty? %>
+          <p class="leaderboard__note">Nothing synced from Hackatime yet.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--days">
+              <thead><tr><th scope="col">Day</th><th class="leaderboard__number" scope="col">Hours</th><th scope="col"><span class="visually-hidden">Counted</span></th></tr></thead>
+              <tbody>
+                <% @days.each do |day| %>
+                  <tr>
+                    <th scope="row"><%= project_date(day.activity_date) %></th>
+                    <td class="leaderboard__number"><%= project_hours((day.coded_seconds / 3600.0).round(1)) %></td>
+                    <td><small class="admin__muted"><%= day.completed? ? "counts for the streak" : "under 20 minutes" %></small></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="admin-project-ships">
+        <h2 class="admin__heading" id="admin-project-ships">Ships</h2>
+        <% if ships.empty? %>
+          <p class="leaderboard__note">Not shipped yet.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--ships">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Ship</th>
+                  <th class="leaderboard__number" scope="col">Hours</th>
+                  <th scope="col">Shipped</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ships.each do |ship| %>
+                  <%= render "admin/ships/row", ship: %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+
+      <% if @project.screenshot.attached? %>
+        <section aria-labelledby="admin-project-shot">
+          <h2 class="admin__heading" id="admin-project-shot">Screenshot</h2>
+          <figure class="admin__ship-shot">
+            <%= link_to url_for(@project.screenshot), target: "_blank", rel: "noopener" do %>
+              <%= image_tag url_for(@project.screenshot), alt: "Screenshot of #{@project.title}" %>
+            <% end %>
+          </figure>
+        </section>
+      <% end %>
+    </div>
+  </main>
+</div>

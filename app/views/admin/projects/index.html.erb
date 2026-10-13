@@ -1,0 +1,106 @@
+<% content_for :title, "Projects · Wrong Tool admin" %>
+
+<%# Every project, newest first: who, what they pledged, where they've got to, and a link to each in full. Real names
+    and emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=PROJECTS(wrong tool)  →  #{@total}" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">Every project</h1>
+        <p class="leaderboard__note">
+          Newest first. Hours are since Hackatime time started counting, as of each person's last sync. Open one to see
+          it in full: the pledge, the Hackatime projects behind it, each day built, the buddy and the ships.
+        </p>
+        <%= form_with url: admin_projects_path, method: :get, class: "admin__search" do |form| %>
+          <%= form.search_field :q, value: @query, placeholder: "Project, idea, tool, name, email or Slack", aria: { label: "Search projects" },
+                autocomplete: "off", spellcheck: false %>
+          <%= form.button "Search", type: "submit" %>
+          <% if @query.present? %><%= link_to "Clear", admin_projects_path %><% end %>
+        <% end %>
+      </header>
+
+      <% if @projects.empty? %>
+        <p class="leaderboard__note">No projects<%= " match that" if @query.present? %>.</p>
+      <% else %>
+        <% if @total > @projects.size %>
+          <p class="leaderboard__note">The newest <%= @projects.size %> of <%= @total %>. Search for the rest.</p>
+        <% end %>
+        <div class="admin__scroll">
+          <table class="leaderboard__table admin__table admin__table--projects">
+            <thead>
+              <tr>
+                <th scope="col">Project</th>
+                <th scope="col">Who</th>
+                <th scope="col">Pledge</th>
+                <th scope="col">Hackatime</th>
+                <th class="leaderboard__number" scope="col">Hours</th>
+                <th class="leaderboard__number" scope="col">Streak</th>
+                <th scope="col">Buddy</th>
+                <th scope="col">Ship</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @projects.each do |project| %>
+                <% user = project.user %>
+                <% hours = project.tracking? ? (@seconds.fetch(user.id, 0) / 3600.0).round(1) : 0 %>
+                <tr id="<%= dom_id(project) %>">
+                  <th scope="row">
+                    <%= link_to project.title, admin_project_path(project) %>
+                    <small class="admin__muted"><%= project.tool_name %> · <%= project.idea %></small>
+                  </th>
+                  <td>
+                    <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
+                    <%= user.name.presence || user.public_name %>
+                    <small class="admin__muted"><%= user.email %><% if user.slack_display_name.present? %> · <%= user.slack_display_name %><% end %></small>
+                  </td>
+                  <td>
+                    <%= project_prize_name(project) %>
+                    <small class="admin__muted"><%= project_pace_label(project.pace_minutes) %> · <%= project.build_time %> · signed <%= project_date(project.signed_on) %></small>
+                  </td>
+                  <td>
+                    <% if project.tracking? %>
+                      <%= project.hackatime_projects.join(", ") %>
+                      <% if project.hackatime_auto_linked %><small class="admin__muted">linked itself</small><% end %>
+                    <% elsif project.hackatime_linked? %>
+                      <span class="admin__muted">linked, no project yet</span>
+                    <% else %>
+                      <span class="admin__muted">not linked</span>
+                    <% end %>
+                  </td>
+                  <td class="leaderboard__number"><%= project_hours(hours) %></td>
+                  <td class="leaderboard__number"><%= user.current_streak %></td>
+                  <td>
+                    <% if (buddy = project.buddy) %>
+                      <%= link_to buddy.title, admin_project_path(buddy) %>
+                    <% elsif project.buddy_skipped %>
+                      <span class="admin__muted">skipped</span>
+                    <% elsif project.buddy_invited %>
+                      <span class="admin__muted">invited</span>
+                    <% else %>
+                      <span class="admin__muted">—</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if (ship = project.ship_in_review) %>
+                      <%= link_to "In review", admin_ship_path(ship) %>
+                    <% elsif project.shipped? %>
+                      <%= link_to "Approved", admin_ship_path(project.ships.max_by(&:created_at)), data: { decision: "approved" } %>
+                    <% elsif project.ships.any? %>
+                      <%= link_to "Sent back", admin_ship_path(project.ships.max_by(&:created_at)), data: { decision: "rejected" } %>
+                    <% else %>
+                      <span class="admin__muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </main>
+</div>

@@ -40,6 +40,13 @@ class Project < ApplicationRecord
   validates :repo_url, format: { with: %r{\Ahttps?://\S+\z}, message: "should be a link, like https://github.com/you/game" },
                        allow_blank: true
 
+  # The project's name, idea or tool, or who it's by (name, email or Slack), any part of it, for the admin's list.
+  def self.search(query)
+    pattern = "%#{sanitize_sql_like(query)}%"
+    joins(:user).where("projects.name ILIKE :q OR projects.idea ILIKE :q OR projects.tool_name ILIKE :q OR " \
+                       "users.name ILIKE :q OR users.email ILIKE :q OR users.slack_display_name ILIKE :q", q: pattern)
+  end
+
   def self.preposition_for(tool)
     OVER.include?(tool) ? "over" : "in"
   end

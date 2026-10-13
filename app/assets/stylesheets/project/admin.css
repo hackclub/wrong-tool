@@ -384,6 +384,32 @@
   }
 }
 
+/* The projects pages (/admin/projects): every project in a table, and one in full with each day built. */
+@layer sections {
+  .admin__table--projects,
+  .admin__table--days {
+    th[scope="row"] {
+      white-space: normal;
+    }
+
+    td {
+      vertical-align: top;
+    }
+
+    a {
+      color: var(--blue-700);
+    }
+
+    .admin__muted {
+      display: block;
+    }
+  }
+
+  .admin__tile a {
+    color: inherit;
+  }
+}
+
 /* The strip while an admin's viewing as someone: floats at the bottom like Sheets' snackbar, on every page. */
 @layer sections {
   .impersonation {

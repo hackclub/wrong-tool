@@ -28,7 +28,7 @@
           <% unless @ship.in_review? %><small><%= @ship.decided_by&.first_name.presence || "someone" %> · <%= @ship.decided_at.strftime("%b %-d") %></small><% end %>
         </div>
         <div class="admin__tile"><span>Hours when shipped</span><strong><%= project_hours(@ship.hours) %></strong><small><%= project_hours(project.hours_logged) %> now</small></div>
-        <div class="admin__tile"><span>Tool</span><strong><%= project.tool_name %></strong><small>pledged <%= project.idea %></small></div>
+        <div class="admin__tile"><span>Project</span><strong><%= link_to project.title, admin_project_path(project) %></strong><small><%= project.tool_name %> · <%= project.idea %></small></div>
         <div class="admin__tile"><span>Console</span><strong><%= project_prize_name(project) %></strong><small><%= project_hours_label(project, @ship.hours) %></small></div>
       </section>
 
