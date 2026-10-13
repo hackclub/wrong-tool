@@ -7,6 +7,7 @@ class StatsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "wrong tool in numbers"
     assert_select ".stats__tile", text: /Builders\s*2/
+    assert_select ".stats__tile", text: /Hours shipped\s*0/
     assert_select ".stats__bars th", "Linked Hackatime"
     assert_select ".stats__column", Program::DATES.count * 2, "hours per day, and who's building per day"
     assert_select "#stats-growth h2", "Who's building each day"

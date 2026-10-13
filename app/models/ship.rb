@@ -1,12 +1,14 @@
 # One time someone shipped their project: the title, description, links and screenshot they submitted (kept as they
-# were, whatever happens to the project after) and the hours it took. It's in review until someone approves it or
-# sends it back.
+# were, whatever happens to the project after) and the hours it took. It's in review until an admin approves it or
+# sends it back (Admin::ShipsController); sent back, they can ship again.
 class Ship < ApplicationRecord
   STATUSES = %w[in_review approved rejected].freeze
+  DECISIONS = %w[approved rejected].freeze
   DESCRIPTION_MIN = 40
   URL = %r{\Ahttps?://\S+\z}
 
   belongs_to :project
+  belongs_to :decided_by, class_name: "User", optional: true
   has_one_attached :screenshot
 
   # The checkbox under the screenshot: it shows the game running inside the tool, not a mockup.
@@ -26,8 +28,21 @@ class Ship < ApplicationRecord
 
   scope :in_review, -> { where(status: "in_review") }
   scope :approved, -> { where(status: "approved") }
+  scope :decided, -> { where.not(status: "in_review") }
+  # Each project's newest ship (of those in the scope so far): the one that stands, whatever came before it.
+  scope :latest_per_project, -> { where(id: select("MAX(id)").group(:project_id)) }
 
   def in_review? = status == "in_review"
+  def approved? = status == "approved"
+  def rejected? = status == "rejected"
+
+  # An admin's call, made once: false if it's been made already (or isn't a decision).
+  def decide!(decision, by:)
+    return false unless in_review? && DECISIONS.include?(decision)
+
+    update!(status: decision, decided_by: by, decided_at: Time.current)
+    true
+  end
 
   private
     def screenshot_is_an_image

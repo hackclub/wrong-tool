@@ -29,11 +29,12 @@ Rails.application.routes.draw do
   post "n/:token/stop" => "nudge_links#mute"
   delete "n/:token/stop" => "nudge_links#unmute"
 
-  # How Clippy's nudges are doing, and what the bandit's learned, wrong tool's numbers day by day, and everyone who's
-  # signed in, with seeing the site as any of them. Admins only.
+  # How Clippy's nudges are doing, and what the bandit's learned, wrong tool's numbers day by day, everyone who's
+  # signed in, with seeing the site as any of them, and every ship in full, to approve or send back. Admins only.
   namespace :admin do
     resources :nudges, only: :index
     resources :metrics, only: :index
+    resources :ships, only: %i[index show update]
     resources :users, only: :index do
       resource :impersonation, only: :create
     end

@@ -34,6 +34,7 @@ class PublicStatsTest < ActiveSupport::TestCase
 
       assert_equal 5, stats[:totals][:builders]
       assert_equal 18.0, stats[:totals][:hours]
+      assert_equal 0.0, stats[:totals][:shipped_hours]
       assert_equal [ 5, 5, 3, 3, 3, 3, 0, 0 ], stats[:funnel].map { |step| step[:count] }
       assert_in_delta 0.6, stats[:funnel][2][:share]
 
@@ -47,5 +48,20 @@ class PublicStatsTest < ActiveSupport::TestCase
 
       assert_equal [ 3, 3 ], stats[:streaks].values_at(:on_streak, :longest)
     end
+  end
+
+  test "hours shipped are the hours on each shipped project's newest ship, as they were when it shipped" do
+    ship = ->(project, hours) do
+      project.ships.create!(title: "A game", description: "A game that's at least forty characters of description long.",
+                            repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours:,
+                            screenshot: Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png"), screenshot_shows_game: true)
+    end
+    ship.(projects(:orpheus), 4.5).update!(status: "rejected")
+    ship.(projects(:orpheus), 6)
+    ship.(projects(:ana), 2.25)
+
+    stats = PublicStats.new.to_h
+    assert_equal 2, stats[:totals][:shipped]
+    assert_equal 8.3, stats[:totals][:shipped_hours]
   end
 end

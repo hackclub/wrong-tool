@@ -1,0 +1,96 @@
+<% content_for :title, "#{@ship.title} · Ships · Wrong Tool admin" %>
+<% project = @ship.project %>
+<% user = project.user %>
+
+<%# One ship in full, as it was submitted: who, the hours and Hackatime projects behind it, the links, the description
+    and the screenshot. A button each way while it's in review; then what was decided. Real names and emails are
+    here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=SHIP(#{@ship.title})  →  #{ship_decision(@ship)}" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <p class="leaderboard__note"><%= link_to "← All ships", admin_ships_path %></p>
+        <h1 class="project__title"><%= @ship.title %></h1>
+        <p class="leaderboard__note">
+          Shipped <%= @ship.created_at.strftime("%b %-d, %H:%M") %> UTC by
+          <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %><%= user.name.presence || user.public_name %>
+          (<%= user.email %><% if user.slack_display_name.present? %>, <%= user.slack_display_name %> on Slack<% end %>).
+        </p>
+        <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
+      </header>
+
+      <section class="admin__tiles" aria-label="The numbers">
+        <div class="admin__tile"><span>Status</span><strong data-decision="<%= @ship.status %>"><%= ship_status_label(@ship) %></strong>
+          <% unless @ship.in_review? %><small><%= @ship.decided_by&.first_name.presence || "someone" %> · <%= @ship.decided_at.strftime("%b %-d") %></small><% end %>
+        </div>
+        <div class="admin__tile"><span>Hours when shipped</span><strong><%= project_hours(@ship.hours) %></strong><small><%= project_hours(project.hours_logged) %> now</small></div>
+        <div class="admin__tile"><span>Tool</span><strong><%= project.tool_name %></strong><small>pledged <%= project.idea %></small></div>
+        <div class="admin__tile"><span>Console</span><strong><%= project_prize_name(project) %></strong><small>needs <%= project_hours(project.hours_needed) %> hrs</small></div>
+      </section>
+
+      <section class="admin__ship" aria-labelledby="admin-ship-submitted">
+        <h2 class="admin__heading" id="admin-ship-submitted">What they submitted</h2>
+        <dl class="admin__ship-details">
+          <dt>Repo</dt><dd><%= link_to @ship.repo_url, @ship.repo_url, target: "_blank", rel: "noopener" %></dd>
+          <dt>Demo</dt><dd><%= link_to @ship.demo_url, @ship.demo_url, target: "_blank", rel: "noopener" %></dd>
+          <dt>Hackatime</dt><dd><%= @ship.hackatime_projects.join(", ").presence || "no Hackatime project" %></dd>
+          <dt>Description</dt><dd class="admin__ship-description"><%= @ship.description %></dd>
+        </dl>
+        <% if @ship.screenshot.attached? %>
+          <figure class="admin__ship-shot">
+            <%= link_to url_for(@ship.screenshot), target: "_blank", rel: "noopener" do %>
+              <%= image_tag url_for(@ship.screenshot), alt: "Screenshot of #{@ship.title}" %>
+            <% end %>
+            <figcaption class="admin__muted">They said it shows the game running in <%= project.tool_name %>, not a mockup.</figcaption>
+          </figure>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="admin-ship-decision">
+        <h2 class="admin__heading" id="admin-ship-decision">Decision</h2>
+        <% if @ship.in_review? %>
+          <p class="leaderboard__note">
+            Approved, their console's locked in and they can't change it in the shop. Sent back, they can ship again.
+            Nobody's told either way from here; say so in #wrong.
+          </p>
+          <div class="admin__actions">
+            <%= button_to "Approve", admin_ship_path(@ship), method: :patch, params: { decision: "approved" },
+                  class: "admin__button", form: { data: { turbo: false } } %>
+            <%= button_to "Send back", admin_ship_path(@ship), method: :patch, params: { decision: "rejected" },
+                  class: "admin__button", form: { data: { turbo: false } } %>
+          </div>
+        <% else %>
+          <p class="leaderboard__note" data-decision="<%= @ship.status %>"><%= ship_decision(@ship) %>.</p>
+        <% end %>
+      </section>
+
+      <% if @others.any? %>
+        <section aria-labelledby="admin-ship-others">
+          <h2 class="admin__heading" id="admin-ship-others">Earlier ships of this project</h2>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--ships">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Ship</th>
+                  <th class="leaderboard__number" scope="col">Hours</th>
+                  <th scope="col">Shipped</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @others.each do |ship| %>
+                  <%= render "admin/ships/row", ship: %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% end %>
+    </div>
+  </main>
+</div>

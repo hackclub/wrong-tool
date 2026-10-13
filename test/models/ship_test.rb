@@ -45,7 +45,28 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal @project.screenshot.blob, ship.screenshot.blob
   end
 
+  test "deciding is an admin's call, made once, and the ship that stands is each project's newest" do
+    first = ship_now(hours: 3)
+    assert_not first.decide!("maybe", by: users(:ana))
+    assert first.decide!("rejected", by: users(:ana))
+    assert first.rejected?
+    assert_equal users(:ana), first.decided_by
+    assert_not first.decide!("approved", by: users(:ana)), "decided already"
+    assert first.reload.rejected?
+
+    second = ship_now(hours: 5)
+    assert_equal [ second ], Ship.latest_per_project.to_a
+    assert_equal 5, Ship.latest_per_project.sum(:hours)
+    assert_equal [ first ], Ship.where(created_at: ..first.created_at).latest_per_project.to_a, "as of a time, the newest then"
+  end
+
   private
+    def ship_now(hours:)
+      @project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every beat is a cell lighting up in time.",
+                             repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://example.com/beat",
+                             hours:, screenshot: fixture_upload, screenshot_shows_game: true)
+    end
+
     def fixture_upload
       Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png")
     end

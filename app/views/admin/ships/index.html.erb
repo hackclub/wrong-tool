@@ -1,0 +1,52 @@
+<% content_for :title, "Ships · Wrong Tool admin" %>
+<% shipped_hours = Ship.latest_per_project.sum(:hours) %>
+
+<%# Every ship: the ones in review, oldest first, then the ones decided. Each opens in full. Real names and emails are
+    here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=SHIPS(wrong tool)  →  #{@in_review.size} in review" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">What's been shipped</h1>
+        <p class="leaderboard__note">
+          Open a ship to see it in full, screenshot and all, and to approve it or send it back. Hours are as they were
+          when it was shipped. <%= project_hours(shipped_hours) %> hrs across every project that's shipped.
+        </p>
+        <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
+      </header>
+
+      <% { "In review" => [ "admin-ships-review", @in_review, "Nothing's waiting." ],
+           "Decided" => [ "admin-ships-decided", @decided, "None yet." ] }.each do |heading, (id, ships, empty)| %>
+        <section aria-labelledby="<%= id %>">
+          <h2 class="admin__heading" id="<%= id %>"><%= heading %></h2>
+          <% if ships.empty? %>
+            <p class="leaderboard__note"><%= empty %></p>
+          <% else %>
+            <div class="admin__scroll">
+              <table class="leaderboard__table admin__table admin__table--ships">
+                <thead>
+                  <tr>
+                    <th scope="col">Who</th>
+                    <th scope="col">Ship</th>
+                    <th class="leaderboard__number" scope="col">Hours</th>
+                    <th scope="col">Shipped</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% ships.each do |ship| %>
+                    <%= render "admin/ships/row", ship: %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  </main>
+</div>

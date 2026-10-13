@@ -283,6 +283,82 @@
   }
 }
 
+/* The ships pages (/admin/ships): every ship in a table, and one in full with its description and screenshot. */
+@layer sections {
+  .admin__table--ships {
+    th[scope="row"] {
+      white-space: normal;
+    }
+
+    td {
+      vertical-align: top;
+    }
+
+    td a {
+      color: var(--blue-700);
+    }
+
+    .admin__muted {
+      display: block;
+    }
+  }
+
+  .admin [data-decision="approved"] {
+    color: var(--green);
+  }
+
+  .admin [data-decision="rejected"] {
+    color: var(--text-secondary);
+  }
+
+  .admin__ship {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .admin__ship-details {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+    margin: 0;
+    font: 13px var(--font-cell);
+
+    dt {
+      color: var(--text-secondary);
+    }
+
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    a {
+      color: var(--blue-700);
+    }
+  }
+
+  .admin__ship-description {
+    max-inline-size: 640px;
+    white-space: pre-line;
+  }
+
+  .admin__ship-shot {
+    margin: 0;
+
+    img {
+      display: block;
+      max-inline-size: min(100%, 640px);
+      block-size: auto;
+      border: 1px solid var(--border-header);
+    }
+
+    figcaption {
+      margin-block-start: 6px;
+    }
+  }
+}
+
 /* The strip while an admin's viewing as someone: floats at the bottom like Sheets' snackbar, on every page. */
 @layer sections {
   .impersonation {

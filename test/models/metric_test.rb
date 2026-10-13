@@ -21,6 +21,21 @@ class MetricTest < ActiveSupport::TestCase
     assert_equal User.count, today["signed_in"]
   end
 
+  test "hours shipped are each project's newest ship as of that day" do
+    ship = ->(at, hours) do
+      projects(:orpheus).ships.create!(title: "Beat Sheet", description: "A rhythm game where every beat is a cell lighting up in time.",
+                                       repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours:, created_at: at,
+                                       screenshot: Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png"), screenshot_shows_game: true)
+    end
+    ship.(Time.utc(2026, 10, 6, 18), 2.5)
+    ship.(Time.utc(2026, 10, 7, 18), 3.25)
+    travel_to Time.utc(2026, 10, 7, 20)
+
+    assert_equal [ 1, 2.5 ], Metric.values(Date.new(2026, 10, 6)).values_at("shipped", "shipped_hours")
+    assert_equal [ 1, 3.25 ], Metric.values.values_at("shipped", "shipped_hours")
+    assert_equal [ 0, 0.0 ], Metric.values(Date.new(2026, 10, 5)).values_at("shipped", "shipped_hours")
+  end
+
   test "snapshots are written once per day and metric, and today's is rewritten" do
     travel_to Time.utc(2026, 10, 7, 20)
     Metric.snapshot!

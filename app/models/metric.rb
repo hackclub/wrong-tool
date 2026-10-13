@@ -16,6 +16,7 @@ class Metric
     [ "past_5h", "Past 5 hours", true, true, ->(through) { with_hours(5, through) } ],
     [ "past_10h", "Past 10 hours", true, true, ->(through) { with_hours(Program::HOURS_PER_REWARD, through) } ],
     [ "shipped", "Shipped", true, true, ->(through) { Ship.where(created_at: ..through).distinct.count(:project_id) } ],
+    [ "shipped_hours", "Hours shipped", true, true, ->(through) { Ship.where(created_at: ..through).latest_per_project.sum(:hours).to_f } ],
     # The day.
     [ "builders", "Built that day", false, true, ->(through) { StreakActivity.where(activity_date: through.to_date, coded_seconds: 1..).count } ],
     [ "completed", "Hit 20 minutes that day", false, true, ->(through) { StreakActivity.completed.where(activity_date: through.to_date).count } ],

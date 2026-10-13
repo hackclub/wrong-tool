@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_153923) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -212,6 +212,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_153923) do
     t.string "status", default: "in_review", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "decided_by_id"
+    t.datetime "decided_at"
+    t.index ["decided_by_id"], name: "index_ships_on_decided_by_id"
     t.index ["project_id"], name: "index_ships_on_project_id"
   end
 
@@ -431,6 +434,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_153923) do
   add_foreign_key "rewards", "pairs"
   add_foreign_key "rewards", "users"
   add_foreign_key "ships", "projects"
+  add_foreign_key "ships", "users", column: "decided_by_id"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
