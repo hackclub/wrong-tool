@@ -29,7 +29,7 @@
         </div>
         <div class="admin__tile"><span>Hours when shipped</span><strong><%= project_hours(@ship.hours) %></strong><small><%= project_hours(project.hours_logged) %> now</small></div>
         <div class="admin__tile"><span>Tool</span><strong><%= project.tool_name %></strong><small>pledged <%= project.idea %></small></div>
-        <div class="admin__tile"><span>Console</span><strong><%= project_prize_name(project) %></strong><small>needs <%= project_hours(project.hours_needed) %> hrs</small></div>
+        <div class="admin__tile"><span>Console</span><strong><%= project_prize_name(project) %></strong><small><%= project_hours_label(project, @ship.hours) %></small></div>
       </section>
 
       <section class="admin__ship" aria-labelledby="admin-ship-submitted">
