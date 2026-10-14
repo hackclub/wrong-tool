@@ -12,6 +12,7 @@
   <main class="project__sheet">
     <div class="admin ph-no-capture">
       <header>
+        <%= render "admin/nav" %>
         <h1 class="project__title">Clippy's bandit</h1>
         <p class="leaderboard__note">
           A nudge worked if they built <%= Nudge::REWARD_MINUTES %> minutes in the <%= Nudge::REWARD_WINDOW.inspect %> after it.
