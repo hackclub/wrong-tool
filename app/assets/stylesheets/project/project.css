@@ -651,10 +651,17 @@
   }
 
   /* Under the name: changing your tool, which opens the tools (.project__tools) right below. */
-  .project__change-tool {
-    align-self: flex-start;
-    block-size: 30px;
+  /* Change your tool, and change your console (the shop): text buttons in a row under the name. */
+  .project__header-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
     margin-inline-start: -10px;
+  }
+
+  .project__change-tool {
+    block-size: 30px;
     padding: 0 10px;
     font-size: 13px;
     text-decoration: none;

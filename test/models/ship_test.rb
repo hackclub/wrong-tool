@@ -60,6 +60,27 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal [ first ], Ship.where(created_at: ..first.created_at).latest_per_project.to_a, "as of a time, the newest then"
   end
 
+  test "approving grants the hours it took to spend, or fewer if the admin says, and the most of any approved ship counts" do
+    assert_equal 0, @project.hours_approved
+    first = ship_now(hours: 6)
+    first.decide!("approved", by: users(:ana), hours: "99")
+    assert_equal 6, first.approved_hours, "never more than it took"
+    assert_equal 6, @project.reload.hours_approved
+
+    rejected = ship_now(hours: 9)
+    rejected.decide!("rejected", by: users(:ana), hours: "9")
+    assert_nil rejected.approved_hours
+    assert_equal 6, @project.reload.hours_approved
+
+    second = ship_now(hours: 11)
+    second.decide!("approved", by: users(:ana), hours: "10.5")
+    assert_equal 10.5, second.approved_hours
+    assert_equal 10.5, @project.reload.hours_approved, "each ship counts every hour up to it, so the most, not the sum"
+
+    ship_now(hours: 2).decide!("approved", by: users(:ana), hours: "-4")
+    assert_equal 10.5, @project.reload.hours_approved
+  end
+
   private
     def ship_now(hours:)
       @project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every beat is a cell lighting up in time.",

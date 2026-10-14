@@ -20,6 +20,8 @@ class Project < ApplicationRecord
   belongs_to :user
   has_many :ships, dependent: :destroy
   has_one :extension, dependent: :destroy
+  has_many :seller_requests, dependent: :destroy
+  has_many :orders, dependent: :destroy
   has_one :pair_as_first, class_name: "Pair", foreign_key: :first_project_id, dependent: :destroy, inverse_of: :first_project
   has_one :pair_as_second, class_name: "Pair", foreign_key: :second_project_id, dependent: :destroy, inverse_of: :second_project
   # Shows on the leaderboard and your ship post.
@@ -126,12 +128,42 @@ class Project < ApplicationRecord
   end
 
   def hours_to_go
-    [ (hours_needed - hours_logged).round(1), 0 ].max
+    [ (hours_needed - hours_unspent_logged).round(1), 0 ].max
   end
 
-  # Your hours cover your pick.
+  # Your hours, less what you've spent, cover your pick.
   def afford?(hours = hours_logged)
-    hours >= hours_needed
+    hours - hours_spent >= hours_needed
+  end
+
+  # The hours your ships got approved with: the most of any approved ship, since each counts every hour logged up to
+  # it (Ship#hours), and an admin can approve fewer (Ship#approved_hours). The shop spends them like money (Order).
+  def hours_approved
+    ships.select(&:approved?).map { |ship| ship.approved_hours || ship.hours }.max.to_f
+  end
+
+  # What you've spent in the shop (orders made, not one being made), and what's left of your approved hours to spend.
+  def hours_spent
+    orders.select(&:persisted?).sum(&:hours).to_f
+  end
+
+  def hours_to_spend
+    [ (hours_approved - hours_spent).round(2), 0 ].max
+  end
+
+  # The hours you've logged that haven't been spent: what's working towards the next thing.
+  def hours_unspent_logged
+    [ hours_logged - hours_spent, 0 ].max
+  end
+
+  # Your order for a console, if you've bought one.
+  def order_for(prize_id)
+    orders.find { |order| order.persisted? && order.prize == prize_id }
+  end
+
+  # What's left to spend covers your pick as it's set up, and you've not bought one already.
+  def claimable?
+    order_for(prize).nil? && hours_to_spend >= hours_needed
   end
 
   # Where your hours come from: the Hackatime editor plugin if you're writing code, Lapse recordings otherwise.

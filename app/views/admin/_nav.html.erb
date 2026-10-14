@@ -1,7 +1,7 @@
 <%# The admin pages, so you can get between them: the one you're on is marked. %>
 <nav class="admin__nav" aria-label="Admin pages">
   <% { "Bandit" => admin_nudges_path, "Numbers" => admin_metrics_path, "People" => admin_users_path,
-       "Extensions" => admin_extensions_path, "Projects" => admin_projects_path, "Ships" => admin_ships_path, "Blazer" => "/admin/blazer" }.each do |label, path| %>
+       "Extensions" => admin_extensions_path, "Sellers" => admin_seller_requests_path, "Orders" => admin_orders_path, "Projects" => admin_projects_path, "Ships" => admin_ships_path, "Blazer" => "/admin/blazer" }.each do |label, path| %>
     <%= link_to label, path, aria: { current: ("page" if current_page?(path)) } %>
   <% end %>
 </nav>

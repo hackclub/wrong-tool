@@ -1,0 +1,25 @@
+<%# locals: (ask:) %>
+<%# One ask: who, the console and the seller it comes from now, the link they sent and when, then whatever the table
+    puts last (buttons, or the decision). %>
+<% project = ask.project %>
+<% user = project.user %>
+<% console = ask.console %>
+<tr id="<%= dom_id(ask) %>">
+  <th scope="row">
+    <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
+    <%= user.name.presence || user.public_name %>
+    <small class="admin__muted"><%= user.email %><% if user.slack_display_name.present? %> · <%= user.slack_display_name %><% end %></small>
+  </th>
+  <td>
+    <%= console.full %>
+    <small class="admin__muted">
+      <%= link_to "from #{console.vendor.name}", console.url, target: "_blank", rel: "noopener" %><%= " · their pick" if project.prize == ask.prize %>
+    </small>
+  </td>
+  <td class="admin__reason">
+    <%= link_to ask.host, ask.url, target: "_blank", rel: "noopener noreferrer" %>
+    <small class="admin__muted"><%= ask.url %></small>
+  </td>
+  <td><%= ask.created_at.strftime("%b %-d") %></td>
+  <%= yield %>
+</tr>

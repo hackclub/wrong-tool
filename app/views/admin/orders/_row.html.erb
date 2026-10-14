@@ -1,0 +1,20 @@
+<%# locals: (order:) %>
+<%# One claim: who (with their email, for their address on Hack Club Auth), what exactly, where to order it from,
+    the hours it took and when, then whatever the table puts last (the button, or who ordered it). %>
+<% project = order.project %>
+<% user = project.user %>
+<tr id="<%= dom_id(order) %>">
+  <th scope="row">
+    <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
+    <%= user.name.presence || user.public_name %>
+    <small class="admin__muted"><%= user.email %><% if user.slack_display_name.present? %> · <%= user.slack_display_name %><% end %></small>
+  </th>
+  <td class="admin__reason"><%= order.configuration %></td>
+  <td>
+    <%= link_to order.seller_name, order.seller_url, target: "_blank", rel: "noopener noreferrer" %>
+    <% if order.seller_url != order.console.url %><small class="admin__muted">a seller we approved</small><% end %>
+  </td>
+  <td><%= project_hours(order.hours.to_f) %> hrs</td>
+  <td><%= order.created_at.strftime("%b %-d") %></td>
+  <%= yield %>
+</tr>

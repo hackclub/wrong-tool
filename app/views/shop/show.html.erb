@@ -1,0 +1,197 @@
+<% content_for :title, "Shop · Wrong Tool" %>
+<% picked = flash[:shop] == "picked" %>
+<% shelf = shop_shelf(@project) %>
+<% yours = shelf.find { |tile| tile[:yours] } %>
+<% says = flash[:shop_error] || shop_says(@project, picked:) %>
+<% ship_status, ship_tone = shop_ship_status(@project) %>
+<% asks = shop_asks_data(@project) %>
+<% seller_name, seller_url = shop_seller(yours[:console], asks[yours[:console].id]) %>
+<% columns = ("A".."L").to_a %>
+<% selected_columns = shop_tile_columns(yours[:cell]) %>
+
+<%# The shop, built out of the sheet's own cells: the shelf of consoles across rows 3 to 10 (a tile each, three
+    columns wide, the one that's yours flagged), and under it the counter: Clippy, with what he
+    says typed out and your answers as choices (↑ ↓ and Enter, or a tap), and the Customize panel for the tile
+    you're looking at. Everything's in hours. Picking (or a colour or extra on yours) is a PATCH to /shop, from the
+    counter as JSON; without JavaScript, tapping a tile picks it as it comes. On phones Clippy's docked at
+    the bottom and customizing happens in the conversation. %>
+<div class="spreadsheet onboarding project shop-page" data-saved data-controller="shop"
+     data-shop-consoles-value="<%= shop_consoles_data(shelf).to_json %>"
+     data-shop-configs-value="<%= shop_configs_data(shelf).to_json %>"
+     data-shop-pick-value="<%= @project.prize %>"
+     data-shop-hours-value="<%= @project.hours_logged %>"
+     data-shop-tracking-value="<%= @project.tracking? %>"
+     data-shop-shipped-value="<%= @project.shipped? %>"
+     data-shop-to-spend-value="<%= @project.hours_to_spend %>"
+     data-shop-spent-value="<%= @project.hours_spent %>"
+     data-shop-orders-value="<%= shelf.filter_map { |tile| [ tile[:console].id, tile[:order] ] if tile[:order] }.to_h.to_json %>"
+     data-shop-claim-url-value="<%= shop_order_path %>"
+     data-shop-url-value="<%= shop_path %>"
+     data-shop-ask-url-value="<%= shop_seller_requests_path %>"
+     data-shop-asks-value="<%= asks.to_json %>"
+     data-shop-says-value="<%= says %>"
+     data-shop-emotes-value="<%= shop_emotes_data.to_json %>"
+     data-shop-mood-value="<%= shop_mood(@project) %>"
+     data-shop-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
+  <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+        progress: "Day 1 of #{@project.build_days.size}", user: current_user %>
+  <%= render "pages/toolbar" %>
+
+  <%# The name box follows the tile you're on; the formula says what you did last. %>
+  <div class="formula-bar">
+    <span class="formula-bar__name-box">
+      <span class="formula-bar__name" data-shop-target="nameBox"><%= yours[:cell] %></span>
+      <%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    </span>
+    <span class="formula-bar__divider"></span>
+    <span class="formula-bar__fx">fx</span>
+    <output class="formula-bar__content onboarding__formula" data-shop-target="formula"><%= shop_formula(@project) %></output>
+  </div>
+
+  <main class="project__sheet shop-sheet">
+    <div class="shop__column-headers" aria-hidden="true">
+      <span class="shop__corner"></span>
+      <% columns.each do |letter| %>
+        <span class="shop__column-header" data-shop-target="columnHeader" data-column="<%= letter %>" <%= "data-selected" if selected_columns.include?(letter) %>><%= letter %></span>
+      <% end %>
+      <span class="shop__column-header shop__column-header--rest" data-shop-target="columnHeader" data-column="M" <%= "data-selected" if selected_columns.include?("M") %>>M</span>
+    </div>
+
+    <div class="shop__body">
+      <div class="shop__row-headers" aria-hidden="true">
+        <% (1..40).each do |row| %>
+          <span class="shop__row-header" data-shop-target="rowHeader" data-row="<%= row %>" <%= "data-selected" if (ShopHelper::SHELF_ROW..ShopHelper::SHELF_ROW + 6).cover?(row) %>><%= row %></span>
+        <% end %>
+      </div>
+
+      <div class="shop" tabindex="0" role="region" aria-label="Shop" data-shop-target="grid" data-action="keydown->shop#key">
+        <h1 class="shop__title"><span class="shop__title-text">Shop</span></h1>
+        <div class="shop__stat shop__stat--logged">
+          <span class="shop__stat-label">LOGGED</span>
+          <span class="shop__stat-value" data-tone="done"><%= shop_hours(@project.hours_logged) %></span>
+        </div>
+        <div class="shop__stat shop__stat--ship">
+          <span class="shop__stat-label">TO SPEND</span>
+          <span class="shop__stat-value" data-tone="<%= ship_tone %>" data-shop-target="toSpend"><%= ship_status %></span>
+        </div>
+
+        <%# The shelf: the two prizes, then the rest, four on screen at a time, snapping as it scrolls. %>
+        <div class="shop__shelf" data-shop-target="shelf" data-action="scroll->shop#scrolled">
+          <div class="shop__shelf-inner">
+            <% shelf.each_with_index do |tile, index| %>
+              <% console = tile[:console] %>
+              <%= form_with url: shop_path, method: :patch, class: "shop__tile", id: "shop-#{console.id}",
+                    data: { shop_target: "tile", console: console.id, group: (console.prize? ? "prize" : "more"), state: tile[:state],
+                            yours: ("" if tile[:yours]), selected: ("" if tile[:yours]) }.compact do %>
+                <%= hidden_field_tag "project[prize]", console.id, id: "shop-#{console.id}-prize" %>
+                <button class="shop__tile-button" data-action="click->shop#select" aria-label="<%= console.full %>, <%= shop_hours(tile[:hours]) %>"
+                        aria-pressed="<%= tile[:yours] %>">
+                  <span class="shop__tile-photo">
+                    <%= image_tag console.image, alt: console.alt, class: "shop__tile-image" %>
+                  </span>
+                  <span class="shop__tile-name">
+                    <span><%= console.full %></span>
+                    <%= shop_icon(:flag, "shop__tile-flag") %>
+                  </span>
+                  <span class="shop__tile-foot">
+                    <b class="shop__tile-cost" data-shop-target="cost"><%= shop_hours(tile[:hours]) %></b>
+                    <span class="shop__tile-tag" data-shop-target="tag"><%= tile[:tag] %></span>
+                  </span>
+                  <span class="shop__tile-corner"></span>
+                  <span class="shop__tile-ring"><span class="shop__tile-you">You</span><span class="shop__tile-handle"></span></span>
+                </button>
+              <% end %>
+              <%# After the two prizes, a column (a row, on a phone) of empty cells before the rest, with a line in it. %>
+              <% if console.prize? && !shelf[index + 1]&.dig(:console)&.prize? %>
+                <span class="shop__shelf-gap"><span class="shop__shelf-gap-text">or swap for one of these</span></span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+        <button type="button" class="shop__shelf-arrow" aria-label="Earlier on the shelf" data-shop-target="left" data-action="shop#scrollLeft" hidden>
+          <%= shop_icon(:chevron_left) %>
+        </button>
+        <button type="button" class="shop__shelf-more" data-shop-target="right" data-action="shop#scrollRight">
+          <span data-shop-target="moreText">3 more</span><%= shop_icon(:chevron_right) %>
+        </button>
+        <div class="shop__range">
+          <span data-shop-target="range">A4:I10</span>
+          <span class="shop__dots">
+            <% shelf.each do |tile| %>
+              <button type="button" class="shop__dot" title="<%= tile[:console].full %>" aria-label="Go to <%= tile[:console].full %>"
+                      data-shop-target="dot" data-console="<%= tile[:console].id %>" data-action="shop#jump"></button>
+            <% end %>
+          </span>
+          <span class="shop__range-hint">shift + scroll</span>
+        </div>
+
+        <%# The counter: Clippy, what he says and your answers, and the Customize panel. %>
+        <div class="shop__counter" data-shop-target="counter">
+          <div class="shop__mascot" data-shop-target="mascot">
+            <%= clippy_sprite_tag("shop__sprite", data: { shop_target: "sprite" }) %>
+          </div>
+          <div class="shop__keeper">
+            <span class="shop__keeper-label">CLIPPY</span>
+            <p class="shop__say" role="status" aria-live="polite" data-shop-target="say" data-action="click->shop#skip">
+              <span data-shop-target="typed"><%= emotes(says) %></span><span class="shop__cursor" aria-hidden="true">▼</span>
+            </p>
+            <%# Asking for the same console from another seller, to save on customs: a link to the listing. An admin
+                checks it (SellerRequest). %>
+            <form class="shop__ask" data-shop-target="ask" data-action="submit->shop#sendAsk" hidden>
+              <input type="url" class="shop__ask-input" placeholder="link to the listing" aria-label="Link to the listing" required
+                     data-shop-target="askInput">
+              <button class="shop__ask-send">send</button>
+            </form>
+            <div class="shop__choices" role="listbox" aria-label="Your answers" data-shop-target="choices"></div>
+          </div>
+          <div class="shop__customize" data-shop-target="customize">
+            <div class="shop__customize-head">
+              <span>Customize · <span data-shop-target="customizeName"><%= yours[:console].name %></span></span>
+              <span class="shop__variant" data-shop-target="variant"><%= shop_variant(yours) %></span>
+            </div>
+            <div class="shop__customize-row">
+              <span class="shop__customize-label">Colour</span>
+              <div class="shop__customize-field">
+                <div class="shop__swatches" data-shop-target="swatches">
+                  <% yours[:console].colors.each do |color| %>
+                    <button type="button" class="shop__swatch" style="--swatch: <%= color.hex %>" title="<%= color.name %>" aria-label="<%= color.name %>"
+                            aria-pressed="<%= color == yours[:color] %>" <%= "data-clear" if color.clear %>
+                            data-color="<%= color.id %>" data-action="shop#pickColor"><span class="shop__swatch-dot"></span></button>
+                  <% end %>
+                </div>
+                <span class="shop__color-name" data-shop-target="colorName"><%= yours[:color].name %></span>
+              </div>
+            </div>
+            <div data-shop-target="options">
+              <% yours[:console].options.each do |option| %>
+                <div class="shop__customize-row">
+                  <span class="shop__customize-label"><%= option.label %></span>
+                  <div class="shop__chips">
+                    <% option.choices.each do |choice| %>
+                      <button type="button" class="shop__chip" aria-pressed="<%= choice.id == yours[:choices][option.id] %>"
+                              data-option="<%= option.id %>" data-choice="<%= choice.id %>" data-action="shop#pickChoice">
+                        <%= choice.name %><span class="shop__chip-more"><%= shop_choice_hours(yours[:console], yours[:choices], option, choice) %></span>
+                      </button>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            <div class="shop__customize-row shop__customize-row--seller">
+              <span class="shop__customize-label">Seller</span>
+              <%= link_to seller_name, seller_url, class: "shop__customize-value", target: "_blank", rel: "noopener noreferrer", data: { shop_target: "seller" } %>
+            </div>
+            <div class="shop__customize-row shop__customize-row--hours">
+              <span class="shop__customize-label shop__customize-label--strong">Hours</span>
+              <span class="shop__customize-formula" data-shop-target="costFormula">=HOURS("<%= yours[:console].id %>")</span>
+              <b class="shop__customize-cost" data-shop-target="customizeCost"><%= shop_hours(yours[:hours]) %></b>
+            </div>
+            <div class="shop__customize-hint">← → browse · ↑ ↓ choose · Enter</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%= render "onboarding/tabs", current: :shop, project_open: true, sum: shop_sum(@project), sum_data: { shop_target: "sum" } %>
+</div>

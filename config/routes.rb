@@ -12,6 +12,13 @@ Rails.application.routes.draw do
     resource :streak, only: :update
   end
   resource :leaderboard, only: :show
+  # The consoles you can build for: changing which one's yours, and its colour, and asking for one from another
+  # seller (to save on customs).
+  resource :shop, only: %i[show update], controller: "shop" do
+    resources :seller_requests, only: :create
+    # Claiming your pick with your approved hours.
+    resource :order, only: :create
+  end
   # wrong tool in numbers, for anyone: totals only, never anyone on their own (PublicStats).
   get "stats" => "stats#show", as: :stats
   resource :buddy, only: :show do
@@ -31,12 +38,14 @@ Rails.application.routes.draw do
   delete "n/:token/stop" => "nudge_links#unmute"
 
   # How Clippy's nudges are doing, and what the bandit's learned, wrong tool's numbers day by day, everyone who's
-  # signed in, with seeing the site as any of them, who's asked for more time to ship, and every ship in full, to approve or
-  # send back. Admins only.
+  # signed in, with seeing the site as any of them, who's asked for more time to ship or for another seller, and every ship in full, to
+  # approve or send back. Admins only.
   namespace :admin do
     resources :nudges, only: :index
     resources :metrics, only: :index
     resources :extensions, only: %i[index update]
+    resources :seller_requests, only: %i[index update]
+    resources :orders, only: %i[index update]
     resources :ships, only: %i[index show update]
     resources :projects, only: %i[index show]
     resources :users, only: :index do

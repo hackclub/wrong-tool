@@ -1,0 +1,90 @@
+<% content_for :title, "Sellers · Wrong Tool admin" %>
+
+<%# Everyone who's asked for a console from another seller, to save on customs: who, which console, the link, and a
+    button each way while it's waiting; then the ones decided, and who decided. Real names and emails are here, so
+    nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=SELLERS(wrong tool)  →  #{@pending.size} waiting" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">Who's asked for another seller</h1>
+        <p class="leaderboard__note">
+          A link to the same console somewhere nearer them, so it gets there without customs. Approve it if it's the same
+          console with the same spec, and it ships to them; it's where theirs is ordered from if it's their pick. The
+          hours stay what they are. They get a DM from Clippy either way, and can send another link after a no.
+        </p>
+        <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
+      </header>
+
+      <section aria-labelledby="admin-sellers-waiting">
+        <h2 class="admin__heading" id="admin-sellers-waiting">Waiting</h2>
+        <% if @pending.empty? %>
+          <p class="leaderboard__note">Nobody's waiting.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--extensions">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Console</th>
+                  <th scope="col">Link</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col"><span class="visually-hidden">Decide</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @pending.each do |ask| %>
+                  <%= render "admin/seller_requests/row", ask: do %>
+                    <td class="admin__actions">
+                      <%= button_to "Approve", admin_seller_request_path(ask), method: :patch, params: { decision: "approved" },
+                            class: "admin__button", form: { data: { turbo: false } } %>
+                      <%= button_to "Deny", admin_seller_request_path(ask), method: :patch, params: { decision: "denied" },
+                            class: "admin__button", form: { data: { turbo: false } } %>
+                    </td>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="admin-sellers-decided">
+        <h2 class="admin__heading" id="admin-sellers-decided">Decided</h2>
+        <% if @decided.empty? %>
+          <p class="leaderboard__note">None yet.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--extensions">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Console</th>
+                  <th scope="col">Link</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col">Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @decided.each do |ask| %>
+                  <%= render "admin/seller_requests/row", ask: do %>
+                    <td data-decision="<%= ask.status %>">
+                      <%= ask.status.capitalize %>
+                      <small class="admin__muted">
+                        <%= ask.decided_by&.first_name.presence || "someone" %> · <%= ask.decided_at.strftime("%b %-d") %>
+                      </small>
+                    </td>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+    </div>
+  </main>
+</div>

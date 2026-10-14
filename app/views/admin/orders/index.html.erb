@@ -1,0 +1,63 @@
+<% content_for :title, "Orders · Wrong Tool admin" %>
+
+<%# Every console claimed with approved hours: the ones to order, oldest first, then the ones ordered and who did.
+    Real names and emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=ORDERS(wrong tool)  →  #{@waiting.size} to order" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">What's been claimed</h1>
+        <p class="leaderboard__note">
+          Each is a console someone claimed with the hours their ship got approved, exactly as they set it up. Order it
+          from the link (their address is on Hack Club Auth, under their email), then mark it ordered: Clippy DMs them.
+        </p>
+        <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
+      </header>
+
+      <% { "To order" => [ "admin-orders-waiting", @waiting, "Nothing to order." ],
+           "Ordered" => [ "admin-orders-ordered", @ordered, "None yet." ] }.each do |heading, (id, orders, empty)| %>
+        <section aria-labelledby="<%= id %>">
+          <h2 class="admin__heading" id="<%= id %>"><%= heading %></h2>
+          <% if orders.empty? %>
+            <p class="leaderboard__note"><%= empty %></p>
+          <% else %>
+            <div class="admin__scroll">
+              <table class="leaderboard__table admin__table admin__table--extensions">
+                <thead>
+                  <tr>
+                    <th scope="col">Who</th>
+                    <th scope="col">What</th>
+                    <th scope="col">From</th>
+                    <th scope="col">Hours</th>
+                    <th scope="col">Claimed</th>
+                    <th scope="col"><%= orders.equal?(@waiting) ? tag.span("Order", class: "visually-hidden") : "Ordered" %></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% orders.each do |order| %>
+                    <%= render "admin/orders/row", order: do %>
+                      <% if order.waiting? %>
+                        <td class="admin__actions">
+                          <%= button_to "Mark ordered", admin_order_path(order), method: :patch, class: "admin__button", form: { data: { turbo: false } } %>
+                        </td>
+                      <% else %>
+                        <td data-decision="approved">
+                          <%= order.ordered_by&.first_name.presence || "someone" %>
+                          <small class="admin__muted"><%= order.ordered_at.strftime("%b %-d") %></small>
+                        </td>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  </main>
+</div>

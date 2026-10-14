@@ -32,10 +32,13 @@ class Admin::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin__ship-description", /every frame is a Figma component/
     assert_select ".admin__ship-shot img[alt='Screenshot of Pong in Figma']"
     assert_select "form[action=?]", admin_ship_path(@ship), 2
+    assert_select "form[action=?] input[name=approved_hours][value='7.5'][max='7.5']", admin_ship_path(@ship)
 
-    patch admin_ship_path(@ship), params: { decision: "approved" }
+    patch admin_ship_path(@ship), params: { decision: "approved", approved_hours: "6" }
     assert_redirected_to admin_ship_path(@ship)
     assert @ship.reload.approved?
+    assert_equal 6, @ship.approved_hours, "what the admin approved, not all 7.5"
+    assert_equal 6, projects(:ana).reload.hours_approved
     assert_equal users(:orpheus), @ship.decided_by
     assert projects(:ana).reload.shipped?
 

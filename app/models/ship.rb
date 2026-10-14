@@ -36,11 +36,13 @@ class Ship < ApplicationRecord
   def approved? = status == "approved"
   def rejected? = status == "rejected"
 
-  # An admin's call, made once: false if it's been made already (or isn't a decision).
-  def decide!(decision, by:)
+  # An admin's call, made once: false if it's been made already (or isn't a decision). Approving grants the hours it
+  # took for the shop to spend (Project#hours_approved), or fewer if the admin says so; never more, never below 0.
+  def decide!(decision, by:, hours: nil)
     return false unless in_review? && DECISIONS.include?(decision)
 
-    update!(status: decision, decided_by: by, decided_at: Time.current)
+    approved_hours = (hours.presence&.to_d&.clamp(0, self.hours) || self.hours if decision == "approved")
+    update!(status: decision, decided_by: by, decided_at: Time.current, approved_hours:)
     true
   end
 

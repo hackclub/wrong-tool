@@ -42,6 +42,20 @@
     }
   }
 
+  /* Approving a ship: the hours it grants, in a box by the button. */
+  .admin__approve {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .admin__hours {
+    inline-size: 80px;
+    padding: 4px 6px;
+    border: 1px solid var(--border-header);
+    font: 13px var(--font-mono);
+  }
+
   .leaderboard__table.admin__table {
     table-layout: auto;
 
@@ -288,8 +302,8 @@
   }
 }
 
-/* The extensions page (/admin/extensions): who's asked for more time, why, and a button each way. The admin pages'
-   nav sits above every one of them. */
+/* The extensions page (/admin/extensions), and the sellers one (/admin/seller_requests) laid out the same: who's
+   asked, for what, and a button each way. The admin pages' nav sits above every one of them. */
 @layer sections {
   .admin__nav {
     display: flex;

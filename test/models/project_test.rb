@@ -137,6 +137,8 @@ class ProjectTest < ActiveSupport::TestCase
     project.update!(prize: "miyoo", prize_color: "teal")
     assert_nil project.prize_color
     assert_equal "Gray", project.console_color.name
+
+    assert_empty project.orders, "nothing bought"
   end
 
   test "your pick's extras are ones its maker offers, price it as the maker does, and set the hours it takes" do

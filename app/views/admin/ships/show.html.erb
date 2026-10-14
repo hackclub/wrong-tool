@@ -54,17 +54,24 @@
         <h2 class="admin__heading" id="admin-ship-decision">Decision</h2>
         <% if @ship.in_review? %>
           <p class="leaderboard__note">
-            Approved, their console's locked in and they can't change it in the shop. Sent back, they can ship again.
-            Nobody's told either way from here; say so in #wrong.
+            Approved, the hours go to them to spend in the shop: what it took, or fewer if some don't count. Sent back,
+            they can ship again. Nobody's told either way from here; say so in #wrong.
           </p>
           <div class="admin__actions">
-            <%= button_to "Approve", admin_ship_path(@ship), method: :patch, params: { decision: "approved" },
-                  class: "admin__button", form: { data: { turbo: false } } %>
+            <%= form_with url: admin_ship_path(@ship), method: :patch, class: "admin__approve", data: { turbo: false } do |form| %>
+              <%= form.hidden_field :decision, value: "approved" %>
+              <%= form.label :approved_hours, "Hours to approve", class: "admin__muted" %>
+              <%= form.number_field :approved_hours, value: @ship.hours.to_f.round(2), min: 0, max: @ship.hours.to_f.round(2), step: 0.01,
+                    class: "admin__hours" %>
+              <%= form.submit "Approve", class: "admin__button" %>
+            <% end %>
             <%= button_to "Send back", admin_ship_path(@ship), method: :patch, params: { decision: "rejected" },
                   class: "admin__button", form: { data: { turbo: false } } %>
           </div>
         <% else %>
-          <p class="leaderboard__note" data-decision="<%= @ship.status %>"><%= ship_decision(@ship) %>.</p>
+          <p class="leaderboard__note" data-decision="<%= @ship.status %>">
+            <%= ship_decision(@ship) %><% if @ship.approved? %>, with <%= project_hours(@ship.approved_hours || @ship.hours) %> hrs to spend<% end %>.
+          </p>
         <% end %>
       </section>
 

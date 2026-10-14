@@ -1,0 +1,1238 @@
+/* The shop, built out of the sheet's own cells: 100 × 30 cells with their letters and numbers, a shelf of console
+   tiles three columns wide across rows 3 to 10, and under it the counter: Clippy in A12:B20, his
+   dialogue box in C12:H20, and the Customize panel in I12:L20. Everything's in hours, never money. */
+@layer sections {
+  .shop-page {
+    --amber-50: #fff1d6;
+    --amber-800: #8a5200;
+    --row-selected: var(--blue-50);
+    --scrim: rgb(32 33 36 / 60%);
+    --tile-width: 300px;
+    --shelf-rows: 7;
+  }
+
+  .shop-sheet {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Column letters along the top, stuck there as the sheet scrolls down. */
+  .shop__column-headers {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 4;
+    flex: none;
+    display: flex;
+    min-inline-size: max-content;
+    block-size: var(--column-header-height);
+    background: var(--surface-header);
+    font-size: 11px;
+    color: var(--text-secondary);
+    user-select: none;
+  }
+
+  .shop__corner {
+    flex: none;
+    inline-size: var(--row-header-width);
+    box-sizing: border-box;
+    border-inline-end: 4px solid var(--border-header);
+    border-block-end: 4px solid var(--border-header);
+  }
+
+  .shop__column-header {
+    flex: none;
+    inline-size: var(--cell-width);
+    display: grid;
+    place-items: center;
+    border-inline-end: 1px solid var(--border-header);
+    border-block-end: 1px solid var(--border-header);
+
+    &[data-selected] {
+      background: var(--selection-header-bg);
+      color: var(--selection-header-fg);
+      font-weight: 700;
+    }
+  }
+
+  .shop__column-header--rest {
+    flex: 1;
+    min-inline-size: var(--cell-width);
+    border-inline-end: 0;
+  }
+
+  .shop__body {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    min-inline-size: max-content;
+  }
+
+  /* Row numbers down the side, stuck there as the sheet scrolls across. */
+  .shop__row-headers {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 3;
+    flex: none;
+    inline-size: var(--row-header-width);
+    display: grid;
+    grid-auto-rows: var(--cell-height);
+    align-content: start;
+    border-inline-end: 1px solid var(--border-header);
+    background: var(--surface-header);
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    user-select: none;
+  }
+
+  .shop__row-header {
+    line-height: var(--cell-height);
+    border-block-end: 1px solid var(--border-header);
+
+    &[data-selected] {
+      background: var(--selection-header-bg);
+      color: var(--selection-header-fg);
+      font-weight: 700;
+    }
+  }
+
+  /* The cells: columns A to L, then the rest of the row, over the sheet's gridlines. Click in and the arrow keys
+     work: ← → along the shelf, ↑ ↓ through Clippy's choices, Enter to answer. */
+  .shop {
+    position: relative;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(12, var(--cell-width)) minmax(var(--cell-width), 1fr);
+    grid-auto-rows: var(--cell-height);
+    align-content: start;
+    min-block-size: calc(var(--cell-height) * 40);
+    outline: none;
+    background-image:
+      linear-gradient(var(--border-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-grid) 1px, transparent 1px);
+    background-size: var(--cell-width) var(--cell-height);
+    background-position: 0 -1px, -1px 0;
+    font-family: var(--font-cell);
+    color: var(--text-primary);
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--blue-150);
+    }
+  }
+
+  /* A1:F2, the title. */
+  .shop__title {
+    grid-column: 1 / 7;
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    padding: 0 12px;
+    background: var(--white);
+    border-inline-end: 1px solid var(--border-grid);
+    border-block-end: 1px solid var(--border-grid);
+  }
+
+  .shop__title-text {
+    font: 700 28px/1 var(--font-cell);
+    letter-spacing: -0.6px;
+  }
+
+  /* I1:J2 and K1:L2: your hours, and how your ship's going. */
+  .shop__stat {
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 12px;
+    background: var(--white);
+    border: 1px solid var(--border-grid);
+    border-block-start: 0;
+  }
+
+  .shop__stat--logged {
+    grid-column: 9 / 11;
+  }
+
+  .shop__stat--ship {
+    grid-column: 11 / 13;
+    border-inline-start: 0;
+  }
+
+  .shop__stat-label {
+    font: 600 10px var(--font-mono);
+    letter-spacing: 0.5px;
+    color: var(--grey-600);
+  }
+
+  .shop__stat-value {
+    font: 600 20px var(--font-mono);
+    color: var(--text-secondary);
+
+    &[data-tone="done"] {
+      color: var(--green);
+    }
+
+    &[data-tone="review"] {
+      color: var(--amber-800);
+    }
+  }
+
+  /* A4:L10, the shelf: 1900px of tiles (a column of empty cells after the two prizes) behind a 1200px window, snapping a
+     tile at a time. Row 3 stays empty cells. */
+  .shop__shelf {
+    grid-column: 1 / 13;
+    grid-row: 4 / span 7;
+    overflow: auto hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .shop__shelf-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, var(--tile-width)) var(--cell-width);
+    grid-auto-columns: var(--tile-width);
+    grid-template-rows: calc(var(--cell-height) * var(--shelf-rows));
+    inline-size: max-content;
+  }
+
+  /* The two prizes are one range, tinted and framed in green the way Sheets outlines a coloured range. */
+  .shop__shelf-inner::before {
+    content: "";
+    position: absolute;
+    inset-block: 0 -1px;
+    inset-inline-start: 0;
+    inline-size: calc(var(--tile-width) * 2);
+    border: 2px solid var(--green);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .shop__tile[data-group="prize"] .shop__tile-button {
+    background: var(--green-header);
+  }
+
+  /* Then a column of empty cells before the rest, with two of them merged in the middle for a line pointing on. */
+  .shop__shelf-gap {
+    grid-row: 1;
+    display: grid;
+    grid-template-rows: repeat(var(--shelf-rows), var(--cell-height));
+    background-image: linear-gradient(to bottom, transparent calc(var(--cell-height) - 1px), var(--border-grid) 0);
+    background-size: 100% var(--cell-height);
+    border-inline-end: 1px solid var(--border-grid);
+  }
+
+  .shop__shelf-gap-text {
+    grid-row: 3 / span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-inline: 8px;
+    background: var(--white);
+    border-block-end: 1px solid var(--border-grid);
+    font-family: var(--font-cell);
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--text-secondary);
+
+    &::after {
+      content: "→";
+      font-size: 14px;
+      color: var(--green);
+    }
+  }
+
+  /* A tile: the photo, the name (flagged if it's your pick), and the hours it takes with where you are on them. */
+  .shop__tile {
+    grid-row: 1;
+    position: relative;
+    display: flex;
+    scroll-snap-align: start;
+  }
+
+  .shop__tile-button {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 0;
+    border-inline-end: 1px solid var(--border-grid);
+    border-block-end: 1px solid var(--border-grid);
+    background: var(--white);
+    font-family: var(--font-cell);
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: background 300ms;
+
+    .shop__tile[data-yours] &,
+    .shop__tile[data-yours][data-group="prize"] & {
+      background: var(--red-50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: -2px;
+    }
+  }
+
+  .shop__tile-photo {
+    position: relative;
+    display: block;
+    block-size: 118px;
+    margin: 12px 20px 0;
+  }
+
+  .shop__tile-image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  .shop__tile-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-inline-size: 0;
+    padding: 8px 12px 0;
+    font-size: 14px;
+    font-weight: 700;
+
+    > span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .shop__tile-flag {
+    --icon-size: 16px;
+
+    display: none;
+    color: var(--red);
+
+    .shop__tile[data-yours] & {
+      display: block;
+    }
+  }
+
+  .shop__tile-foot {
+    margin-block-start: auto;
+    block-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 0 12px;
+    border-block-start: 1px solid var(--border-grid);
+  }
+
+  .shop__tile-cost {
+    font: 600 13px var(--font-mono);
+  }
+
+  .shop__tile-tag {
+    font-size: 11px;
+    color: var(--grey-600);
+    white-space: nowrap;
+
+    .shop__tile[data-state="unlocked"] &,
+    .shop__tile[data-state="shipping"] & {
+      color: var(--amber-800);
+    }
+
+    .shop__tile[data-state="ready"] & {
+      color: var(--green);
+    }
+  }
+
+  /* Your pick: a red corner. */
+  .shop__tile-corner {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: 0;
+    display: none;
+    border-block-start: 16px solid var(--red);
+    border-inline-start: 16px solid transparent;
+
+    .shop__tile[data-yours] & {
+      display: block;
+    }
+  }
+
+  /* The selection: the blue ring with its "You" tag and round handle, on the tile you're looking at. */
+  .shop__tile-ring {
+    position: absolute;
+    inset: -1px;
+    display: none;
+    border: 2px solid var(--selection);
+    pointer-events: none;
+
+    .shop__tile[data-selected] & {
+      display: block;
+    }
+  }
+
+  .shop__tile-you {
+    position: absolute;
+    inset-inline-start: -2px;
+    inset-block-start: -18px;
+    block-size: 16px;
+    padding: 0 6px;
+    border-radius: 3px 3px 3px 0;
+    background: var(--selection);
+    font: 500 11px/16px var(--font-chrome);
+    color: var(--white);
+  }
+
+  .shop__tile-handle {
+    position: absolute;
+    inset-inline-end: -5px;
+    inset-block-end: -5px;
+    inline-size: 8px;
+    block-size: 8px;
+    border: 1px solid var(--white);
+    border-radius: 50%;
+    background: var(--selection);
+  }
+
+  /* Along the shelf: a round button back, and "3 more" on. */
+  .shop__shelf-arrow,
+  .shop__shelf-more {
+    position: absolute;
+    inset-block-start: calc(var(--cell-height) * 3 + 85px);
+    z-index: 2;
+    cursor: pointer;
+  }
+
+  .shop__shelf-arrow {
+    --icon-size: 24px;
+
+    inset-inline-start: 12px;
+    display: grid;
+    place-items: center;
+    inline-size: 40px;
+    block-size: 40px;
+    border: 1px solid var(--border-header);
+    border-radius: 50%;
+    background: var(--white);
+    box-shadow: 0 1px 3px rgb(60 64 67 / 30%);
+    color: var(--icon-color);
+
+    &:hover {
+      background: var(--hover-chrome);
+    }
+  }
+
+  .shop__shelf-more {
+    --icon-size: 22px;
+
+    inset-inline-start: calc(var(--cell-width) * 12 - 12px);
+    translate: -100% 0;
+    block-size: 38px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 8px 0 14px;
+    border-radius: 19px;
+    background: var(--text-primary);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 25%);
+    font: 500 13px var(--font-chrome);
+    color: var(--white);
+    white-space: nowrap;
+  }
+
+  /* A11:D11: where you are along the shelf, a dot a tile. */
+  .shop__range {
+    grid-column: 1 / 7;
+    grid-row: 11;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    background: var(--white);
+    border-inline-end: 1px solid var(--border-grid);
+    border-block-end: 1px solid var(--border-grid);
+    font: 12px var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  .shop__dots {
+    display: flex;
+    gap: 3px;
+  }
+
+  .shop__dot {
+    inline-size: 20px;
+    block-size: 10px;
+    padding: 0;
+    border: 1px solid var(--border-header);
+    background: var(--white);
+    cursor: pointer;
+
+    &[data-on] {
+      border-color: var(--selection);
+      background: var(--selection);
+    }
+  }
+
+  .shop__range-hint {
+    margin-inline-start: auto;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--grey-600);
+  }
+
+  /* The counter. On a desk its three parts are cells of their own. */
+  .shop__counter {
+    display: contents;
+  }
+
+  /* A12:B20: Clippy, who hops when something happens. */
+  .shop__mascot {
+    grid-column: 1 / 3;
+    grid-row: 12 / 21;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-block-end: 14px;
+    border: 1px solid var(--border-grid);
+    border-inline-start: 0;
+    background: var(--surface-header);
+    overflow: hidden;
+  }
+
+  .shop__sprite {
+    scale: 1.1;
+    transform-origin: bottom center;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: translate 160ms cubic-bezier(0.3, 1.5, 0.5, 1);
+    }
+
+    .shop__mascot[data-hop] & {
+      translate: 0 -14px;
+    }
+  }
+
+  /* C12:H20: what Clippy says, typed out, and your answers under it. */
+  .shop__keeper {
+    grid-column: 3 / 9;
+    grid-row: 12 / 21;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-inline-size: 0;
+    padding: 14px 18px 10px;
+    border: 2px solid var(--text-primary);
+    background: var(--white);
+  }
+
+  .shop__keeper-label {
+    align-self: flex-start;
+    padding: 2px 8px;
+    background: var(--text-primary);
+    font: 600 11px var(--font-mono);
+    letter-spacing: 0.4px;
+    color: var(--white);
+  }
+
+  .shop__say {
+    min-block-size: 48px;
+    margin: 0;
+    font: 17px/1.4 var(--font-cell);
+    text-wrap: pretty;
+
+    &[data-typing] {
+      cursor: pointer;
+    }
+  }
+
+  /* Asking for another seller: the link, and send. */
+  .shop__ask {
+    display: flex;
+    gap: 6px;
+  }
+
+  .shop__ask-input {
+    flex: 1;
+    min-inline-size: 0;
+    block-size: 34px;
+    padding: 0 10px;
+    border: 2px solid var(--selection);
+    font: 14px var(--font-cell);
+    color: var(--text-primary);
+    outline: none;
+  }
+
+  .shop__ask-send {
+    flex: none;
+    block-size: 34px;
+    padding: 0 18px;
+    border-radius: 17px;
+    background: var(--blue-700);
+    font: 500 13px var(--font-chrome);
+    color: var(--white);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ▼ once he's done, blinking; while he types there's nothing to answer yet. */
+  .shop__cursor {
+    display: inline-block;
+    margin-inline-start: 6px;
+    font-size: 11px;
+    color: var(--grey-600);
+    animation: shop-blink 1s steps(2, start) infinite;
+
+    .shop__say[data-typing] & {
+      visibility: hidden;
+      animation: none;
+    }
+  }
+
+  @keyframes shop-blink {
+    to {
+      visibility: hidden;
+    }
+  }
+
+  .shop__choices {
+    margin-block-start: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+
+    &[data-columns="2"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 12px;
+    }
+  }
+
+  .shop__choice {
+    --icon-size: 18px;
+
+    block-size: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-inline-size: 0;
+    padding: 0 8px;
+    border: 0;
+    border-block-start: 1px solid var(--border-grid);
+    background: transparent;
+    font: 15px var(--font-cell);
+    color: var(--text-primary);
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &[data-marked] {
+      background: var(--row-selected);
+      color: var(--blue-700);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: -2px;
+    }
+  }
+
+  .shop__choice-mark {
+    flex: none;
+    inline-size: 12px;
+    font-size: 11px;
+    color: var(--blue-700);
+    visibility: hidden;
+
+    .shop__choice[data-marked] & {
+      visibility: visible;
+    }
+  }
+
+  .shop__choice-icon {
+    color: var(--grey-700);
+
+    &[data-tone="pick"] {
+      color: var(--red);
+    }
+  }
+
+  .shop__choice-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shop__choice-more {
+    flex: none;
+    margin-inline-start: auto;
+    font: 11px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  /* A colour, as a square of it: see-through ones over a checker. */
+  .shop__swatch-dot,
+  .shop__choice-swatch {
+    display: block;
+    box-sizing: border-box;
+    border: 1px solid rgb(0 0 0 / 20%);
+    background: var(--swatch);
+
+    [data-clear] & {
+      background:
+        linear-gradient(color-mix(in srgb, var(--swatch) 74%, transparent), color-mix(in srgb, var(--swatch) 74%, transparent)),
+        repeating-linear-gradient(45deg, #cfcfcf 0 3px, #fff 3px 6px);
+    }
+  }
+
+  .shop__choice-swatch {
+    flex: none;
+    inline-size: 18px;
+    block-size: 18px;
+  }
+
+  /* I12:L20: the Customize panel for the tile you're on. Changes to yours save as you make them. */
+  .shop__customize {
+    grid-column: 9 / 13;
+    grid-row: 12 / 21;
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    min-inline-size: 0;
+    background: var(--white);
+    font-size: 13px;
+  }
+
+  .shop__customize-head {
+    block-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid var(--border-grid);
+    border-inline-start: 0;
+    border-block-end-color: var(--border-header);
+    background: var(--green-header);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .shop__variant {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 400 11px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  .shop__customize-row {
+    min-block-size: 60px;
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    border-inline-end: 1px solid var(--border-grid);
+    border-block-end: 1px solid var(--border-grid);
+  }
+
+  .shop__customize-label {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-inline-end: 1px solid var(--border-grid);
+    color: var(--text-secondary);
+  }
+
+  .shop__customize-label--strong {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .shop__customize-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 10px;
+  }
+
+  .shop__swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .shop__swatch {
+    inline-size: 26px;
+    block-size: 26px;
+    padding: 2px;
+    border: 1px solid var(--border-grid);
+    background: var(--white);
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      padding: 1px;
+      border: 2px solid var(--selection);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: 1px;
+    }
+  }
+
+  .shop__swatch-dot {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .shop__color-name {
+    font-size: 11px;
+    color: var(--grey-600);
+  }
+
+  .shop__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .shop__chip {
+    block-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    border: 1px solid var(--border-grid);
+    background: var(--white);
+    font: 12px var(--font-cell);
+    color: var(--text-primary);
+    white-space: nowrap;
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      border: 2px solid var(--selection);
+      background: var(--row-selected);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: 1px;
+    }
+  }
+
+  .shop__chip-more {
+    font: 11px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  .shop__customize-row--seller {
+    min-block-size: 30px;
+  }
+
+  .shop__customize-value {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding: 0 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:is(a) {
+      color: var(--blue-700);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  .shop__customize-row--hours {
+    min-block-size: 30px;
+    grid-template-columns: 100px minmax(0, 1fr) 100px;
+  }
+
+  .shop__customize-formula {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding: 0 10px;
+    border-inline-end: 1px solid var(--border-grid);
+    font: 12px var(--font-mono);
+    color: var(--text-formula);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shop__customize-cost {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 10px;
+    font: 700 13px var(--font-mono);
+  }
+
+  .shop__customize-hint {
+    block-size: 30px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font: 11px var(--font-mono);
+    color: var(--grey-600);
+  }
+
+  /* Phones: four columns, the shelf as two columns of tiles under their headers, and Clippy docked at the
+     bottom, where customizing happens in the conversation. */
+  @media (width <= 600px) {
+    .shop__column-headers {
+      min-inline-size: 0;
+    }
+
+    .shop__column-header {
+      flex: 1;
+      inline-size: auto;
+
+      &:nth-child(n + 6) {
+        display: none;
+      }
+    }
+
+    .shop__body {
+      min-inline-size: 0;
+    }
+
+    .shop {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-auto-rows: minmax(var(--cell-height), auto);
+      min-inline-size: 0;
+      background-size: 25% var(--cell-height);
+    }
+
+    .shop__title {
+      grid-column: 1 / -1;
+      grid-row: 1 / 3;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 10px;
+      border-inline-end: 0;
+    }
+
+    .shop__title-text {
+      font-size: 22px;
+    }
+
+    .shop__stat {
+      grid-row: 3;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border-block-start: 0;
+      border-inline-start: 0;
+    }
+
+    .shop__stat--logged {
+      grid-column: 1 / 3;
+    }
+
+    .shop__stat--ship {
+      grid-column: 3 / 5;
+      border-inline-end: 0;
+    }
+
+    .shop__stat-label {
+      order: 2;
+    }
+
+    .shop__stat-value {
+      font-size: 12px;
+    }
+
+    .shop__shelf {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+
+    .shop__shelf-inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: none;
+      grid-auto-rows: auto;
+      inline-size: auto;
+    }
+
+    .shop__tile {
+      grid-row: auto;
+      block-size: 210px;
+      order: 1;
+
+      &[data-group="more"] {
+        order: 3;
+      }
+
+      /* Of type: the gap is a span between the tiles, which are forms. */
+      &:nth-of-type(even) .shop__tile-button {
+        border-inline-end: 0;
+      }
+    }
+
+    .shop__tile-photo {
+      block-size: 110px;
+      margin: 12px 12px 0;
+    }
+
+    .shop__tile-name {
+      padding: 8px 10px 0;
+      font-size: 13px;
+    }
+
+    .shop__tile-foot {
+      padding: 0 10px;
+    }
+
+    .shop__tile-cost {
+      font-size: 12px;
+    }
+
+    .shop__tile-tag {
+      font-size: 10px;
+    }
+
+    /* On a phone the gap is a row of empty cells, and the frame goes round the prizes' row. */
+    .shop__shelf-gap {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      order: 2;
+      block-size: var(--cell-height);
+      background: none;
+      border-inline-end: 0;
+      border-block-end: 1px solid var(--border-grid);
+      grid-template-rows: auto;
+    }
+
+    .shop__shelf-gap-text {
+      grid-row: auto;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 6px;
+      block-size: 100%;
+      border-block-end: 0;
+
+      &::after {
+        content: "↓";
+      }
+    }
+
+    .shop__shelf-inner::before {
+      inset-block: 0 auto;
+      inline-size: 100%;
+      block-size: 210px;
+    }
+
+    .shop__tile-you {
+      display: none;
+    }
+
+    .shop__shelf-arrow,
+    .shop__shelf-more,
+    .shop__range,
+    .shop__customize-hint {
+      display: none;
+    }
+
+    .shop__counter {
+      position: sticky;
+      inset-block-end: 0;
+      z-index: 5;
+      grid-column: 1 / -1;
+      grid-row: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      inline-size: calc(100% + var(--row-header-width));
+      margin-inline-start: calc(-1 * var(--row-header-width));
+      margin-block-start: var(--cell-height);
+      padding: 10px 12px 6px;
+      border-block-start: 2px solid var(--text-primary);
+      background: var(--white);
+    }
+
+    .shop__mascot {
+      position: absolute;
+      inset-inline-start: 12px;
+      inset-block-start: 10px;
+      inline-size: 64px;
+      block-size: 60px;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--border-grid);
+    }
+
+    .shop__sprite {
+      scale: 0.45;
+    }
+
+    .shop__keeper {
+      gap: 4px;
+      min-block-size: 60px;
+      padding: 0 0 0 74px;
+      border: 0;
+    }
+
+    .shop__keeper-label {
+      padding: 1px 6px;
+      font-size: 10px;
+    }
+
+    .shop__say {
+      min-block-size: 42px;
+      font-size: 15px;
+    }
+
+    .shop__ask-input,
+    .shop__ask-send {
+      block-size: 44px;
+    }
+
+    .shop__choices {
+      margin-block-start: 4px;
+
+      &[data-columns="2"] {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .shop__choice {
+      --icon-size: 20px;
+
+      block-size: 44px;
+      gap: 10px;
+
+      &::after {
+        content: "";
+        flex: none;
+        inline-size: 8px;
+        block-size: 8px;
+        margin-inline-start: auto;
+        border-block-start: 2px solid var(--text-placeholder);
+        border-inline-end: 2px solid var(--text-placeholder);
+        rotate: 45deg;
+      }
+    }
+
+    .shop__choice-mark {
+      display: none;
+    }
+
+    /* While a colour or extra's being picked, the swatches and chips are the answers: only "Never mind" stays. */
+    .shop__counter[data-customizing] .shop__choice:not(:last-child) {
+      display: none;
+    }
+
+    .shop__choice-more {
+      margin-inline-start: 0;
+    }
+
+    /* Only while a colour or an extra's being picked. */
+    .shop__customize {
+      display: none;
+      font-size: 14px;
+    }
+
+    .shop__counter[data-customizing] .shop__customize {
+      display: flex;
+    }
+
+    .shop__customize-head {
+      border: 0;
+      border-block-end: 1px solid var(--border-grid);
+      background: transparent;
+      padding: 0;
+    }
+
+    .shop__customize-row {
+      min-block-size: 0;
+      grid-template-columns: minmax(0, 1fr);
+      padding: 8px 0;
+      border-inline-end: 0;
+    }
+
+    .shop__customize-label {
+      display: none;
+    }
+
+    .shop__customize-field {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .shop__swatch {
+      inline-size: 44px;
+      block-size: 44px;
+      padding: 4px;
+
+      &[aria-pressed="true"] {
+        padding: 3px;
+      }
+    }
+
+    .shop__color-name {
+      margin-inline-start: 4px;
+      font-size: 12px;
+    }
+
+    .shop__chips {
+      gap: 6px;
+      padding: 0;
+    }
+
+    .shop__chip {
+      block-size: 44px;
+      gap: 6px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .shop__customize-row--seller {
+      display: none;
+    }
+
+    .shop__customize-row--hours {
+      display: flex;
+      justify-content: space-between;
+      border-block-end: 0;
+    }
+
+    .shop__customize-label--strong {
+      display: none;
+    }
+
+    .shop__customize-formula,
+    .shop__customize-cost {
+      padding: 0;
+      border: 0;
+    }
+  }
+}

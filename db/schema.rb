@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -162,6 +162,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
+  create_table "orders", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "prize", null: false
+    t.string "prize_color", null: false
+    t.json "prize_options", default: {}, null: false
+    t.decimal "hours", precision: 6, scale: 2, null: false
+    t.string "seller_url", null: false
+    t.string "status", default: "waiting", null: false
+    t.bigint "ordered_by_id"
+    t.datetime "ordered_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ordered_by_id"], name: "index_orders_on_ordered_by_id"
+    t.index ["project_id", "prize"], name: "index_orders_on_project_id_and_prize", unique: true
+  end
+
   create_table "pairs", force: :cascade do |t|
     t.integer "first_project_id", null: false
     t.integer "second_project_id", null: false
@@ -215,6 +231,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
     t.index ["user_id"], name: "index_rewards_on_user_id"
   end
 
+  create_table "seller_requests", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "prize", null: false
+    t.string "url", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "decided_by_id"
+    t.datetime "decided_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "index_seller_requests_on_decided_by_id"
+    t.index ["project_id", "prize"], name: "index_seller_requests_on_project_id_and_prize"
+    t.index ["project_id"], name: "index_seller_requests_on_project_id"
+  end
+
   create_table "ships", force: :cascade do |t|
     t.integer "project_id", null: false
     t.string "title", null: false
@@ -228,6 +258,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
     t.datetime "updated_at", null: false
     t.bigint "decided_by_id"
     t.datetime "decided_at"
+    t.decimal "approved_hours", precision: 6, scale: 2
     t.index ["decided_by_id"], name: "index_ships_on_decided_by_id"
     t.index ["project_id"], name: "index_ships_on_project_id"
   end
@@ -444,11 +475,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
   add_foreign_key "extensions", "projects"
   add_foreign_key "extensions", "users", column: "decided_by_id"
   add_foreign_key "nudges", "users"
+  add_foreign_key "orders", "projects"
+  add_foreign_key "orders", "users", column: "ordered_by_id"
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
   add_foreign_key "rewards", "pairs"
   add_foreign_key "rewards", "users"
+  add_foreign_key "seller_requests", "projects"
+  add_foreign_key "seller_requests", "users", column: "decided_by_id"
   add_foreign_key "ships", "projects"
   add_foreign_key "ships", "users", column: "decided_by_id"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

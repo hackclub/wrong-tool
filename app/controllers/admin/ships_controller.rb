@@ -14,7 +14,7 @@ class Admin::ShipsController < Admin::BaseController
 
   def update
     ship = Ship.find(params[:id])
-    decided = ship.decide!(params[:decision].to_s, by: current_user)
+    decided = ship.decide!(params[:decision].to_s, by: current_user, hours: params[:approved_hours])
     redirect_to admin_ship_path(ship), alert: ("That one's been decided already." unless decided)
   end
 end
