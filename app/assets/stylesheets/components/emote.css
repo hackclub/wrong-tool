@@ -1,0 +1,11 @@
+/* A Slack emote in a line of text (ApplicationHelper#emotes), the size Slack draws them. */
+@layer components {
+  .emote {
+    display: inline-block;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-inline: 1px;
+    vertical-align: -5px;
+    object-fit: contain;
+  }
+}

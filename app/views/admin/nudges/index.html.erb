@@ -167,7 +167,7 @@
                 <td><%= "#{time_ago_in_words(nudge.sent_at)} ago" if nudge.sent_at %></td>
                 <td><%= nudge.user.first_name.presence || nudge.user.name %></td>
                 <td><%= nudge.arm.humanize %> <small class="admin__muted"><%= nudge.holdout ? "holdout" : nudge.bucket || nudge.kind %></small></td>
-                <td class="admin__message"><%= nudge.text %><% if nudge.mood_text %> <small class="admin__muted"><%= nudge.mood_text %></small><% end %></td>
+                <td class="admin__message"><%= nudge.text %><% if nudge.mood_text %> <small class="admin__muted"><%= emotes(nudge.mood_text) %></small><% end %></td>
                 <td class="leaderboard__number"><%= nudge.propensity && pct.(nudge.propensity) %></td>
                 <td class="leaderboard__number"><%= nudge.clicks %></td>
                 <td><%= nudge.reward.nil? ? "waiting" : result.(nudge) %></td>
