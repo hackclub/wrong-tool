@@ -41,6 +41,8 @@ Rails.application.routes.draw do
   # signed in, with seeing the site as any of them, who's asked for more time to ship or for another seller, and every ship in full, to
   # approve or send back. Admins only.
   namespace :admin do
+    # Every admin page, and what's waiting on an admin.
+    root "home#show"
     resources :nudges, only: :index
     resources :metrics, only: :index
     resources :extensions, only: %i[index update]

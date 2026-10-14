@@ -56,6 +56,24 @@
     font: 13px var(--font-mono);
   }
 
+  /* On the admin home, a tile is a link to the page with what's waiting, and says so when something is. */
+  .admin__tile--link {
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--blue-50);
+    }
+
+    &[data-waiting] strong {
+      color: var(--blue-700);
+    }
+  }
+
+  .admin__table--pages a {
+    color: var(--blue-700);
+  }
+
   .leaderboard__table.admin__table {
     table-layout: auto;
 

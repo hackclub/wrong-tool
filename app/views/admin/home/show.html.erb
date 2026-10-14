@@ -1,0 +1,66 @@
+<% content_for :title, "Admin · Wrong Tool" %>
+<% waiting = @waiting.values.sum %>
+
+<%# The admin home: what's waiting on an admin (a tile each, to the page that has it), then every admin page with
+    what it's for, and how many of each there are where that's a number. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=ADMIN(wrong tool)  →  #{waiting} waiting" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">Admin</h1>
+        <p class="leaderboard__note">
+          <%= waiting.zero? ? "Nothing's waiting on you." : "#{pluralize(waiting, "thing")} waiting on you." %>
+          Every admin page is below, and in the links along the top of each one.
+        </p>
+      </header>
+
+      <section aria-labelledby="admin-home-waiting">
+        <h2 class="admin__heading" id="admin-home-waiting">Waiting on you</h2>
+        <div class="admin__tiles">
+          <% admin_pages.select { |page| @waiting.key?(page[:label]) }.each do |page| %>
+            <% count = @waiting.fetch(page[:label]) %>
+            <%= link_to page[:path], class: "admin__tile admin__tile--link", data: { waiting: (true if count.positive?) } do %>
+              <%= page[:label] %>
+              <strong><%= count %></strong>
+              <small><%= admin_waiting_label(page[:label]) %></small>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+
+      <section aria-labelledby="admin-home-pages">
+        <h2 class="admin__heading" id="admin-home-pages">Every page</h2>
+        <div class="admin__scroll">
+          <table class="leaderboard__table admin__table admin__table--pages">
+            <thead>
+              <tr>
+                <th scope="col">Page</th>
+                <th scope="col">What it's for</th>
+                <th scope="col">Now</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% admin_pages.each do |page| %>
+                <tr>
+                  <th scope="row"><%= link_to page[:label], page[:path] %></th>
+                  <td><%= page[:about] %></td>
+                  <td>
+                    <% if @waiting.key?(page[:label]) %>
+                      <%= @waiting[page[:label]] %> <%= admin_waiting_label(page[:label]) %>
+                    <% elsif @totals.key?(page[:label]) %>
+                      <%= number_with_delimiter(@totals[page[:label]]) %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
