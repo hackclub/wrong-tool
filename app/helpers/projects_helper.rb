@@ -1,6 +1,4 @@
 module ProjectsHelper
-  PRIZE_NAMES = { "rg35xx" => "ANBERNIC RG35XX Pro", "miyoo" => "Miyoo Mini Plus" }.freeze
-  PRIZE_SHORT_NAMES = { "rg35xx" => "RG35XX", "miyoo" => "Miyoo" }.freeze
   PACE_LABELS = { 20 => "20 min", 45 => "45 min", 60 => "1 hr", 120 => "2 hrs", 180 => "3 hrs" }.freeze
   BUILD_TIME_LABELS = { "after school" => "after school", "evening" => "evenings", "late night" => "late nights",
                         "weekends" => "weekends" }.freeze
@@ -8,13 +6,14 @@ module ProjectsHelper
   BUILD_TIME_SOON = { "after school" => "after school", "evening" => "this evening", "late night" => "tonight",
                       "weekends" => "today" }.freeze
 
+  # "ANBERNIC RG35XX Pro"
   def project_prize_name(project)
-    PRIZE_NAMES.fetch(project.prize)
+    project.console.full
   end
 
-  # "1.5 of 10 hrs"
+  # "1.5 of 12 hrs": the hours your pick takes (Project#hours_needed).
   def project_hours_label(project, hours = project.hours_logged)
-    "#{project_hours(hours)} of #{hours_per_reward} hrs"
+    "#{project_hours(hours)} of #{project_hours(project.hours_needed)} hrs"
   end
 
   # 1.5, or 2 rather than 2.0
@@ -36,11 +35,11 @@ module ProjectsHelper
     project.title.downcase.delete_prefix("a ").delete_prefix("an ").gsub(/[^a-z0-9]+/, "_").delete_prefix("_").delete_suffix("_")[0, 36]
   end
 
-  # "10 hrs · 45 min a day · done by Oct 15 · Miyoo Mini Plus"
+  # "12 hrs · 45 min a day · done by Oct 15 · Miyoo Mini Plus in grey, 64 GB card"
   def project_meta(project)
     per = project.build_time == "weekends" ? "a session" : "a day"
-    [ "#{hours_per_reward} hrs", "#{project_pace_label(project.pace_minutes)} #{per}",
-      "done by #{project_date(project.finish_on)}", project_prize_name(project) ].join(" · ")
+    [ "#{project_hours(project.hours_needed)} hrs", "#{project_pace_label(project.pace_minutes)} #{per}",
+      "done by #{project_date(project.finish_on)}", project.prize_configuration ].join(" · ")
   end
 
   # Your hours always come through Hackatime: from its editor plugin if you're writing code (over SSH, that's on the
@@ -135,7 +134,7 @@ module ProjectsHelper
   # deadline, on the Events card: this is the day your hours would be in.)
   def project_goal(project)
     [
-      { label: "Logged", value: project_hours_label(project), note: "for the #{project_prize_name(project)}" },
+      { label: "Logged", value: project_hours_label(project), note: "for the #{project.prize_name}" },
       { label: "Daily pace", value: project_pace_label(project.pace_minutes), note: BUILD_TIME_LABELS.fetch(project.build_time),
         pace: true },
       { label: "Done by", value: project_date(project.finish_on), note: "at this pace" }
@@ -148,19 +147,22 @@ module ProjectsHelper
       "#{project_date(project.finish_on)}. Ship any time up to #{project_date(project.deadline)}."
   end
 
-  # The milestones along your hours track (which runs to the last one), and whether you've reached each. The
-  # shoutout reads "posted" once it has been (Reward::HOURS), which follows the next sync after you reach it.
+  # The milestones along your hours track: the shoutout (Program::MILESTONES) and your handheld, at the hours it
+  # takes (the track runs to the later of them). Whether you've reached each; the shoutout reads "posted" once it
+  # has been (Reward::HOURS), which follows the next sync after you reach it.
   def project_milestones(project)
-    most = Program::MILESTONES.keys.max
-    Program::MILESTONES.map do |hours, reward|
+    milestones = Program::MILESTONES.to_a << [ project.hours_needed, project.console.name ]
+    milestones = milestones.sort_by(&:first)
+    most = milestones.last.first
+    milestones.map do |hours, reward|
       reached = project.hours_logged >= hours
       posted = reward == "shoutout" && project.user.earned?("hours_shoutout")
-      { hours:, label: "#{hours} hrs · #{posted ? "posted" : reward}", reached:, at: hours * 100.0 / most, last: hours == most }
+      { hours:, label: "#{project_hours(hours)} hrs · #{posted ? "posted" : reward}", reached:, at: hours * 100.0 / most, last: hours == most }
     end
   end
 
   def project_hours_percent(project)
-    [ project.hours_logged * 100.0 / Program::MILESTONES.keys.max, 100 ].min
+    [ project.hours_logged * 100.0 / project_milestones(project).last[:hours], 100 ].min
   end
 
   # Your build days as cells. The days gone show how they went, from Hackatime: "hit" with your pace's minutes on

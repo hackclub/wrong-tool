@@ -37,10 +37,10 @@ class OnboardingTest < ApplicationSystemTestCase
     pledged = "#{genre} #{twist}"
     click_on "Use this idea"
 
-    assert_selector "h2", text: "Pick your prize."
+    assert_selector "h2", text: "Pick your handheld."
     click_on "Mini Plus"
     assert_selector "h2", text: "Set your pace.", wait: 0.5
-    assert_selector ".onboarding-mascot__bubble", text: "Nice pick! The Mini Plus is yours after 10 hours."
+    assert_selector ".onboarding-mascot__bubble", text: "Nice pick! The Mini Plus is about 10 hours of building."
     assert_selector ".onboarding-prize[data-claimed]", text: "Mini Plus", visible: :all
 
     # Nothing's picked for you, so there's nothing to sign yet.

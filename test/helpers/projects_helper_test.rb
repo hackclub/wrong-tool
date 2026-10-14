@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ProjectsHelperTest < ActionView::TestCase
+  include ApplicationHelper
+
   include PagesHelper
 
   test "how to get hours onto Hackatime depends on the tool" do
@@ -33,6 +35,10 @@ class ProjectsHelperTest < ActionView::TestCase
   end
 
   test "the schedule fills in the days gone by how they went, then today, the goal day and the party" do
+    with_hours_needed(10.0) { schedule_fills_in } # a pick that takes 10 hours
+  end
+
+  def schedule_fills_in
     project = projects(:orpheus)
     user = project.user
     user.streak_activities.create!(activity_date: Date.new(2026, 10, 6), coded_seconds: 45 * 60)
@@ -74,6 +80,8 @@ class ProjectsHelperTest < ActionView::TestCase
     project = projects(:orpheus)
     assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 20.", project_schedule_note(project)
     assert_equal({ label: "Done by", value: "Oct 19", note: "at this pace" }, project_goal(project).last)
+    assert_equal({ label: "Logged", value: "0 of 10 hrs", note: "for the Miyoo Mini Plus in gray" }, project_goal(project).first)
+    assert_equal "10 hrs · 45 min a day · done by Oct 19 · Miyoo Mini Plus in gray, 64GB", project_meta(project)
   end
 
   test "an approved extension moves the deadline on the schedule" do
@@ -85,5 +93,13 @@ class ProjectsHelperTest < ActionView::TestCase
     assert_equal({ gap: true }, days[-2])
     assert_equal "goal", days[-3][:state]
     assert_nil days.find { |day| day[:date] == "20" && day[:state] == "due" }
+  end
+
+  test "the hours track runs to your pick, at the hours its price takes, with the shoutout on the way" do
+    project = projects(:orpheus)
+    assert_equal [ "5 hrs · shoutout", "10 hrs · Mini Plus" ], project_milestones(project).map { _1[:label] }
+    assert_equal [ false, true ], project_milestones(project).map { _1[:last] }
+    assert_in_delta 50.0, project_milestones(project).first[:at], 0.1
+    assert_equal 0, project_hours_percent(project)
   end
 end

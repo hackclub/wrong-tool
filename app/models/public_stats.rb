@@ -35,8 +35,13 @@ class PublicStats
         hours: (seconds_by_user.values.sum / 3600.0).round(1),
         shipped: Ship.distinct.count(:project_id),
         shipped_hours: Ship.latest_per_project.sum(:hours).to_f.round(1),
-        handhelds: users_with_hours(Program::HOURS_PER_REWARD)
+        handhelds: picks_afforded
       }
+    end
+
+    # Whose hours cover the console they picked.
+    def picks_afforded
+      Project.all.count { |project| project.afford?((seconds_by_user.fetch(project.user_id, 0) / 3600.0).round(1)) }
     end
 
     # Signed in to shipped, each step with how many got there.

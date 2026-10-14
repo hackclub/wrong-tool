@@ -75,7 +75,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1 .project__title", "A rhythm game in Spreadsheet"
-    assert_select ".project__meta", /done by Oct 19/
+    assert_select ".project__meta", /done by Oct 19 · Miyoo Mini Plus in gray, 64GB$/
     assert_select ".app-bar__progress", "Day 1 of 14"
     assert_select ".project__step[data-state=current] .project__step-title", /Link Hackatime/
     assert_select ".project__step[data-state=locked]", /Link your Hackatime project/
@@ -115,7 +115,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
       assert_select ".formula-bar__content", /TRUE/
       assert_select ".project__setup-summary", "Setup done"
       assert_equal [ "1.5 of 10 hrs", "45 min", "Oct 19" ], css_select(".project__goal-value").map(&:text)
-      assert_equal [ "5 hrs · shoutout", "10 hrs · handheld", "20 hrs · +$85" ], css_select(".project__track-label").map(&:text)
+      assert_equal [ "5 hrs · shoutout", "10 hrs · Mini Plus" ], css_select(".project__track-label").map(&:text)
       assert_select ".project__day-cell[data-state=party]", /Party/
       assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
       assert_select ".project__event[data-kind=ship] .project__event-day", "20", "the deadline, not the day your hours would be in"

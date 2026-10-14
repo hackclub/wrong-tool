@@ -67,5 +67,19 @@ module HackatimeHelpers
   end
 end
 
+module ShopHelpers
+  # As if every pick took this many hours (Shop.hours_for), for the schedule tests, whose arithmetic is about days,
+  # not prices.
+  def with_hours_needed(hours)
+    Shop.singleton_class.alias_method(:hours_for_without_test, :hours_for)
+    Shop.define_singleton_method(:hours_for) { |_dollars| hours }
+    yield
+  ensure
+    Shop.singleton_class.alias_method(:hours_for, :hours_for_without_test)
+    Shop.singleton_class.remove_method(:hours_for_without_test)
+  end
+end
+
+ActiveSupport::TestCase.include ShopHelpers
 ActiveSupport::TestCase.include HackClubAuthHelpers
 ActiveSupport::TestCase.include HackatimeHelpers

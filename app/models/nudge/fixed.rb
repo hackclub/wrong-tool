@@ -7,9 +7,12 @@ module Nudge::Fixed
     { "kickoff" => Program::DATES.begin, "three_days_left" => deadline - 3, "last_day" => deadline }
   end
 
-  # Hours on Hackatime that each milestone is for, in order. Each sends once, and reaching a later one first means
-  # the earlier ones don't send at all.
-  MILESTONES = { "first_session" => 0.1, "halfway" => Program::HOURS_PER_REWARD / 2.0, "done" => Program::HOURS_PER_REWARD }.freeze
+  # Hours on Hackatime that each milestone is for, in order: your first, halfway to your pick's price, and there
+  # (Project#hours_needed). Each sends once, and reaching a later one first means the earlier ones don't send at all.
+  def self.milestones(context)
+    needed = context.project.hours_needed
+    { "first_session" => 0.1, "halfway" => needed / 2.0, "done" => needed }
+  end
 
   # Sent at their slot, so streak savers come with the day's nudge rather than at 11pm.
   def self.for(context)
@@ -21,15 +24,16 @@ module Nudge::Fixed
   def self.program_nudge(context)
     dates = program_dates(context)
     key = dates.key(context.today) or return
-    key = "#{key}_done" if key != "kickoff" && context.hours >= Program::HOURS_PER_REWARD
+    key = "#{key}_done" if key != "kickoff" && context.project.afford?
     since = dates["three_days_left"].in_time_zone(context.user.time_zone)
     return if context.user.nudges.delivered.where(kind: "program", arm: key, sent_at: since..).exists?
     build(context, kind: "program", arm: key)
   end
 
   def self.milestone(context)
-    key = MILESTONES.select { |_, hours| context.hours >= hours }.keys.last or return
-    later = MILESTONES.keys.drop(MILESTONES.keys.index(key))
+    milestones = milestones(context)
+    key = milestones.select { |_, hours| context.hours >= hours }.keys.last or return
+    later = milestones.keys.drop(milestones.keys.index(key))
     return if context.user.nudges.delivered.where(kind: "milestone", arm: later).exists?
     build(context, kind: "milestone", arm: key)
   end

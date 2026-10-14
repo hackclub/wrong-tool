@@ -11,7 +11,7 @@ class Reward < ApplicationRecord
   ].freeze
 
   # Hours logged on your linked Hackatime projects since the program started. The milestone on the project page's
-  # hours track (Program::MILESTONES): the handheld and the bonus past it are claimed by shipping, not awarded here.
+  # hours track (Program::MILESTONES): the console your hours pay for (Shop) is claimed by shipping, not awarded here.
   HOURS = [
     { key: "hours_shoutout", hours: Program::MILESTONES.key("shoutout"), label: "Shoutout in #wrong", about: "We post your game in the channel." }
   ].freeze

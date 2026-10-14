@@ -233,8 +233,8 @@ export default class extends Controller {
   claim({ params: { prize } }) {
     this.#set({ prize })
     this.#completed(3, { prize })
-    const { name } = this.prizesValue.find(({ id }) => id === prize)
-    this.#congratulate(`Nice pick! The ${name} is yours after ${this.hoursValue} hours.`)
+    const { name, hours } = this.prizesValue.find(({ id }) => id === prize)
+    this.#congratulate(`Nice pick! The ${name} is about ${hours} hours of building.`)
     this.#goTo(4)
   }
 
@@ -479,10 +479,15 @@ export default class extends Controller {
   }
 
   // The day you'd log your last hour: sessions of `pace` minutes, one a day (only Saturdays and Sundays if you
+  // The hours your pick takes (its price through the shop's rates), or the first-tier hours before you've picked.
+  #hoursNeeded(s = this.state) {
+    return this.prizesValue.find(({ id }) => id === s.prize)?.hours ?? this.hoursValue
+  }
+
   // build on weekends), from the day wrong tool starts, or today if that's later.
   #finishDate(s = this.state) {
     if (!s.pace) return null
-    let sessions = Math.ceil((this.hoursValue * 60) / s.pace)
+    let sessions = Math.ceil((this.#hoursNeeded(s) * 60) / s.pace)
     const today = new Date()
     const day = new Date(Math.max(localDate(this.programValue.start), new Date(today.getFullYear(), today.getMonth(), today.getDate())))
     for (;;) {
@@ -608,7 +613,7 @@ export default class extends Controller {
         if (s.rolling) return `=IDEA(RAND(), "${toolName}")`
         if (s.ownOpen) return `="${s.own}"`
         return s.idea ? `="${s.idea}"` : `=IDEA(RAND(), "${toolName}")`
-      case 3: return `=PRIZE(${this.hoursValue} hrs)`
+      case 3: return `=PRIZE(${this.#hoursNeeded(s)} hrs)`
       default: {
         const idea = this.#pledgeIdea().replace(/^(a|an) /i, "")
         const date = finish ? `DATE(${finish.getMonth() + 1},${finish.getDate()})` : "DATE(?,?)"

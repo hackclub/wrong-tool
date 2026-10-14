@@ -1,6 +1,7 @@
-<%# A3: picking a handheld bursts the grid into colored cells, then moves on to A4. %>
+<%# A3: picking a console (a few of them, OnboardingHelper#onboarding_prizes) moves on to A4. Its colour and extras wait for
+    your handheld sheet. Each card says about how many hours of building it is (Shop). %>
 <div class="onboarding-prizes">
-  <p class="onboarding-prizes__title">Build for <%= hours_per_reward %> hours of to claim this. (You can get multiple)</p>
+  <p class="onboarding-prizes__title">Build your game and we'll mail you one of these.</p>
 
   <div class="onboarding-prizes__grid">
     <% onboarding_prizes.each do |prize| %>
@@ -9,11 +10,13 @@
               data-action="onboarding#claim" data-onboarding-prize-param="<%= prize[:id] %>">
         <span class="onboarding-prize__photo">
           <%= image_tag prize[:image], alt: prize[:alt], class: "onboarding-prize__image" %>
+          <span class="onboarding-prize__kind"><%= prize[:kind] %></span>
         </span>
         <span class="onboarding-prize__strip">
           <span class="onboarding-prize__text">
             <span class="onboarding-prize__maker"><%= prize[:maker] %></span>
             <span class="onboarding-prize__name"><%= prize[:name] %></span>
+            <span class="onboarding-prize__price">about <%= project_hours(prize[:hours]) %> hrs of building</span>
           </span>
           <%= inline_svg_tag "icons/onboarding/radio-button-unchecked.svg", class: "icon onboarding-prize__radio", aria_hidden: true %>
           <%= inline_svg_tag "icons/onboarding/radio-button-checked.svg", class: "icon onboarding-prize__radio onboarding-prize__radio--checked", aria_hidden: true %>

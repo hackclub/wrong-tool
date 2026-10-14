@@ -1,5 +1,7 @@
 <% title = "make a game in something that isn't a game engine." %>
-<% ticker = [ "free handheld", "build #{hours_per_reward} hours, we mail you one", "anbernic rg35xx pro", "or miyoo mini plus" ] %>
+<% hours = Console::ALL.map(&:hours_for).minmax.map(&:round) %>
+<% ticker = [ "free handheld", "build a game, we mail you one", "about #{hours.first} to #{hours.last} hours, depending which",
+              "anbernic rg35xx pro", "or miyoo mini plus", "or a clamshell", "#{Console::ALL.size} to pick from", "any colour" ] %>
 
 <%# Drawn in CSS, under the program name: a screwdriver driving a nail. %>
 <div class="cell hero__art" role="img" aria-label="A screwdriver driving a nail into a plank"
@@ -20,7 +22,7 @@
       class: "cell cell--formula hero__kicker", data: { formula: %(=HYPERLINK("#{organizer_url}", "run by @cskartikey")) } %>
 <h1 class="cell cell--title hero__name" data-formula='=YSWS("wrong tool")'>wrong tool</h1>
 <%= tag.h2 title, class: "cell cell--title hero__title", data: { formula: %(="#{title}") } %>
-<p class="cell cell--subtitle cell--wrap hero__subtitle"><span>build it in <strong>google sheets</strong>, <strong>figma</strong>, <strong>email</strong>, or whatever else you like. log&nbsp;<%= hours_per_reward %> hours and we'll send you a handheld.</span></p>
+<p class="cell cell--subtitle cell--wrap hero__subtitle"><span>build it in <strong>google sheets</strong>, <strong>figma</strong>, <strong>email</strong>, or whatever else you like. build it for a couple of weeks and we'll mail you a handheld.</span></p>
 <%= link_to "Start building →", onboarding_path, class: "cell cell--cta hero__cta",
       data: { formula: "=START(building)", cell_selection_target: "initial",
               capture: "signup_clicked", capture_location: "hero" } %>
@@ -32,7 +34,7 @@
 <%# The prize marquee scrolls and the two handhelds take turns being picked. %>
 <div class="hero__prize" data-controller="prize-picker" data-prize-picker-pick-value="rg35xx">
   <div class="cell hero__marquee" role="marquee" aria-label="<%= ticker.join(" · ") %>"
-       data-formula="=SHIP(handheld) every <%= hours_per_reward %> hrs">
+       data-formula="=IF(built(game), MAIL(handheld))">
     <span class="hero__marquee-track" aria-hidden="true">
       <% 2.times do %>
         <span class="hero__marquee-run">

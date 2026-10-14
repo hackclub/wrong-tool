@@ -40,7 +40,7 @@ class RewardTest < ActiveSupport::TestCase
     assert @orpheus.reload.earned?("hours_shoutout")
     assert_includes slack_messages, [ "U0ORPHEUS", "5 hours logged. We posted *#{@orpheus.project.title}* in #wrong." ]
     assert_includes slack_messages, [ Program::SLACK_CHANNEL_ID, ":yay: <@U0ORPHEUS> just logged 5 hours on *#{@orpheus.project.title}*, built in " \
-                                                                  "#{@orpheus.project.tool_name}. halfway to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_" ]
+                                                                  "#{@orpheus.project.tool_name}. well on the way to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_" ]
 
     travel_to(Time.utc(2026, 10, 9, 13)) { @orpheus.recalculate_streak! }
     assert_equal 1, @orpheus.rewards.where(key: "hours_shoutout").count

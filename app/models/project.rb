@@ -2,7 +2,8 @@
 # and how far they've got setting up to build it.
 class Project < ApplicationRecord
   TOOLS = %w[spreadsheet figma email ssh shaders other].freeze
-  PRIZES = %w[rg35xx miyoo].freeze
+  # The console you're building for (Console), and the colour and extras you picked for it in the shop.
+  PRIZES = Console.ids
   PACES = [ 20, 45, 60, 120, 180 ].freeze
   BUILD_TIMES = [ "after school", "evening", "late night", "weekends" ].freeze
 
@@ -27,9 +28,14 @@ class Project < ApplicationRecord
   # Renaming it to nothing puts back the name it had (your idea and tool).
   normalizes :name, with: ->(name) { name.strip.presence }
   normalizes :hackatime_projects, with: ->(names) { Array(names).map { |name| name.to_s.strip }.compact_blank.uniq }
+  normalizes :prize_options, with: ->(options) { Console.picks(options) }
 
   validates :tool, inclusion: { in: TOOLS }
   validates :prize, inclusion: { in: PRIZES }
+  # Changing console drops the colour and extras, unless the new console has them too (grey, a 128 GB card).
+  before_validation :drop_picks_of_other_console, if: :will_save_change_to_prize?
+  validate :prize_color_is_one_it_comes_in
+  validate :prize_options_are_ones_it_offers
   validates :pace_minutes, inclusion: { in: PACES }
   validates :build_time, inclusion: { in: BUILD_TIMES }
   validates :tool_name, :idea, :signed_on, presence: true
@@ -57,10 +63,10 @@ class Project < ApplicationRecord
     name || "#{idea} #{self.class.preposition_for(tool)} #{tool_name}".upcase_first
   end
 
-  # One build day per session of pace_minutes until the hours are in, starting the day wrong tool does (or the
-  # day you signed, if later). Building on weekends, only Saturdays and Sundays count.
+  # One build day per session of pace_minutes until the hours your pick takes are in, starting the day wrong tool
+  # does (or the day you signed, if later). Building on weekends, only Saturdays and Sundays count.
   def build_days
-    sessions = (Program::HOURS_PER_REWARD * 60.0 / pace_minutes).ceil
+    sessions = (hours_needed * 60.0 / pace_minutes).ceil
     day = [ Program::DATES.begin, signed_on ].max
     days = []
     until days.size == sessions
@@ -81,6 +87,51 @@ class Project < ApplicationRecord
 
   def code_tool?
     CODE.include?(tool) || (tool == "other" && tool_name.to_s.match?(CODE_NAMES))
+  end
+
+  # The console you're building for.
+  def console
+    Console.find(prize)
+  end
+
+  # The colour of it you picked, or the first it comes in.
+  def console_color
+    console && (console.color(prize_color) || console.default_color)
+  end
+
+  # "ANBERNIC RG35XX Pro in transparent teal"
+  def prize_name
+    "#{console.full} in #{console_color.label}"
+  end
+
+  # The extras you picked, with the defaults for any you didn't: { "storage" => "128", "bag" => "no" }.
+  def prize_choices
+    console.choices_for(prize_options)
+  end
+
+  # "ANBERNIC RG35XX Pro in transparent teal, 128 GB card"
+  def prize_configuration
+    [ prize_name, console.extras_label(prize_options) ].compact.join(", ")
+  end
+
+  # What your pick costs, as its maker charges it (Console#price_for).
+  def prize_price
+    console.price_for(prize_options)
+  end
+
+  # The hours your pick takes (Console#hours_for: a promised prize is 10 as it comes; the rest is priced), and how
+  # many more that is than you've built.
+  def hours_needed
+    console.hours_for(prize_options)
+  end
+
+  def hours_to_go
+    [ (hours_needed - hours_logged).round(1), 0 ].max
+  end
+
+  # Your hours cover your pick.
+  def afford?(hours = hours_logged)
+    hours >= hours_needed
   end
 
   # Where your hours come from: the Hackatime editor plugin if you're writing code, Lapse recordings otherwise.
@@ -329,6 +380,22 @@ class Project < ApplicationRecord
 
       unknown = @picked_hackatime_projects - hackatime_projects_was.to_a - available_hackatime_projects.to_a.map(&:name)
       errors.add(:hackatime_projects, "don't include #{unknown.to_sentence} on Hackatime") if unknown.any?
+    end
+
+    def drop_picks_of_other_console
+      self.prize_color = nil unless console&.color(prize_color)
+      self.prize_options = Console.picks(prize_options).select { |option, choice| console&.option(option)&.choice(choice) }
+    end
+
+    def prize_options_are_ones_it_offers
+      return if console.nil? || prize_options.blank?
+      unknown = console.unknown_choices(prize_options)
+      errors.add(:prize_options, "include #{unknown.to_sentence}, which the #{console.name} doesn't offer") if unknown.any?
+    end
+
+    def prize_color_is_one_it_comes_in
+      return if prize_color.blank? || console.nil?
+      errors.add(:prize_color, "isn't one the #{console.name} comes in") unless console.color(prize_color)
     end
 
     def screenshot_is_an_image

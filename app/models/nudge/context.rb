@@ -154,18 +154,20 @@ class Nudge::Context
 
   private
     def build_vars
-      hours_left = [ Program::HOURS_PER_REWARD - hours, 0 ].max
+      hours_needed = project.hours_needed
+      hours_left = [ hours_needed - hours, 0 ].max
       upcoming = helpers.project_rewards(project).find { |reward| reward[:state] == "next" }
       {
         first_name: user.first_name,
         title: project.title.downcase_first,
         tool_name: project.tool_name,
-        prize: ProjectsHelper::PRIZE_SHORT_NAMES.fetch(project.prize),
+        prize: project.console.short,
         hours: hours,
+        hours_needed: helpers.project_hours(hours_needed),
         hours_left: hours_left.round(1),
-        percent: (hours * 100 / Program::HOURS_PER_REWARD).round,
+        percent: [ (hours * 100 / hours_needed).round, 100 ].min,
         sessions_left: (hours_left * 60 / project.pace_minutes).ceil,
-        session_percent: (project.pace_minutes * 100.0 / (Program::HOURS_PER_REWARD * 60)).round,
+        session_percent: (project.pace_minutes * 100.0 / (hours_needed * 60)).round,
         pace: project.pace_minutes,
         build_time: project.build_time,
         finish_on: project.finish_on.strftime("%b %-d"),

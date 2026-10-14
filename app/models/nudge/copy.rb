@@ -8,9 +8,9 @@
 module Nudge::Copy
   # Bandit arms.
   ARMS = {
-    # How close you are to the handheld.
+    # How close you are to your handheld: the hours it takes (Shop), never the money.
     "progress" => [
-      "%{hours} of 10 hours on %{title}. about %{sessions_left} more %{pace}-minute sessions to a %{prize}.",
+      "%{hours} of %{hours_needed} hours on %{title}. about %{sessions_left} more %{pace}-minute sessions to a %{prize}.",
       "you're %{percent}%% of the way to a %{prize}.",
       "%{hours_left} hours left. at %{pace} minutes a session, you'd finish by %{finish_on}.",
       "one %{pace}-minute session gets you %{session_percent}%% closer to a %{prize}."
@@ -72,7 +72,7 @@ module Nudge::Copy
     ],
     # What it added up to.
     "cheer_progress" => [
-      "%{minutes} minutes %{day}. that's %{hours} of 10 hours, %{hours_left} to a %{prize}.",
+      "%{minutes} minutes %{day}. that's %{hours} of %{hours_needed} hours, %{hours_left} to a %{prize}.",
       "%{day}'s %{minutes} minutes put you at %{percent}%% of a %{prize}.",
       "%{hours} hours on %{title} so far. %{sessions_left} more sessions at your pace and it's a %{prize}."
     ],
@@ -104,12 +104,12 @@ module Nudge::Copy
     "hackatime_project" => [ "hackatime has time from you, but %{title} isn't linked to any of it yet. pick your project and your hours count." ],
     "repo" => [ "add your repo link to %{title} so it counts when you ship." ],
 
-    # Milestones.
+    # Milestones (Nudge::Fixed.milestones): halfway to your pick's price, and there.
     "first_session" => [ "first session logged. %{title} exists now!" ],
-    "halfway" => [ "5 hours. you're halfway to a %{prize}." ],
-    "done" => [ "10 hours. you've earned a %{prize}. go claim it 🎉" ],
+    "halfway" => [ "%{hours} hours. halfway to a %{prize}." ],
+    "done" => [ "%{hours_needed} hours. you've earned a %{prize}. go claim it 🎉" ],
 
-    # Program dates. "_done" is for people who already have their 10 hours.
+    # Program dates. "_done" is for people whose hours already cover their pick.
     "kickoff" => [ "wrong tool starts today. %{title}, %{build_time}, %{pace} minutes." ],
     "three_days_left" => [ "3 days left. %{hours_left} more hours and a %{prize} is yours." ],
     "three_days_left_done" => [ "3 days left, and you've already won. anything you build now is a bonus." ],

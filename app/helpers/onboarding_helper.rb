@@ -6,8 +6,8 @@ module OnboardingHelper
         help: "Anything not made for making games counts. Game engines don't. You can switch later." },
       { label: "Project", question: "What are you building?",
         help: "You can switch it later. Just start something for now :)" },
-      { label: "Prize", question: "Pick your prize.",
-        help: "Pick one. It ships once you log #{hours_per_reward} hours. (You can get more!)" },
+      { label: "Prize", question: "Pick your handheld.",
+        help: "Each takes about the hours it says. Pick the one you'd play; colours, extras and changing your mind come later." },
       { label: "Commit", question: "Set your pace.",
         help: "Pick a pace and a time, then sign your pledge." }
     ]
@@ -98,12 +98,16 @@ module OnboardingHelper
     noun.match?(/\A[aeiou]/i) ? "an" : "a"
   end
 
+  # How many consoles onboarding offers: few enough that each card has room for its photo. The rest wait in the shop.
+  ONBOARDING_PRIZE_COUNT = 3
+
+  # The consoles to pick from: the shelf's first few (Console.by_hours, the two prizes then the quickest), as the
+  # prize cards show them, with about how many hours of building each is (Shop). The colour and extras are picked
+  # on your handheld sheet later.
   def onboarding_prizes
-    [
-      { id: "rg35xx", maker: "ANBERNIC", name: "RG35XX Pro", full: "ANBERNIC RG35XX Pro",
-        image: "rewards/rg35xx-pro.webp", alt: "ANBERNIC RG35XX Pro handheld in transparent teal" },
-      { id: "miyoo", maker: "MIYOO", name: "Mini Plus", full: "Miyoo Mini Plus",
-        image: "rewards/miyoo-mini-plus.webp", alt: "Miyoo Mini Plus handheld in grey, front and back" }
-    ]
+    Console.by_hours.first(ONBOARDING_PRIZE_COUNT).map do |console|
+      { id: console.id, maker: console.maker, name: console.name, full: console.full, kind: console.kind_label,
+        image: console.image, alt: console.alt, hours: console.hours_for }
+    end
   end
 end

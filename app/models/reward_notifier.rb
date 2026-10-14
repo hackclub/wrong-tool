@@ -21,7 +21,7 @@ module RewardNotifier
   POSTS = {
     "streak_shoutout" => "🔥 %{you} has a 10-day streak, building %{title} in %{tool}.\n_:clippy-excited: clippy is vibrating. :ultrafastparrot:_",
     "hours_shoutout" => ":yay: %{you} just logged #{Program::MILESTONES.key("shoutout")} hours on %{title}, built in %{tool}. " \
-                        "halfway to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_",
+                        "well on the way to a handheld.\n_:clippy-proud: clippy is doing a little dance. :dino-bbq:_",
     "pair_shoutout" => ":partyparrot: %{you} and %{buddy} built together through both weeks of wrong tool: " \
                        "%{title} in %{tool}, and %{buddy_title} in %{buddy_tool}.\n_:clippy-emotional: clippy is crying. happy tears. :heavysob:_",
     "desktop" => ":blob_hype: %{you} and %{buddy} were the first pair to log #{Reward::DESKTOP_HOURS}h each. " \
