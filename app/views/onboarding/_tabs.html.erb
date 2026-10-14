@@ -1,4 +1,5 @@
-<%# Onboarding and your project, as two sheets, and your buddy, the leaderboard and the shop once you have a project. "My project" stays
+<%# Onboarding and your project, as two sheets, and your buddy, the leaderboard and the shop once you have a project (the
+    shop, being public, also shows to anyone on it). "My project" stays
     locked until there is one (during onboarding, until you've signed the pledge); once there is, you're done with
     onboarding and its tab goes, except while you're on it. It isn't prefetched: before the
     pledge is saved, that would only fetch the redirect back here, and Turbo would serve it when onboarding goes to
@@ -29,6 +30,12 @@
       Leaderboard<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
     <%= link_to shop_path, class: "sheet-tab", aria: { current: ("page" if current == :shop) } do %>
+      Shop<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
+  <% end %>
+  <%# The shop's public: someone just looking has it as a tab beside onboarding. %>
+  <% if current == :shop && !project_open %>
+    <%= link_to shop_path, class: "sheet-tab", aria: { current: "page" } do %>
       Shop<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
   <% end %>

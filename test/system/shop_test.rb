@@ -177,3 +177,24 @@ class ShopTest < ApplicationSystemTestCase
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 end
+
+# The shop for anyone, signed in or not: browsing, trying colours on, and a way to start building.
+class PublicShopTest < ApplicationSystemTestCase
+  test "anyone can browse the shop, try colours on without saving, and start building from it" do
+    visit shop_path
+    assert_selector "#shop-rg35xx[data-selected]"
+    assert_no_selector ".shop__tile[data-yours]"
+    assert_selector ".shop__say", text: "everything here is paid in hours of building", wait: 5
+    assert_selector ".shop__choice", text: "another seller", count: 0
+    assert_selector ".shop__choice", text: "pick this one", count: 0
+
+    find("#shop-miyoo .shop__tile-button").click
+    assert_selector ".shop__say", text: "Mini Plus: 10 hours of building.", wait: 5
+    find(".shop__swatch[data-color=purple]").click
+    assert_selector ".shop__say", text: "purple. it comes like that too.", wait: 5
+    assert_selector ".shop__color-name", text: "Purple"
+
+    find(".shop__choice", text: "start building").click
+    assert_current_path onboarding_path
+  end
+end

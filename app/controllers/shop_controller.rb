@@ -1,11 +1,13 @@
 # The shop: every console your hours can buy (Console::ALL, priced by Shop), as a sheet with Clippy at the counter.
 # Changing which one's yours (what you're working towards), its colour and its extras, any time; buying is Order.
+# Anyone can look: without a project it's the public shop, every console as it comes, to browse and try colours on.
 class ShopController < ApplicationController
-  before_action :require_project
+  before_action :require_project, except: :show
 
-  # Your hours, as of the last sync (a sync's queued if it's time).
+  # Your hours, as of the last sync (a sync's queued if it's time); or, without a project, the public shop.
   def show
-    current_user.sync_streak_if_stale!
+    @project = current_user&.project
+    current_user.sync_streak_if_stale! if @project
   end
 
   # Picking a console, or a colour or extra on the one you have. From the counter that's JSON, and the

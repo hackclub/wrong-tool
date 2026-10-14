@@ -5,7 +5,7 @@
      [ "What can I make?", "Any game, as long as you build it in something that isn't a game engine." ],
      [ "What do I submit?", safe_join([ "A public link to your git repo and your hours from ", link.("Hackatime", hackatime_url), " or ", link.("Lapse", lapse_url), "." ]) ],
      [ "When's the deadline?", "#{sheet_date(program_dates.end)}." ],
-     [ "Will you actually mail it to me?", "Yep! Build your game and we mail you the handheld you picked: about #{Console::ALL.map(&:hours_for).min.round} to #{Console::ALL.map(&:hours_for).max.round} hours of building, depending which. Everything in the shop is paid in hours." ],
+     [ "Will you actually mail it to me?", safe_join([ "Yep! Build your game and we mail you the handheld you picked: about #{Console::ALL.map(&:hours_for).min.round} to #{Console::ALL.map(&:hours_for).max.round} hours of building, depending which. Everything in ", link_to("the shop", shop_path), " is paid in hours." ]) ],
      [ "Is this legit?", "Yup. We're Hack Club, a nonprofit that's run programs like this for years, including Stardance, Arcade, High Seas, Summer of Making and Flavortown." ],
      [ "I've got more questions.", safe_join([ "Ask us on the ", link.("Hack Club Slack", footer_links["slack"]), "." ]) ]
    ] %>

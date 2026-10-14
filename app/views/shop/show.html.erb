@@ -1,10 +1,12 @@
 <% content_for :title, "Shop · Wrong Tool" %>
+<%# Without a project it's the public shop: anyone can browse, and the first tile's the one you're looking at. %>
+<% public = @project.nil? %>
 <% picked = flash[:shop] == "picked" %>
 <% shelf = shop_shelf(@project) %>
-<% yours = shelf.find { |tile| tile[:yours] } %>
-<% says = flash[:shop_error] || shop_says(@project, picked:) %>
-<% ship_status, ship_tone = shop_ship_status(@project) %>
-<% asks = shop_asks_data(@project) %>
+<% yours = shelf.find { |tile| tile[:yours] } || shelf.first %>
+<% says = public ? shop_public_says : flash[:shop_error] || shop_says(@project, picked:) %>
+<% ship_status, ship_tone = shop_ship_status(@project) unless public %>
+<% asks = public ? {} : shop_asks_data(@project) %>
 <% seller_name, seller_url = shop_seller(yours[:console], asks[yours[:console].id]) %>
 <% columns = ("A".."L").to_a %>
 <% selected_columns = shop_tile_columns(yours[:cell]) %>
@@ -18,24 +20,30 @@
 <div class="spreadsheet onboarding project shop-page" data-saved data-controller="shop"
      data-shop-consoles-value="<%= shop_consoles_data(shelf).to_json %>"
      data-shop-configs-value="<%= shop_configs_data(shelf).to_json %>"
-     data-shop-pick-value="<%= @project.prize %>"
-     data-shop-hours-value="<%= @project.hours_logged %>"
-     data-shop-tracking-value="<%= @project.tracking? %>"
-     data-shop-shipped-value="<%= @project.shipped? %>"
-     data-shop-to-spend-value="<%= @project.hours_to_spend %>"
-     data-shop-spent-value="<%= @project.hours_spent %>"
+     data-shop-public-value="<%= public %>"
+     data-shop-start-url-value="<%= onboarding_path %>"
+     data-shop-pick-value="<%= @project&.prize %>"
+     data-shop-hours-value="<%= @project&.hours_logged || 0 %>"
+     data-shop-tracking-value="<%= !!@project&.tracking? %>"
+     data-shop-shipped-value="<%= !!@project&.shipped? %>"
+     data-shop-to-spend-value="<%= @project&.hours_to_spend || 0 %>"
+     data-shop-spent-value="<%= @project&.hours_spent || 0 %>"
      data-shop-orders-value="<%= shelf.filter_map { |tile| [ tile[:console].id, tile[:order] ] if tile[:order] }.to_h.to_json %>"
      data-shop-claim-url-value="<%= shop_order_path %>"
-     data-shop-needs-address-value="<%= current_user.needs_address? %>"
+     data-shop-needs-address-value="<%= !!current_user&.needs_address? %>"
      data-shop-url-value="<%= shop_path %>"
      data-shop-ask-url-value="<%= shop_seller_requests_path %>"
      data-shop-asks-value="<%= asks.to_json %>"
      data-shop-says-value="<%= says %>"
      data-shop-emotes-value="<%= shop_emotes_data.to_json %>"
-     data-shop-mood-value="<%= shop_mood(@project) %>"
+     data-shop-mood-value="<%= public ? "idle" : shop_mood(@project) %>"
      data-shop-sounds-value="<%= { first: asset_path("clippy-congratulate-1.mp3"), second: asset_path("clippy-congratulate-2.mp3") }.to_json %>">
-  <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
-        progress: "Day 1 of #{@project.build_days.size}", user: current_user %>
+  <% if public %>
+    <%= render "pages/app_bar" %>
+  <% else %>
+    <%= render "pages/app_bar", onboarding: true, file_name: project_file_name(@project),
+          progress: "Day 1 of #{@project.build_days.size}", user: current_user %>
+  <% end %>
   <%= render "pages/toolbar" %>
 
   <%# The name box follows the tile you're on; the formula says what you did last. %>
@@ -46,7 +54,7 @@
     </span>
     <span class="formula-bar__divider"></span>
     <span class="formula-bar__fx">fx</span>
-    <output class="formula-bar__content onboarding__formula" data-shop-target="formula"><%= shop_formula(@project) %></output>
+    <output class="formula-bar__content onboarding__formula" data-shop-target="formula"><%= public ? %(=HANDHELD("#{yours[:console].id}")  →  #{shop_hours(yours[:hours])}) : shop_formula(@project) %></output>
   </div>
 
   <main class="project__sheet shop-sheet">
@@ -67,14 +75,25 @@
 
       <div class="shop" tabindex="0" role="region" aria-label="Shop" data-shop-target="grid" data-action="keydown->shop#key">
         <h1 class="shop__title"><span class="shop__title-text">Shop</span></h1>
-        <div class="shop__stat shop__stat--logged">
-          <span class="shop__stat-label">LOGGED</span>
-          <span class="shop__stat-value" data-tone="done"><%= shop_hours(@project.hours_logged) %></span>
-        </div>
-        <div class="shop__stat shop__stat--ship">
-          <span class="shop__stat-label">TO SPEND</span>
-          <span class="shop__stat-value" data-tone="<%= ship_tone %>" data-shop-target="toSpend"><%= ship_status %></span>
-        </div>
+        <% if public %>
+          <div class="shop__stat shop__stat--logged">
+            <span class="shop__stat-label">CONSOLES</span>
+            <span class="shop__stat-value" data-tone="done"><%= shelf.size %></span>
+          </div>
+          <div class="shop__stat shop__stat--ship">
+            <span class="shop__stat-label">FROM</span>
+            <span class="shop__stat-value" data-tone="none"><%= shop_hours(shelf.map { |tile| tile[:hours] }.min) %></span>
+          </div>
+        <% else %>
+          <div class="shop__stat shop__stat--logged">
+            <span class="shop__stat-label">LOGGED</span>
+            <span class="shop__stat-value" data-tone="done"><%= shop_hours(@project.hours_logged) %></span>
+          </div>
+          <div class="shop__stat shop__stat--ship">
+            <span class="shop__stat-label">TO SPEND</span>
+            <span class="shop__stat-value" data-tone="<%= ship_tone %>" data-shop-target="toSpend"><%= ship_status %></span>
+          </div>
+        <% end %>
 
         <%# The shelf: the two prizes, then the rest, four on screen at a time, snapping as it scrolls. %>
         <div class="shop__shelf" data-shop-target="shelf" data-action="scroll->shop#scrolled">
@@ -83,7 +102,7 @@
               <% console = tile[:console] %>
               <%= form_with url: shop_path, method: :patch, class: "shop__tile", id: "shop-#{console.id}",
                     data: { shop_target: "tile", console: console.id, group: (console.prize? ? "prize" : "more"), state: tile[:state],
-                            yours: ("" if tile[:yours]), selected: ("" if tile[:yours]) }.compact do %>
+                            yours: ("" if tile[:yours]), selected: ("" if tile == yours) }.compact do %>
                 <%= hidden_field_tag "project[prize]", console.id, id: "shop-#{console.id}-prize" %>
                 <button class="shop__tile-button" data-action="click->shop#select" aria-label="<%= console.full %>, <%= shop_hours(tile[:hours]) %>"
                         aria-pressed="<%= tile[:yours] %>">
@@ -145,7 +164,7 @@
             </form>
             <div class="shop__choices" role="listbox" aria-label="Your answers" data-shop-target="choices"></div>
             <%# Sharing your address (to claim), through Hack Club Auth; the counter submits it. %>
-            <% if current_user.needs_address? %>
+            <% if !public && current_user.needs_address? %>
               <%= button_to "Share my address", "/auth/hackclub", params: { origin: shop_path }, hidden: true,
                     form: { data: { turbo: false, shop_target: "addressForm" } } %>
             <% end %>
@@ -199,5 +218,9 @@
     </div>
   </main>
 
-  <%= render "onboarding/tabs", current: :shop, project_open: true, sum: shop_sum(@project), sum_data: { shop_target: "sum" } %>
+  <% if public %>
+    <%= render "onboarding/tabs", current: :shop %>
+  <% else %>
+    <%= render "onboarding/tabs", current: :shop, project_open: true, sum: shop_sum(@project), sum_data: { shop_target: "sum" } %>
+  <% end %>
 </div>

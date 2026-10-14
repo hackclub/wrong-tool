@@ -8,7 +8,8 @@ import { Clippy } from "mascot/clippy"
 // which an admin checks; the tile says how that's going. ← → move along the shelf. Each tile remembers the colour and extras you've tried on
 // it; on your pick those save as you make them (a PATCH to /shop, as JSON), and "Make it my pick" on another
 // saves it as you've set it up. Everything's in hours: each console carries a table of the hours every way of
-// picking it takes, so nothing here knows a price.
+// picking it takes, so nothing here knows a price. In the public shop (no project) it's all browsing: colours and
+// extras try on without saving, and the last choice is to start building.
 export default class extends Controller {
   static targets = [
     "grid", "nameBox", "formula", "tile", "cost", "tag", "shelf", "left", "right", "moreText", "range", "dot",
@@ -16,13 +17,13 @@ export default class extends Controller {
     "options", "costFormula", "customizeCost", "sum", "columnHeader", "rowHeader", "addressForm", "toSpend"
   ]
   static values = {
-    consoles: Array, configs: Object, pick: String, hours: Number, tracking: Boolean, shipped: Boolean,
+    public: Boolean, startUrl: String, consoles: Array, configs: Object, pick: String, hours: Number, tracking: Boolean, shipped: Boolean,
     toSpend: Number, spent: Number, orders: Object, claimUrl: String, needsAddress: Boolean, url: String, askUrl: String, asks: Object, says: String, emotes: Object, mood: String, sounds: Object
   }
 
   connect() {
     this.configs = structuredClone(this.configsValue)
-    this.selected = this.pickValue
+    this.selected = this.pickValue || this.consolesValue[0]?.id
     this.talk = "main"
     this.marked = -1
     this.asks = structuredClone(this.asksValue)
@@ -200,6 +201,7 @@ export default class extends Controller {
   }
 
   #tagOf(id) {
+    if (this.publicValue) return ""
     const state = this.#stateOf(id)
     if (state === "locked") return `${hrs(this.#toGo(id))} to go`
     if (state === "shipping") return CLAIMED_TAGS[this.ordersValue[id]]
@@ -276,6 +278,7 @@ export default class extends Controller {
     const console = this.#console(id)
     const state = this.#stateOf(id)
     const cost = `${hrs(this.#hoursOf(id))} hours`
+    if (this.publicValue) return `${console.short}: ${cost} of building.`
     if (state === "shipping") {
       return this.ordersValue[id] === "ordered" ? `${console.short}: yours, and it's ordered. :yay:` : `${console.short}: yours. someone will order it soon.`
     }
@@ -324,6 +327,10 @@ export default class extends Controller {
     console.options.forEach((option) => {
       list.push({ icon: ICON_FOR[option.id] ?? "extra", label: lower(this.#choiceOf(id, option).name), run: () => this.#talkTo(`option:${option.id}`) })
     })
+    if (this.publicValue) {
+      list.push({ icon: "flag", tone: "pick", label: "start building", run: () => window.Turbo ? window.Turbo.visit(this.startUrlValue) : window.location.assign(this.startUrlValue) })
+      return list
+    }
     const ask = this.#liveAsk(id)
     list.push({ icon: "store", label: ask ? `another seller: ${ask.label}` : "another seller, to save on customs", run: () => this.#askSeller() })
     if (this.#stateOf(id) === "ready") list.push({ icon: "flag", tone: "pick", label: "ship it to me", run: () => this.#confirmClaim() })
@@ -422,7 +429,7 @@ export default class extends Controller {
     if (id === this.pickValue) {
       if (await this.#save(id)) this.#say(`${color.name.toLowerCase()}. saved.`)
     } else {
-      this.#say(`${color.name.toLowerCase()}. pick it and it comes like that.`)
+      this.#say(`${color.name.toLowerCase()}. ${this.publicValue ? "it comes like that too." : "pick it and it comes like that."}`)
     }
   }
 
@@ -442,7 +449,7 @@ export default class extends Controller {
     if (id === this.pickValue) {
       if (await this.#save(id)) this.#say(`${lower(choice.name)}. that makes it ${total}. saved.`)
     } else {
-      this.#say(`${lower(choice.name)}. that makes it ${total}, if you pick it.`)
+      this.#say(`${lower(choice.name)}. that makes it ${total}${this.publicValue ? "" : ", if you pick it"}.`)
     }
   }
 

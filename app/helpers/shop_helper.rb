@@ -15,7 +15,10 @@ module ShopHelper
   TAGS = { "unlocked" => "ship first", "ready" => "ready" }.freeze
   CLAIMED_TAGS = { "waiting" => "in the queue", "ordered" => "ordered" }.freeze
 
+  # Without a project (the public shop, for anyone), every tile's as it comes, with nothing yours and no tag.
   def shop_shelf(project)
+    return shop_public_shelf unless project
+
     Console.by_hours.each_with_index.map do |console, index|
       yours = console == project.console
       order = project.order_for(console.id)
@@ -26,10 +29,23 @@ module ShopHelper
       hours = order ? order.hours.to_f : console.hours_for(choices)
       to_go = [ (hours - project.hours_unspent_logged).round(1), 0 ].max
       state = shop_state(project, order:, hours:)
-      { console:, cell: "#{column_name(index * TILE_COLUMNS + (console.prize? ? 0 : 1))}#{SHELF_ROW}", yours:, choices:, hours:, to_go:, state:,
+      { console:, cell: shop_cell(console, index), yours:, choices:, hours:, to_go:, state:,
         color: order&.color || (yours ? project.console_color : console.default_color), order: order&.status,
         tag: shop_tag(project, state, to_go, order) }
     end
+  end
+
+  def shop_public_shelf
+    Console.by_hours.each_with_index.map do |console, index|
+      choices = console.default_choices
+      { console:, cell: shop_cell(console, index), yours: false, choices:, hours: console.hours_for(choices), to_go: 0, state: "locked",
+        color: console.default_color, order: nil, tag: "" }
+    end
+  end
+
+  # Where a tile sits: three columns each, with a column of empty cells after the two prizes.
+  def shop_cell(console, index)
+    "#{column_name(index * TILE_COLUMNS + (console.prize? ? 0 : 1))}#{SHELF_ROW}"
   end
 
   # A column's letters, the way a sheet names them, from 0: A … Z, AA, AB …
@@ -125,6 +141,11 @@ module ShopHelper
     elsif project.afford? then "your hours cover the #{name}. ship your game and it's yours. :yay:"
     else "#{hours} hours so far, #{to_go} to go for the #{name}."
     end
+  end
+
+  # What Clippy says to someone just looking (the public shop).
+  def shop_public_says
+    "everything here is paid in hours of building. build a game in the wrong tool and pick one. :yay:"
   end
 
   # The emotes the counter uses, as pictures (SlackEmoji), for lines said as you go.

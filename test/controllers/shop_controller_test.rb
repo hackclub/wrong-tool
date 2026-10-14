@@ -1,13 +1,30 @@
 require "test_helper"
 
 class ShopControllerTest < ActionDispatch::IntegrationTest
-  test "without a project, it's back to onboarding" do
+  test "without a project it's the public shop: every console as it comes, nothing yours, and a way to start" do
     get shop_path
-    assert_redirected_to onboarding_path
+    assert_response :success
+    assert_select ".shop__tile", Console::ALL.size
+    assert_select ".shop__tile[data-yours]", 0
+    assert_select "#shop-rg35xx[data-selected]"
+    assert_select "#shop-rg28xx .shop__tile-cost", "8 hrs"
+    assert_select ".shop__tile-tag", text: /\S/, count: 0
+    assert_select ".shop__stat--logged .shop__stat-label", "CONSOLES"
+    assert_select ".shop__stat--logged .shop__stat-value", Console::ALL.size.to_s
+    assert_select ".shop__stat--ship .shop__stat-value", "8 hrs"
+    assert_select "[data-controller=shop][data-shop-public-value=true][data-shop-start-url-value=?]", onboarding_path
+    assert_select ".shop__say", /paid in hours of building/
+    assert_select ".sheet-tab[aria-current=page]", /Shop/
+    assert_select ".sheet-tabs__sum", 0
+    assert_select "button", text: "Share my address", count: 0
 
     sign_in_as(mock_hack_club_auth)
     get shop_path
-    assert_redirected_to onboarding_path
+    assert_response :success
+    assert_select "[data-controller=shop][data-shop-public-value=true]"
+
+    patch shop_path, params: { project: { prize: "miyoo" } }
+    assert_redirected_to onboarding_path, "picking still needs a project"
   end
 
   test "the shop is a shelf of every console in hours, never prices, with yours flagged and Clippy at the counter" do
