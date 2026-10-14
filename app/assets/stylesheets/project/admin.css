@@ -288,7 +288,8 @@
   }
 }
 
-/* The admin pages' nav, above every one of them. */
+/* The extensions page (/admin/extensions): who's asked for more time, why, and a button each way. The admin pages'
+   nav sits above every one of them. */
 @layer sections {
   .admin__nav {
     display: flex;
@@ -305,6 +306,30 @@
         color: var(--text-primary);
       }
     }
+  }
+
+  .admin__table--extensions {
+    th[scope="row"] {
+      white-space: normal;
+    }
+
+    td {
+      vertical-align: top;
+    }
+
+    .admin__muted {
+      display: block;
+    }
+
+    [data-decision="approved"] {
+      color: var(--green);
+    }
+  }
+
+  .admin__reason {
+    min-inline-size: 240px;
+    max-inline-size: 440px;
+    white-space: pre-line;
   }
 }
 

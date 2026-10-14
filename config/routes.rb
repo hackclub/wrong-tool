@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   get "start" => "onboarding#show", as: :onboarding
   resource :project, only: %i[show create update] do
     resource :ship, only: %i[show create]
+    resource :extension, only: :create
     get :hours
     resource :streak, only: :update
   end
@@ -30,10 +31,12 @@ Rails.application.routes.draw do
   delete "n/:token/stop" => "nudge_links#unmute"
 
   # How Clippy's nudges are doing, and what the bandit's learned, wrong tool's numbers day by day, everyone who's
-  # signed in, with seeing the site as any of them, and every ship in full, to approve or send back. Admins only.
+  # signed in, with seeing the site as any of them, who's asked for more time to ship, and every ship in full, to approve or
+  # send back. Admins only.
   namespace :admin do
     resources :nudges, only: :index
     resources :metrics, only: :index
+    resources :extensions, only: %i[index update]
     resources :ships, only: %i[index show update]
     resources :projects, only: %i[index show]
     resources :users, only: :index do

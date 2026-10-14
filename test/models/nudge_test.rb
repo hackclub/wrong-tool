@@ -49,6 +49,18 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal "U0ORPHEUS", @sent.sole.first
   end
 
+  test "the last days go by your deadline, so an extension brings them round again" do
+    assert_equal "three_days_left", deliver(at_slot(17)).arm
+    assert_equal "last_day", deliver(at_slot(20)).arm
+    assert_nil deliver(at_slot(21)), "wrong tool's over for you"
+
+    @user.project.create_extension!(reason: "exams", status: "approved")
+    assert_not_nil deliver(at_slot(22)), "still going"
+    assert_equal "three_days_left", deliver(at_slot(24)).arm
+    assert_equal "last_day", deliver(at_slot(27)).arm
+    assert_nil deliver(at_slot(28))
+  end
+
   test "then milestones, then setup steps, before the bandit" do
     assert_equal "first_session", deliver.arm
 

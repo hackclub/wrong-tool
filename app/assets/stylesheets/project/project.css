@@ -946,6 +946,23 @@
   }
 
   /* The days skipped between your last build day and the deadline. */
+  /* Asking for more time, as the strip's last item: beside Due, or a line of its own for the ask's form. */
+  .project__days-extension {
+    align-self: center;
+    margin-inline-start: 8px;
+
+    &[data-asking] {
+      flex-basis: 100%;
+      margin: 8px 0 0;
+    }
+
+    .project__event-note,
+    .project__event-button,
+    .project__extension-form {
+      margin: 0;
+    }
+  }
+
   .project__day-gap {
     align-self: center;
     inline-size: 24px;
@@ -1297,6 +1314,39 @@
     gap: 4px;
     font: 13px var(--font-cell);
     color: var(--green);
+  }
+
+  /* Asking for more time, beside the Due cell: a short why, then where the ask's got to. */
+  .project__extension[data-state="approved"] {
+    color: var(--green);
+  }
+
+  .project__extension-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    inline-size: 100%;
+    margin-block-start: 6px;
+  }
+
+  .project__extension-reason {
+    block-size: auto;
+    padding: 10px 14px;
+    font: 14px var(--font-cell);
+    resize: vertical;
+  }
+
+  .project__extension-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .project__extension-button {
+    block-size: 40px;
+    padding-inline: 18px;
+    font-size: 14px;
   }
 
   /* The top three as stairs, first in the middle and tallest, you on a blue step if you're further down. */

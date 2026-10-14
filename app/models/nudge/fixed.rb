@@ -1,12 +1,11 @@
 # Nudges that always send when they apply, so the bandit never learns from them. The first one that applies wins:
 # a program date, then a milestone, then a missing setup step, then saving a streak.
 module Nudge::Fixed
-  # wrong tool's own dates.
-  PROGRAM = {
-    "kickoff" => Program::DATES.begin,
-    "three_days_left" => Program::DATES.end - 3,
-    "last_day" => Program::DATES.end
-  }.freeze
+  # wrong tool's own dates, for them: kickoff is everyone's, the last days go by their deadline (Project#deadline).
+  def self.program_dates(context)
+    deadline = context.project.deadline
+    { "kickoff" => Program::DATES.begin, "three_days_left" => deadline - 3, "last_day" => deadline }
+  end
 
   # Hours on Hackatime that each milestone is for, in order. Each sends once, and reaching a later one first means
   # the earlier ones don't send at all.
@@ -17,10 +16,14 @@ module Nudge::Fixed
     program_nudge(context) || milestone(context) || setup_nudge(context) || streak_saver(context)
   end
 
+  # Each once: ones sent for an earlier deadline (before this one's last three days) don't count, so an extension
+  # brings the last days round again.
   def self.program_nudge(context)
-    key = PROGRAM.key(context.today) or return
+    dates = program_dates(context)
+    key = dates.key(context.today) or return
     key = "#{key}_done" if key != "kickoff" && context.hours >= Program::HOURS_PER_REWARD
-    return if context.user.nudges.delivered.where(kind: "program", arm: key).exists?
+    since = dates["three_days_left"].in_time_zone(context.user.time_zone)
+    return if context.user.nudges.delivered.where(kind: "program", arm: key, sent_at: since..).exists?
     build(context, kind: "program", arm: key)
   end
 

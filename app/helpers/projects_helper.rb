@@ -145,7 +145,7 @@ module ProjectsHelper
   # "14 sessions of 45 min gets you there by Oct 16. Ship any time up to Oct 20."
   def project_schedule_note(project)
     "#{pluralize(project.build_days.size, "session")} of #{project_pace_label(project.pace_minutes)} gets you there by " \
-      "#{project_date(project.finish_on)}. Ship any time up to #{project_date(Program::DATES.end)}."
+      "#{project_date(project.finish_on)}. Ship any time up to #{project_date(project.deadline)}."
   end
 
   # The milestones along your hours track (which runs to the last one), and whether you've reached each. The
@@ -166,11 +166,12 @@ module ProjectsHelper
   # Your build days as cells. The days gone show how they went, from Hackatime: "hit" with your pace's minutes on
   # your linked projects (or more), "some" with less, "missed" with none, or "skip" for the one your skip day
   # covered. Today shows its time so far (and fills in the same way, under its ring) once there is some. Ahead of it
-  # are the play party, the day your hours would be in ("goal") and the deadline ("due"): on its own after a gap
-  # when your days end before it, or in among them when they run on past it. Days run on streak time (2am to 2am
-  # where you are), like the streak does.
+  # are the play party, the day your hours would be in ("goal") and the deadline ("due", which an extension moves):
+  # on its own after a gap when your days end before it, or in among them when they run on past it. Days run on
+  # streak time (2am to 2am where you are), like the streak does.
   def project_schedule(project, today: project.user.streak_today_date)
     days = project.build_days
+    deadline = project.deadline
     seconds = project.user.streak_activities.for_range(days.first..today).pluck(:activity_date, :coded_seconds).to_h
     skipped_on = project.user.streak_skip_used_on
     cells = days.map.with_index do |day, index|
@@ -181,15 +182,15 @@ module ProjectsHelper
         if day == today then [ "today", built.zero? ? "Today" : project_day_time(built) ]
         elsif day < today && day == skipped_on then [ "skip", "Skip" ]
         elsif day < today then [ how, built.zero? ? "0" : project_day_time(built) ]
-        elsif day == Program::DATES.end then [ "due", "Due" ]
+        elsif day == deadline then [ "due", "Due" ]
         elsif index == days.size - 1 then [ "goal", "Goal" ]
         elsif day == Program::PLAY_PARTY_ON then [ "party", "Party" ]
         end
       { date: label, state:, value:, built: (how if day == today && !built.zero?) }
     end
-    if days.last < Program::DATES.end
-      cells << { gap: true } if days.last < Program::DATES.end - 1
-      cells << { date: Program::DATES.end.day.to_s, state: "due", value: "Due" }
+    if days.last < deadline
+      cells << { gap: true } if days.last < deadline - 1
+      cells << { date: deadline.day.to_s, state: "due", value: "Due" }
     end
     cells
   end

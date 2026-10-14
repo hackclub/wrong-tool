@@ -18,6 +18,7 @@ class Project < ApplicationRecord
 
   belongs_to :user
   has_many :ships, dependent: :destroy
+  has_one :extension, dependent: :destroy
   has_one :pair_as_first, class_name: "Pair", foreign_key: :first_project_id, dependent: :destroy, inverse_of: :first_project
   has_one :pair_as_second, class_name: "Pair", foreign_key: :second_project_id, dependent: :destroy, inverse_of: :second_project
   # Shows on the leaderboard and your ship post.
@@ -259,6 +260,31 @@ class Project < ApplicationRecord
 
   def ship_in_review
     ships.in_review.order(:created_at).last
+  end
+
+  # When you have to ship by: wrong tool's last day, or a week on once an extension's approved.
+  def deadline
+    extension&.approved? ? Program::DATES.end + Program::EXTENSION_DAYS : Program::DATES.end
+  end
+
+  # wrong tool's days, for you: the program's, running on to your deadline if it moved. Nudges go by this.
+  def program_dates
+    Program::DATES.begin..deadline
+  end
+
+  # Ship closes at the end of the deadline where you are, plus Program::SHIP_GRACE_DAYS nobody's told about.
+  def ship_cutoff
+    (deadline + Program::SHIP_GRACE_DAYS).in_time_zone(user.time_zone).end_of_day
+  end
+
+  def may_ship?(now: Time.current)
+    now <= ship_cutoff
+  end
+
+  # You can ask for more time once: set up, not shipped, nothing asked yet, and the deadline (where you are) still to
+  # come. Not through the quiet grace days, which would give them away.
+  def extension_requestable?(now: Time.current)
+    set_up? && !shipped? && extension.nil? && user.local_date(now) <= deadline
   end
 
   # Shipping: what you submit becomes your project's name and repo too, and the screenshot you pick (or the one you

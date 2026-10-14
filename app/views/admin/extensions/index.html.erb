@@ -1,0 +1,89 @@
+<% content_for :title, "Extensions · Wrong Tool admin" %>
+<% new_deadline = (Program::DATES.end + Program::EXTENSION_DAYS).strftime("%b %-d") %>
+
+<%# Everyone who's asked for more time to ship: who, why, and a button each way while it's waiting; then the ones
+    decided, and who decided. Real names and emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=EXTENSIONS(wrong tool)  →  #{@pending.size} waiting" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "admin/nav" %>
+        <h1 class="project__title">Who's asked for more time</h1>
+        <p class="leaderboard__note">
+          Approving moves their deadline to <%= new_deadline %> (<%= Program::EXTENSION_DAYS %> days on), on their project page and in Clippy's
+          nudges. They get a DM from Clippy either way. Each project can ask once.
+        </p>
+        <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
+      </header>
+
+      <section aria-labelledby="admin-extensions-waiting">
+        <h2 class="admin__heading" id="admin-extensions-waiting">Waiting</h2>
+        <% if @pending.empty? %>
+          <p class="leaderboard__note">Nobody's waiting.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--extensions">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Project</th>
+                  <th scope="col">Why</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col"><span class="visually-hidden">Decide</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @pending.each do |extension| %>
+                  <%= render "admin/extensions/row", extension: do %>
+                    <td class="admin__actions">
+                      <%= button_to "Approve", admin_extension_path(extension), method: :patch, params: { decision: "approved" },
+                            class: "admin__button", form: { data: { turbo: false } } %>
+                      <%= button_to "Deny", admin_extension_path(extension), method: :patch, params: { decision: "denied" },
+                            class: "admin__button", form: { data: { turbo: false } } %>
+                    </td>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+
+      <section aria-labelledby="admin-extensions-decided">
+        <h2 class="admin__heading" id="admin-extensions-decided">Decided</h2>
+        <% if @decided.empty? %>
+          <p class="leaderboard__note">None yet.</p>
+        <% else %>
+          <div class="admin__scroll">
+            <table class="leaderboard__table admin__table admin__table--extensions">
+              <thead>
+                <tr>
+                  <th scope="col">Who</th>
+                  <th scope="col">Project</th>
+                  <th scope="col">Why</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col">Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @decided.each do |extension| %>
+                  <%= render "admin/extensions/row", extension: do %>
+                    <td data-decision="<%= extension.status %>">
+                      <%= extension.status.capitalize %>
+                      <small class="admin__muted">
+                        <%= extension.decided_by&.first_name.presence || "someone" %> · <%= extension.decided_at.strftime("%b %-d") %>
+                      </small>
+                    </td>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </section>
+    </div>
+  </main>
+</div>

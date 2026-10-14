@@ -3,12 +3,13 @@ class ProjectsController < ApplicationController
   before_action :require_project, only: %i[show update hours]
 
   # ?step= opens one of the setup steps you can still do (otherwise it's the first one left); ?edit=pace, your pace;
-  # ?edit=tool, your tool.
+  # ?edit=tool, your tool; ?edit=extension, asking for more time (ExtensionsController).
   # ?refresh=1 asks Hackatime for your projects again.
   def show
     @step = params[:step]
     @editing_pace = params[:edit] == "pace"
     @editing_tool = params[:edit] == "tool"
+    @asking_extension = params[:edit] == "extension"
     @refresh_hackatime = params[:refresh].present?
     flash.now[:clippy] = "hop" if auto_link_hackatime_project(refresh: @refresh_hackatime)
     @refresh_hackatime = false if @project.available_hackatime_projects # just asked: the projects step can use that

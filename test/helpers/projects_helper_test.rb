@@ -75,4 +75,15 @@ class ProjectsHelperTest < ActionView::TestCase
     assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 20.", project_schedule_note(project)
     assert_equal({ label: "Done by", value: "Oct 19", note: "at this pace" }, project_goal(project).last)
   end
+
+  test "an approved extension moves the deadline on the schedule" do
+    project = projects(:orpheus)
+    project.create_extension!(reason: "exams", status: "approved")
+    assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 27.", project_schedule_note(project)
+    days = project_schedule(project, today: Date.new(2026, 10, 12))
+    assert_equal({ date: "27", state: "due", value: "Due" }, days.last)
+    assert_equal({ gap: true }, days[-2])
+    assert_equal "goal", days[-3][:state]
+    assert_nil days.find { |day| day[:date] == "20" && day[:state] == "due" }
+  end
 end

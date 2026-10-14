@@ -1,14 +1,16 @@
 # Shipping your project: the form, and once it's submitted, that it's in review. Opens once you're set up and your
-# hours come from a Hackatime project.
+# hours come from a Hackatime project, and closes after your deadline, with a couple of quiet days' grace
+# (Project#ship_cutoff).
 class ShipsController < ApplicationController
   before_action :require_set_up_project
 
   def show
     @ship = @project.ship_in_review || @project.ships.build(title: @project.title, repo_url: @project.repo_url)
+    @closed = !@ship.persisted? && !@project.may_ship?
   end
 
   def create
-    return redirect_to project_ship_path if @project.ship_in_review
+    return redirect_to project_ship_path if @project.ship_in_review || !@project.may_ship?
 
     @ship = @project.ship!(ship_params)
     if @ship.persisted?

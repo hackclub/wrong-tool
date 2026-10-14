@@ -2,6 +2,11 @@
 module Program
   # Launches Oct 6 and runs for two weeks.
   DATES = Date.new(2026, 10, 6)..Date.new(2026, 10, 20)
+  # An approved extension (Extension) moves someone's deadline this much later.
+  EXTENSION_DAYS = 7
+  # Ship stays open this many days past the deadline, quietly: nobody's told, and the site keeps saying the deadline.
+  SHIP_GRACE_DAYS = 2
+  # The first hours pay more (Shop::FIRST_RATE an hour; Shop::RATE after), and the stats count who's past them.
   HOURS_PER_REWARD = 10
   # Hackatime time from this day on counts: only projects worked on since then can be linked.
   HACKATIME_START = Date.new(2026, 10, 6)

@@ -1,0 +1,18 @@
+<%# locals: (extension:) %>
+<%# One ask: who, their project, why and when, then whatever the table puts last (buttons, or the decision). %>
+<% project = extension.project %>
+<% user = project.user %>
+<tr id="<%= dom_id(extension) %>">
+  <th scope="row">
+    <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
+    <%= user.name.presence || user.public_name %>
+    <small class="admin__muted"><%= user.email %><% if user.slack_display_name.present? %> · <%= user.slack_display_name %><% end %></small>
+  </th>
+  <td>
+    <%= project.title %>
+    <small class="admin__muted"><%= project.tool_name %> · <%= project_hours(project.hours_logged) %> hrs</small>
+  </td>
+  <td class="admin__reason"><%= extension.reason %></td>
+  <td><%= extension.created_at.strftime("%b %-d") %></td>
+  <%= yield %>
+</tr>

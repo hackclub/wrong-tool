@@ -26,7 +26,7 @@
           <div class="project__header-text">
             <div class="project__day-row">
               <span class="project__day"><%= set_up ? "Day 1 of #{build_days.size}" : "Day 1" %></span>
-              <% if set_up && @project.tracking? %>
+              <% if set_up && @project.tracking? && (@project.ship_in_review || @project.may_ship?) %>
                 <%= link_to project_ship_path, class: "project__ship" do %>
                   <svg class="icon" viewBox="0 -960 960 960" aria-hidden="true"><path d="m226-559 78 33q14-28 29-54t33-52l-56-11-84 84Zm142 83 114 113q42-16 90-49t90-75q70-70 109.5-155.5T806-800q-72-5-158 34.5T492-656q-42 42-75 90t-49 90Zm178-65q-23-23-23-56.5t23-56.5q23-23 57-23t57 23q23 23 23 56.5T660-541q-23 23-57 23t-57-23Zm19 321 84-84-11-56q-26 18-52 32.5T532-299l33 79Zm313-653q19 121-23.5 235.5T708-419l20 99q4 20-2 39t-20 33L538-80l-84-197-171-171-197-84 167-168q14-14 33.5-20t39.5-2l99 20q104-104 218-147t235-24ZM157-321q35-35 85.5-35.5T328-322q35 35 34.5 85.5T327-151q-25 25-83.5 43T82-76q14-103 32-161.5t43-83.5Zm57 56q-10 10-20 36.5T180-175q27-4 53.5-13.5T270-208q12-12 13-29t-11-29q-12-12-29-11.5T214-265Z"/></svg>
                   <%= @project.ship_in_review ? "In review" : "Ship" %>
@@ -119,6 +119,12 @@
                         <span class="project__day-value"><%= day[:value] %></span>
                       </li>
                     <% end %>
+                  <% end %>
+                  <%# Right after the Due cell, asking for more time (or where the ask's got to). %>
+                  <% if @project.extension || @project.extension_requestable? %>
+                    <li class="project__days-extension" <%= "data-asking" if @asking_extension %>>
+                      <%= render "projects/extension", project: @project, asking: @asking_extension %>
+                    </li>
                   <% end %>
                 </ol>
                 <div class="project__track" role="img" aria-label="<%= @project.hours_logged %> hours logged">
@@ -267,7 +273,7 @@
                 </div>
               </div>
               <div class="project__event" data-kind="ship">
-                <span class="project__event-date"><%= project_event_date(Program::DATES.end) %></span>
+                <span class="project__event-date"><%= project_event_date(@project.deadline) %></span>
                 <div class="project__event-text">
                   <h3 class="project__event-title">Deadline</h3>
                   <p class="project__event-note">Hit Ship any time up to then, once it's playable. You can keep building after you ship.</p>

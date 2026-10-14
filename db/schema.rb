@@ -110,6 +110,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
     t.index ["started_by_id"], name: "index_buddy_pomodoros_on_started_by_id"
   end
 
+  create_table "extensions", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.text "reason", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "decided_by_id"
+    t.datetime "decided_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["decided_by_id"], name: "index_extensions_on_decided_by_id"
+    t.index ["project_id"], name: "index_extensions_on_project_id", unique: true
+  end
+
   create_table "metric_snapshots", force: :cascade do |t|
     t.date "day", null: false
     t.string "key", null: false
@@ -427,6 +439,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_150000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "buddy_pomodoros", "pairs"
   add_foreign_key "buddy_pomodoros", "projects", column: "started_by_id"
+  add_foreign_key "extensions", "projects"
+  add_foreign_key "extensions", "users", column: "decided_by_id"
   add_foreign_key "nudges", "users"
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"

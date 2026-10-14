@@ -48,6 +48,16 @@ class User < ApplicationRecord
     nil
   end
 
+  # Where you are, for anything that goes by your calendar day (the deadline): your browser's timezone, or UTC until
+  # it's said.
+  def time_zone
+    ActiveSupport::TimeZone[timezone.presence || "UTC"]
+  end
+
+  def local_date(now = Time.current)
+    now.in_time_zone(time_zone).to_date
+  end
+
   # "stop these messages" in one of Clippy's DMs (that nudge counts against what it said), and changing your mind.
   def mute_slack!(nudge)
     transaction do

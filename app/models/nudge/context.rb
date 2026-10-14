@@ -77,20 +77,20 @@ class Nudge::Context
     user.slack_dmed_at.present? && user.slack_dmed_at > now - Nudge::MESSAGE_GAP
   end
 
-  # During wrong tool, not quiet hours, Clippy not stopped and not just heard from, under the caps, and they haven't
-  # built today already. Cheers aren't counted against the caps: they're earned, and they only go once the day's
+  # Until their deadline (Project#program_dates), not quiet hours, Clippy not stopped and not just heard from, under
+  # the caps, and they haven't built today already. Cheers aren't counted against the caps: they're earned, and they only go once the day's
   # building is done.
   def may_nudge?
-    return false unless Program::DATES.cover?(today) && reachable?
+    return false unless project.program_dates.cover?(today) && reachable?
     return false if quiet? || just_messaged? || sent_today.exists?
     return false if user.nudges.delivered.where.not(kind: "cheer").where(sent_at: now - 7.days..).count >= Nudge::WEEKLY_CAP
     minutes_today < Nudge::REWARD_MINUTES
   end
 
-  # A cheer for built_on is still owed: during wrong tool, Clippy not stopped, the day's still today or yesterday
+  # A cheer for built_on is still owed: before their deadline, Clippy not stopped, the day's still today or yesterday
   # with its 20 minutes still there, and no cheer for that day, or any today, yet.
   def cheer_due?
-    return false unless built_on && Program::DATES.cover?(today) && reachable?
+    return false unless built_on && project.program_dates.cover?(today) && reachable?
     return false if !(today - 1..today).cover?(built_on) || minutes_on(built_on) < Nudge::REWARD_MINUTES
     cheers = user.nudges.delivered.cheers
     !cheers.where(built_on:).or(cheers.where(sent_at: local_now.beginning_of_day..)).exists?
@@ -170,7 +170,7 @@ class Nudge::Context
         build_time: project.build_time,
         finish_on: project.finish_on.strftime("%b %-d"),
         local_time: local_now.strftime("%-l%P").strip,
-        days_left: (Program::DATES.end - today).to_i,
+        days_left: (project.deadline - today).to_i,
         streak: (streak if streak.positive?),
         streak_next: (streak + 1 if streak.positive?),
         next_reward: (upcoming[:label].downcase if upcoming && streak.positive?),

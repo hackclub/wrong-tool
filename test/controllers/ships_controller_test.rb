@@ -47,6 +47,42 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ship__error", /has to show the game running/
   end
 
+  test "shipping closes after the deadline where you are, with two quiet days nobody's told about" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+    users(:orpheus).update!(timezone: "America/New_York")
+    sign_in_as_orpheus
+
+    travel_to Time.utc(2026, 10, 23, 3) do # 11pm on Oct 22 in New York: still open
+      get project_ship_path
+      assert_select "form.ship__form"
+      get project_path
+      assert_select ".project__ship", /Ship/
+    end
+
+    travel_to Time.utc(2026, 10, 23, 5) do
+      get project_ship_path
+      assert_response :success
+      assert_select ".ship__done[data-state=closed] .ship__done-title", "Shipping's closed."
+      assert_select ".ship__done-text", /was Oct 20\./
+      assert_select ".ship__done-text", { text: /Oct 22/, count: 0 }, "the grace is never mentioned"
+      assert_select "form.ship__form", 0
+      assert_no_difference -> { Ship.count } do
+        post project_ship_path, params: { ship: ship_params }
+      end
+      assert_redirected_to project_ship_path
+      get project_path
+      assert_select ".project__ship", 0
+    end
+
+    projects(:orpheus).create_extension!(reason: "exams", status: "approved")
+    travel_to Time.utc(2026, 10, 29, 12) do
+      post project_ship_path, params: { ship: ship_params }
+      assert_redirected_to project_ship_path
+      assert_equal 1, Ship.count
+    end
+  end
+
   private
     def sign_in_as_orpheus
       mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS")
