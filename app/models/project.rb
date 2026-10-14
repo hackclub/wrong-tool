@@ -163,7 +163,7 @@ class Project < ApplicationRecord
 
   # What's left to spend covers your pick as it's set up, and you've not bought one already.
   def claimable?
-    order_for(prize).nil? && hours_to_spend >= hours_needed
+    order_for(prize).nil? && hours_to_spend >= hours_needed && !user.needs_address?
   end
 
   # Where your hours come from: the Hackatime editor plugin if you're writing code, Lapse recordings otherwise.

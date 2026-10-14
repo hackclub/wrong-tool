@@ -15,14 +15,18 @@ OmniAuth::Strategies::OAuth2.class_eval do
   end
 end
 
+# Every scope Hack Club Auth has: wrong tool's an HQ official app, so it may ask for phone, address and birthdate too
+# (community apps can't). slack_id and verification_status add those claims (and ysws_eligible). The address posts
+# prizes; it, the phone and the birthdate go with a ship's submission.
+Rails.application.config.x.hack_club_auth_scopes = %i[openid profile email phone address birthdate slack_id verification_status]
+
 Rails.application.config.middleware.use OmniAuth::Builder do
   provider :openid_connect,
     name: :hackclub,
     issuer: "https://auth.hackclub.com",
     discovery: true,
     response_type: :code,
-    # What community apps may ask for. slack_id and verification_status add those claims (and ysws_eligible).
-    scope: %i[openid profile email slack_id verification_status],
+    scope: Rails.configuration.x.hack_club_auth_scopes,
     client_options: {
       identifier: hack_club_auth.(:client_id),
       secret: hack_club_auth.(:client_secret),

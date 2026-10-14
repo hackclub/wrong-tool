@@ -36,6 +36,25 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".project__ship", /In review/
   end
 
+  test "without your address, shipping waits for it: shared through Hack Club" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+    sign_in_as_orpheus
+    users(:orpheus).update!(address: nil) # signed in before we asked
+
+    get project_ship_path
+    assert_select ".ship__done[data-state=address] .ship__done-title", "First, your address."
+    assert_select "form[action='/auth/hackclub'] input[name=origin][value=?]", project_ship_path
+    assert_select "form.ship__form", 0
+    assert_no_difference -> { Ship.count } do
+      post project_ship_path, params: { ship: ship_params }
+    end
+
+    users(:orpheus).update!(address: HQ_ADDRESS)
+    get project_ship_path
+    assert_select "form.ship__form"
+  end
+
   test "what a ship's missing says so" do
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)

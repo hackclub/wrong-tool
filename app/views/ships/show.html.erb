@@ -36,6 +36,22 @@
         <%= link_to "Back to project", project_path, class: "onboarding-button onboarding-button--primary ship__button" %>
       </div>
     </main>
+  <% elsif current_user.needs_address? %>
+    <%# A ship's submission needs where to post the prize: their address, shared through Hack Club Auth. %>
+    <main class="ship__done" data-state="address">
+      <div class="project__clippy" data-project-target="clippy">
+        <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
+      </div>
+      <h2 class="ship__done-title">First, your address.</h2>
+      <p class="ship__done-text">
+        Shipping sends your address with your project, so your prize can be posted to you. Share it through Hack Club:
+        it's kept encrypted, and only used to send you things.
+      </p>
+      <div class="ship__done-actions">
+        <%= button_to "Share my address", "/auth/hackclub", params: { origin: project_ship_path },
+              class: "onboarding-button onboarding-button--primary ship__button", form: { data: { turbo: false } } %>
+      </div>
+    </main>
   <% else %>
     <% screenshot = @project.screenshot if @project.screenshot.attached? && @project.screenshot.blob.persisted? %>
     <%= form_with model: @ship, url: project_ship_path, method: :post, multipart: true, class: "ship__form",

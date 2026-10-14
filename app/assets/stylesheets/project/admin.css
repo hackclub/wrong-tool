@@ -42,6 +42,11 @@
     }
   }
 
+  /* An order's address, a line each as it'd go on the parcel. */
+  .admin__address {
+    white-space: pre-line;
+  }
+
   /* Approving a ship: the hours it grants, in a box by the button. */
   .admin__approve {
     display: flex;

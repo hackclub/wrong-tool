@@ -66,4 +66,21 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert_nil session[:user_id]
   end
+
+  test "signing in keeps what Hack Club Auth shares (address, phone, birthdate), and keeps it when a sign-in doesn't" do
+    users(:orpheus).update!(address: nil)
+    mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS", address: HQ_ADDRESS)
+    post "/auth/hackclub"
+    follow_redirect!
+    assert_equal [ HQ_ADDRESS, "+18025550123", "2010-04-01" ], users(:orpheus).reload.values_at(:address, :phone_number, :birthdate)
+
+    mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS", address: nil, phone_number: nil, birthdate: nil)
+    post "/auth/hackclub"
+    follow_redirect!
+    assert_equal [ HQ_ADDRESS, "+18025550123", "2010-04-01" ], users(:orpheus).reload.values_at(:address, :phone_number, :birthdate)
+  end
+
+  test "sign-in asks Hack Club Auth for every scope it has" do
+    assert_equal %i[openid profile email phone address birthdate slack_id verification_status], Rails.configuration.x.hack_club_auth_scopes
+  end
 end

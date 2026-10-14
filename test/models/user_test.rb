@@ -64,4 +64,23 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Anonymous #{user.animal.capitalize}", user.public_name
     assert_no_match(/Ana|Lovelace/, user.public_name)
   end
+
+  test "an address is kept as Hack Club Auth shares it, encrypted, and needed till we have it" do
+    assert_equal({ "street_address" => "15 Falls Rd", "locality" => "Shelburne", "country" => "US" },
+                 User.address_from(street_address: " 15 Falls Rd ", locality: "Shelburne", region: "", country: "US", formatted: "x"))
+    assert_equal HQ_ADDRESS, User.address_from(HQ_ADDRESS.to_json)
+    assert_nil User.address_from(nil)
+    assert_nil User.address_from("not json")
+
+    user = users(:orpheus)
+    assert_not user.needs_address?
+    user.update!(address: nil)
+    assert user.needs_address?
+
+    user.update!(address: HQ_ADDRESS)
+    assert_equal HQ_ADDRESS, user.reload.address
+    assert_equal "15 Falls Rd\nShelburne, VT 05482\nUS", user.address_lines
+    assert_no_match(/Falls/, User.connection.select_value("SELECT address FROM users WHERE id = #{user.id}"), "encrypted at rest")
+    assert_not user.needs_address?
+  end
 end

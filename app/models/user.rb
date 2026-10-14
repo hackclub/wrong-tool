@@ -8,6 +8,13 @@ class User < ApplicationRecord
 
   # Linking Hackatime gives us their Hackatime ID and a token that reads their projects and hours.
   encrypts :hackatime_access_token
+  # Where to post things, from Hack Club Auth (its address claim): street_address, locality, region, postal_code and
+  # country. Encrypted, and only for sending prizes and a ship's submission.
+  ADDRESS_FIELDS = %w[street_address locality region postal_code country].freeze
+  serialize :address, coder: JSON
+  encrypts :address
+  # And their phone and birthdate ("2010-04-01"), from the phone and birthdate scopes, for a ship's submission.
+  encrypts :phone_number, :birthdate
 
   validates :hca_id, presence: true, uniqueness: true
   validates :hackatime_uid, uniqueness: { message: "is already linked to someone else here" }, allow_nil: true
@@ -125,9 +132,34 @@ class User < ApplicationRecord
         first_name: auth.info.first_name,
         slack_id: claims[:slack_id],
         verification_status: claims[:verification_status],
-        ysws_eligible: claims[:ysws_eligible] || false
+        ysws_eligible: claims[:ysws_eligible] || false,
+        # Kept if this sign-in didn't share one (from before the scope, or a community-app sign-in).
+        address: address_from(claims[:address]) || user.address,
+        phone_number: claims[:phone_number].presence || user.phone_number,
+        birthdate: claims[:birthdate].presence || user.birthdate
       )
     end
+  end
+
+  # The address claim as we keep it: its fields, as strings, blanks dropped. Nil if there's nothing to it.
+  def self.address_from(claim)
+    claim = JSON.parse(claim) if claim.is_a?(String)
+    claim.to_h.stringify_keys.slice(*ADDRESS_FIELDS).transform_values { |value| value.to_s.strip }.compact_blank.presence
+  rescue JSON::ParserError
+    nil
+  end
+
+  # We don't have their address (they signed in before we asked, or didn't share it): shipping and buying wait for it.
+  def needs_address?
+    address.blank?
+  end
+
+  # Their address, a line each: "1 Hack Ln\nShelburne, VT 05482\nUS".
+  def address_lines(fields = address)
+    return if fields.blank?
+
+    [ fields["street_address"], [ fields["locality"], [ fields["region"], fields["postal_code"] ].compact_blank.join(" ") ].compact_blank.join(", "),
+      fields["country"] ].compact_blank.join("\n")
   end
 
   private

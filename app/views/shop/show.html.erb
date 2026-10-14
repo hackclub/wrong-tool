@@ -26,6 +26,7 @@
      data-shop-spent-value="<%= @project.hours_spent %>"
      data-shop-orders-value="<%= shelf.filter_map { |tile| [ tile[:console].id, tile[:order] ] if tile[:order] }.to_h.to_json %>"
      data-shop-claim-url-value="<%= shop_order_path %>"
+     data-shop-needs-address-value="<%= current_user.needs_address? %>"
      data-shop-url-value="<%= shop_path %>"
      data-shop-ask-url-value="<%= shop_seller_requests_path %>"
      data-shop-asks-value="<%= asks.to_json %>"
@@ -143,6 +144,11 @@
               <button class="shop__ask-send">send</button>
             </form>
             <div class="shop__choices" role="listbox" aria-label="Your answers" data-shop-target="choices"></div>
+            <%# Sharing your address (to claim), through Hack Club Auth; the counter submits it. %>
+            <% if current_user.needs_address? %>
+              <%= button_to "Share my address", "/auth/hackclub", params: { origin: shop_path }, hidden: true,
+                    form: { data: { turbo: false, shop_target: "addressForm" } } %>
+            <% end %>
           </div>
           <div class="shop__customize" data-shop-target="customize">
             <div class="shop__customize-head">

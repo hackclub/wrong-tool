@@ -7,7 +7,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     @admins = Rails.configuration.x.admin_slack_ids
     Rails.configuration.x.admin_slack_ids = [ "U0ORPHEUS" ]
     @order = projects(:ana).orders.new(prize: "miyoo", prize_color: "purple", prize_options: { storage: "64" }, hours: 10,
-                                       seller_url: "https://www.amazon.de/dp/B0MIYOO")
+                                       seller_url: "https://www.amazon.de/dp/B0MIYOO", address: HQ_ADDRESS)
     @order.save!(validate: false) # as if their approved hours covered it
   end
 
@@ -22,6 +22,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin__nav a[aria-current=page]", "Orders"
     assert_select "tr##{dom_id(@order)}", text: /Ana Lovelace.*ana@hackclub\.com.*Miyoo Mini Plus in purple, 64GB.*amazon\.de.*a seller we approved.*10 hrs/m
     assert_select "tr##{dom_id(@order)} a[href='https://www.amazon.de/dp/B0MIYOO']", "amazon.de"
+    assert_select "tr##{dom_id(@order)} .admin__address", /15 Falls Rd\s+Shelburne, VT 05482\s+US/
 
     patch admin_order_path(@order)
     assert_redirected_to admin_orders_path

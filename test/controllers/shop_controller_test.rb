@@ -177,6 +177,18 @@ class ShopControllerTest < ActionDispatch::IntegrationTest
     assert_select "#shop-rg28xx .shop__tile-tag", "ordered"
   end
 
+  test "without your address, buying asks for it first" do
+    approve_ship(hours: 12)
+    sign_in_as(mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS"))
+    users(:orpheus).update!(address: nil) # signed in before we asked
+    get shop_path
+    assert_select "[data-controller=shop][data-shop-needs-address-value=true]"
+    assert_select "form[action='/auth/hackclub'][data-shop-target=addressForm] input[name=origin][value='/shop']"
+    post shop_order_path, params: { order: { prize: "miyoo" } }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal "We need your address to post it. Share it through Hack Club first.", response.parsed_body["error"]
+  end
+
   test "approved hours that don't cover your pick can't buy it, and logged ones don't count till they're shipped" do
     approve_ship(hours: 8)
     link_hackatime(users(:orpheus))

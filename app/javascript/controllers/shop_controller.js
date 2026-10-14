@@ -13,11 +13,11 @@ export default class extends Controller {
   static targets = [
     "grid", "nameBox", "formula", "tile", "cost", "tag", "shelf", "left", "right", "moreText", "range", "dot",
     "counter", "mascot", "sprite", "say", "typed", "ask", "askInput", "choices", "customize", "customizeName", "seller", "variant", "swatches", "colorName",
-    "options", "costFormula", "customizeCost", "sum", "columnHeader", "rowHeader", "toSpend"
+    "options", "costFormula", "customizeCost", "sum", "columnHeader", "rowHeader", "addressForm", "toSpend"
   ]
   static values = {
     consoles: Array, configs: Object, pick: String, hours: Number, tracking: Boolean, shipped: Boolean,
-    toSpend: Number, spent: Number, orders: Object, claimUrl: String, url: String, askUrl: String, asks: Object, says: String, emotes: Object, mood: String, sounds: Object
+    toSpend: Number, spent: Number, orders: Object, claimUrl: String, needsAddress: Boolean, url: String, askUrl: String, asks: Object, says: String, emotes: Object, mood: String, sounds: Object
   }
 
   connect() {
@@ -315,6 +315,7 @@ export default class extends Controller {
     }
 
     if (this.talk === "seller") return [ back ]
+    if (this.talk === "address") return [ { icon: "send", tone: "pick", label: "share my address", run: () => this.addressFormTarget.requestSubmit() }, back ]
     if (this.talk === "claim") return [ { icon: "flag", tone: "pick", label: "yes, ship it to me", run: () => this.#claim() }, back ]
 
     const list = [ { icon: "info", label: `about the ${console.short}`, run: () => this.#about() } ]
@@ -337,6 +338,11 @@ export default class extends Controller {
     const console = this.#console(id)
     const ask = this.#liveAsk(id)
     const from = ask?.status === "approved" ? ask.host : console.vendor
+    if (this.needsAddressValue) {
+      this.#talkTo("address")
+      this.#say("we need your address to post it. share it through hack club, then come back and buy it.")
+      return
+    }
     this.#talkTo("claim")
     this.#say(`this isn't checkout. it's ${hrs(this.#hoursOf(id))} of your ${hrs(this.toSpendValue)} approved hours on the ${console.short} in ` +
               `${this.#colorOf(id).name.toLowerCase()}, from ${from}. once it's bought, it can't change.`)
@@ -630,6 +636,7 @@ const ICONS = {
   back: '<path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   zoom: '<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21M8 10.5h5M10.5 8v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   store: '<path d="M4 10 5.5 4h13L20 10M4 10v10h16V10M4 10h16M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  send: '<path d="M4 12 20 4l-4 16-4-7-8-1Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
 }
 
 // "your hours cover it. :yay:" → the words, and the emotes on the end.

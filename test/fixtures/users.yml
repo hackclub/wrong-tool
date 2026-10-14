@@ -7,6 +7,8 @@ orpheus:
   slack_display_name: orph
   verification_status: verified
   ysws_eligible: true
+  address: '{"street_address":"15 Falls Rd","locality":"Shelburne","region":"VT","postal_code":"05482","country":"US"}'
+
 
 ana:
   hca_id: ident!ana
@@ -17,3 +19,5 @@ ana:
   slack_display_name: pixelana
   verification_status: verified
   ysws_eligible: true
+  address: '{"street_address":"12 Byron St","locality":"London","postal_code":"N1 1AA","country":"GB"}'
+

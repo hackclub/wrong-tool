@@ -10,7 +10,7 @@ class ShipsController < ApplicationController
   end
 
   def create
-    return redirect_to project_ship_path if @project.ship_in_review || !@project.may_ship?
+    return redirect_to project_ship_path if @project.ship_in_review || !@project.may_ship? || current_user.needs_address?
 
     @ship = @project.ship!(ship_params)
     if @ship.persisted?

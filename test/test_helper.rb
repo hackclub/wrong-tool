@@ -31,13 +31,17 @@ Hackatime.stubbed_spans = {}
 
 module HackClubAuthHelpers
   def mock_hack_club_auth(uid: "ident!heidi", email: "heidi@hackclub.com", name: "Heidi Hakkuun", first_name: "Heidi",
-                          slack_id: "U0HEIDI", verification_status: "verified", ysws_eligible: true)
+                          slack_id: "U0HEIDI", verification_status: "verified", ysws_eligible: true, address: HQ_ADDRESS,
+                          phone_number: "+18025550123", birthdate: "2010-04-01")
     OmniAuth.config.mock_auth[:hackclub] = OmniAuth::AuthHash.new(
       provider: "hackclub", uid:,
       info: { email:, name:, first_name: },
-      extra: { raw_info: { sub: uid, email:, name:, slack_id:, verification_status:, ysws_eligible: } }
+      extra: { raw_info: { sub: uid, email:, name:, slack_id:, verification_status:, ysws_eligible:, address:, phone_number:, birthdate: }.compact }
     )
   end
+
+  HQ_ADDRESS = { "street_address" => "15 Falls Rd", "locality" => "Shelburne", "region" => "VT", "postal_code" => "05482",
+                 "country" => "US" }.freeze
 end
 
 module HackatimeHelpers

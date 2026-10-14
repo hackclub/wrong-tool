@@ -52,6 +52,18 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal [ "Open the queue", "https://wrong.hackclub.com/admin/orders" ], dm[:args].third["link"]
   end
 
+  test "buying waits for your address, and the order keeps it as it was" do
+    approve(hours: 10)
+    users(:orpheus).update!(address: nil) # signed in before we asked
+    assert_equal "We need your address to post it. Share it through Hack Club first.", buy("miyoo").problem
+
+    users(:orpheus).update!(address: HQ_ADDRESS)
+    order = buy("miyoo")
+    assert_equal HQ_ADDRESS, order.address
+    users(:orpheus).update!(address: HQ_ADDRESS.merge("street_address" => "1 New St"))
+    assert_equal "15 Falls Rd", order.reload.address["street_address"]
+  end
+
   test "from a seller an admin approved for that console, if there is one" do
     approve(hours: 10)
     @project.seller_requests.create!(prize: "miyoo", url: "https://www.amazon.de/dp/B0MIYOO").decide!("approved", by: users(:ana))
