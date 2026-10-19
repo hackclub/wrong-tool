@@ -76,7 +76,7 @@ gem "omniauth_openid_connect", "~> 0.8"
 gem "omniauth-oauth2", "~> 1.8"
 
 gem "posthog-ruby", "~> 3.23", require: "posthog"
-gem "posthog-rails", "~> 3.18"
+gem "posthog-rails", "~> 3.19"
 gem "opentelemetry-sdk"
 gem "opentelemetry-exporter-otlp"
 gem "opentelemetry-logs-sdk"
