@@ -359,11 +359,11 @@ GEM
       opentelemetry-logs-sdk (~> 0.1)
       opentelemetry-sdk
       opentelemetry-semantic_conventions
-    opentelemetry-logs-api (0.6.0)
+    opentelemetry-logs-api (0.7.0)
       opentelemetry-api (~> 1.0)
-    opentelemetry-logs-sdk (0.8.0)
+    opentelemetry-logs-sdk (0.8.1)
       opentelemetry-api (~> 1.2)
-      opentelemetry-logs-api (~> 0.6.0)
+      opentelemetry-logs-api (~> 0.7.0)
       opentelemetry-sdk (~> 1.3)
     opentelemetry-registry (0.6.3)
       opentelemetry-api (~> 1.1)
@@ -767,8 +767,8 @@ CHECKSUMS
   opentelemetry-exporter-otlp (0.37.0) sha256=edc8bda657dce5f4d527ac735f75d44043bb5924de6df0e3f01260108aa76136
   opentelemetry-exporter-otlp-common (0.3.0) sha256=855d10d788a7272dfe5b14efa229507619abbef29085ef4a8acfd2c0d3af6171
   opentelemetry-exporter-otlp-logs (0.6.0) sha256=1ff24ee654d83dccc52ec8ef811caa0cd013919bf22f8dde9b2dff1918eaa01e
-  opentelemetry-logs-api (0.6.0) sha256=b889ac61d90326bffadb83bf7278d246d1086e2349c9052aeb072ed375ce73d0
-  opentelemetry-logs-sdk (0.8.0) sha256=d7c8cb43cff62df87049d62e03ae9f1a4e5e5035595b3d7501bdf3aebb3e6204
+  opentelemetry-logs-api (0.7.0) sha256=53ea80e36b830bf068d6e44ec3776da7bf42f62ccc1d5a5944cc221999febe5d
+  opentelemetry-logs-sdk (0.8.1) sha256=cb02f3b325ebbced9eb07f56057c93b1ee2d8cb44144b77d0ecf59684747d3a3
   opentelemetry-registry (0.6.3) sha256=568fa8eaea94394f29f4fce3f0339ab10c3bf6d6c8beed6b3cfee6fd37fcc608
   opentelemetry-sdk (1.13.1) sha256=91c9cc315ac7ef30243549eeff8b27cd0d39bd02bdf9c9ae481ab96a1cec6754
   opentelemetry-semantic_conventions (1.44.0) sha256=b09b8793422f13b01c08f7a6f29b5f511f47f37bcdb57c0513465a0464168513
