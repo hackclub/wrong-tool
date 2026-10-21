@@ -1,5 +1,4 @@
 <% content_for :title, "Extensions · Wrong Tool admin" %>
-<% new_deadline = (Program::DATES.end + Program::EXTENSION_DAYS).strftime("%b %-d") %>
 
 <%# Everyone who's asked for more time to ship: who, why, and a button each way while it's waiting; then the ones
     decided, and who decided. Real names and emails are here, so nothing on this page is recorded. %>
@@ -13,8 +12,8 @@
         <%= render "admin/nav" %>
         <h1 class="project__title">Who's asked for more time</h1>
         <p class="leaderboard__note">
-          Approving moves their deadline to <%= new_deadline %> (<%= Program::EXTENSION_DAYS %> days on), on their project page and in Clippy's
-          nudges. They get a DM from Clippy either way. Each project can ask once.
+          Nobody can ask any more: everyone's due <%= Program::DATES.end.strftime("%b %-d") %>, where an extension would have taken them, so
+          approving moves no dates. They get a DM from Clippy either way.
         </p>
         <% if flash[:alert] %><p class="leaderboard__note" role="alert"><%= flash[:alert] %></p><% end %>
       </header>

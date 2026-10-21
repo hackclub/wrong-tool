@@ -118,11 +118,11 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
       assert_equal [ "5 hrs · shoutout", "10 hrs · Mini Plus" ], css_select(".project__track-label").map(&:text)
       assert_select ".project__day-cell[data-state=party]", /Party/
       assert_select ".project__event[data-kind=party]", /Play party.*Thursday at 7pm · on stream/m
-      assert_select ".project__event[data-kind=ship] .project__event-day", "20", "the deadline, not the day your hours would be in"
+      assert_select ".project__event[data-kind=ship] .project__event-day", "27", "the deadline, not the day your hours would be in"
       assert_select ".project__event[data-kind=ship] .project__event-title", "Deadline"
-      assert_select ".project__schedule-note", "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 20."
+      assert_select ".project__schedule-note", "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 27."
       assert_select ".project__day-cell[data-state=goal]", /Goal/
-      assert_select ".project__day-cell[data-state=due] .project__day-date", "20"
+      assert_select ".project__day-cell[data-state=due] .project__day-date", "27"
       assert_select ".project__day-cell[data-state=hit] .project__day-value", "1.5h", "yesterday's 1.5 hours fill its cell"
       assert_select ".project__stair[data-you]", /You/
       assert_select ".project__stairs-note", "Hours this week. You're in first."

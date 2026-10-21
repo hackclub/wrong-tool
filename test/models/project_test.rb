@@ -176,15 +176,12 @@ class ProjectTest < ActiveSupport::TestCase
 end
 
 class ProjectDeadlineTest < ActiveSupport::TestCase
-  test "the deadline is wrong tool's last day, a week on once an extension's approved" do
+  test "the deadline is wrong tool's last day, extension or not" do
     project = projects(:orpheus)
-    assert_equal Date.new(2026, 10, 20), project.deadline
+    assert_equal Date.new(2026, 10, 27), project.deadline
 
     extension = project.create_extension!(reason: "exams")
-    assert_equal Date.new(2026, 10, 20), project.reload.deadline, "asking alone moves nothing"
-    extension.update!(status: "denied")
-    assert_equal Date.new(2026, 10, 20), project.reload.deadline
-
+    assert_equal Date.new(2026, 10, 27), project.reload.deadline
     extension.update!(status: "approved")
     assert_equal Date.new(2026, 10, 27), project.reload.deadline
     assert_equal Date.new(2026, 10, 6)..Date.new(2026, 10, 27), project.program_dates
@@ -192,40 +189,17 @@ class ProjectDeadlineTest < ActiveSupport::TestCase
 
   test "ship closes at the end of the deadline where you are, plus two quiet days" do
     project = projects(:orpheus)
-    assert_equal Time.utc(2026, 10, 22, 23, 59, 59), project.ship_cutoff.change(usec: 0), "UTC until they've said where they are"
+    assert_equal Time.utc(2026, 10, 29, 23, 59, 59), project.ship_cutoff.change(usec: 0), "UTC until they've said where they are"
 
     users(:orpheus).update!(timezone: "America/New_York")
-    assert project.reload.may_ship?(now: Time.utc(2026, 10, 23, 2))
-    assert_not project.may_ship?(now: Time.utc(2026, 10, 23, 4))
-
-    project.create_extension!(reason: "exams", status: "approved")
     assert project.reload.may_ship?(now: Time.utc(2026, 10, 30, 2))
     assert_not project.may_ship?(now: Time.utc(2026, 10, 30, 4))
   end
 
-  test "you can ask for more time once, while set up and unshipped, up to the deadline where you are" do
+  test "nobody can ask for more time any more" do
     project = projects(:orpheus)
-    assert_not project.extension_requestable?, "not set up yet"
-
     link_hackatime(users(:orpheus))
     project.update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    assert project.reload.extension_requestable?(now: Time.utc(2026, 10, 12, 12))
-
-    noon = Time.utc(2026, 10, 20, 12) # Oct 21 already in Kiritimati, still Oct 20 in Pago Pago
-    users(:orpheus).update!(timezone: "Pacific/Kiritimati")
-    assert_not project.reload.extension_requestable?(now: noon)
-    users(:orpheus).update!(timezone: "Pacific/Pago_Pago")
-    assert project.reload.extension_requestable?(now: noon)
-    assert_not project.extension_requestable?(now: Time.utc(2026, 10, 21, 12)), "not through the grace days"
-
-    project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every cell is a drum pad, built in Sheets.",
-                          repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://beat.sheet", status: "approved",
-                          screenshot: { io: file_fixture("screenshot.png").open, filename: "screenshot.png", content_type: "image/png" },
-                          screenshot_shows_game: true)
-    assert_not project.reload.extension_requestable?(now: noon), "shipped"
-    project.ships.destroy_all
-
-    project.create_extension!(reason: "exams")
-    assert_not project.reload.extension_requestable?(now: noon), "asked already"
+    assert_not project.reload.extension_requestable?(now: Time.utc(2026, 10, 12, 12)), "set up, unshipped, and early"
   end
 end

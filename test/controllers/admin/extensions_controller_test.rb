@@ -44,9 +44,9 @@ class Admin::ExtensionsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:orpheus))
     patch admin_extension_path(@extension), params: { decision: "denied" }
     assert @extension.reload.denied?
-    assert_equal Date.new(2026, 10, 20), projects(:ana).reload.deadline
+    assert_equal Date.new(2026, 10, 27), projects(:ana).reload.deadline
     dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ANA" }
-    assert_match(/still due Oct 20/, dm[:args].second)
+    assert_match(/still due Oct 27/, dm[:args].second)
   end
 
   test "nobody else can see it, or decide" do

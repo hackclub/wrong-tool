@@ -19,8 +19,8 @@ module Nudge::Fixed
     program_nudge(context) || milestone(context) || setup_nudge(context) || streak_saver(context)
   end
 
-  # Each once: ones sent for an earlier deadline (before this one's last three days) don't count, so an extension
-  # brings the last days round again.
+  # Each once: ones sent for an earlier deadline (before this one's last three days) don't count, so a moved
+  # deadline (wrong tool running a week longer) brings the last days round again.
   def self.program_nudge(context)
     dates = program_dates(context)
     key = dates.key(context.today) or return

@@ -32,7 +32,7 @@ class ExtensionNotifierTest < ActiveSupport::TestCase
     denied = projects(:orpheus).create_extension!(reason: "busy")
     denied.decide!("denied", by: users(:ana))
     dm = enqueued_jobs.find { |job| job[:job] == SlackMessageJob && job[:args].first == "U0ORPHEUS" }
-    assert_match(/No extra days this time, so \*A rhythm game in Spreadsheet\* is still due Oct 20/, dm[:args].second)
+    assert_match(/No extra days this time, so \*A rhythm game in Spreadsheet\* is still due Oct 27/, dm[:args].second)
   end
 
   test "nothing to someone who stopped Clippy's messages, or isn't on Slack" do

@@ -49,16 +49,11 @@ class NudgeTest < ActiveSupport::TestCase
     assert_equal "U0ORPHEUS", @sent.sole.first
   end
 
-  test "the last days go by your deadline, so an extension brings them round again" do
-    assert_equal "three_days_left", deliver(at_slot(17)).arm
-    assert_equal "last_day", deliver(at_slot(20)).arm
-    assert_nil deliver(at_slot(21)), "wrong tool's over for you"
-
+  test "the last days go by wrong tool's last day, extension or not" do
     @user.project.create_extension!(reason: "exams", status: "approved")
-    assert_not_nil deliver(at_slot(22)), "still going"
     assert_equal "three_days_left", deliver(at_slot(24)).arm
     assert_equal "last_day", deliver(at_slot(27)).arm
-    assert_nil deliver(at_slot(28))
+    assert_nil deliver(at_slot(28)), "wrong tool's over for you"
   end
 
   test "then milestones, then setup steps, before the bandit" do
@@ -202,7 +197,7 @@ class NudgeTest < ActiveSupport::TestCase
     assert_nil deliver(at_slot(8, hour: 18))
     assert_nil deliver(at_slot(8, hour: 19, min: 15))
     assert_nil deliver(at_slot(5))
-    assert_nil deliver(at_slot(21))
+    assert_nil deliver(at_slot(28))
 
     @user.update!(slack_muted_at: Time.current)
     assert_nil deliver

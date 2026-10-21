@@ -51,8 +51,9 @@ class ProjectsHelperTest < ActionView::TestCase
     assert_equal [ "45m", "20m", "Skip", "1.5h", "Today", nil ], days.first(6).map { _1[:value] }
     assert_equal [ "Oct 6", "7", "8", "9", "10", "11" ], days.first(6).map { _1[:date] }
     assert_equal({ state: "goal", value: "Goal" }, days[13].slice(:state, :value))
-    assert_equal({ date: "20", state: "due", value: "Due" }, days.last, "the deadline's the day after the goal, so no gap")
-    assert_equal 15, days.size
+    assert_equal({ gap: true }, days[14], "days skipped between the goal and the deadline")
+    assert_equal({ date: "27", state: "due", value: "Due" }, days.last)
+    assert_equal 16, days.size
 
     user.streak_activities.create!(activity_date: Date.new(2026, 10, 10), coded_seconds: 50 * 60)
     today = project_schedule(project, today: Date.new(2026, 10, 10))[4]
@@ -66,7 +67,7 @@ class ProjectsHelperTest < ActionView::TestCase
 
     project.update!(pace_minutes: 20)
     days = project_schedule(project, today: Date.new(2026, 10, 10))
-    assert_equal "due", days.find { _1[:date] == "20" }[:state], "the deadline sits among your days when they run past it"
+    assert_equal "due", days.find { _1[:date] == "27" }[:state], "the deadline sits among your days when they run past it"
     assert_equal "goal", days.last[:state]
 
     project.update!(pace_minutes: 45)
@@ -78,21 +79,17 @@ class ProjectsHelperTest < ActionView::TestCase
 
   test "the schedule says when your hours would be in, and that you ship any time up to the deadline" do
     project = projects(:orpheus)
-    assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 20.", project_schedule_note(project)
+    assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 27.", project_schedule_note(project)
     assert_equal({ label: "Done by", value: "Oct 19", note: "at this pace" }, project_goal(project).last)
     assert_equal({ label: "Logged", value: "0 of 10 hrs", note: "for the Miyoo Mini Plus in gray" }, project_goal(project).first)
     assert_equal "10 hrs · 45 min a day · done by Oct 19 · Miyoo Mini Plus in gray, 64GB", project_meta(project)
   end
 
-  test "an approved extension moves the deadline on the schedule" do
+  test "an approved extension doesn't move the deadline on the schedule" do
     project = projects(:orpheus)
     project.create_extension!(reason: "exams", status: "approved")
     assert_equal "14 sessions of 45 min gets you there by Oct 19. Ship any time up to Oct 27.", project_schedule_note(project)
-    days = project_schedule(project, today: Date.new(2026, 10, 12))
-    assert_equal({ date: "27", state: "due", value: "Due" }, days.last)
-    assert_equal({ gap: true }, days[-2])
-    assert_equal "goal", days[-3][:state]
-    assert_nil days.find { |day| day[:date] == "20" && day[:state] == "due" }
+    assert_equal({ date: "27", state: "due", value: "Due" }, project_schedule(project, today: Date.new(2026, 10, 12)).last)
   end
 
   test "the hours track runs to your pick, at the hours its price takes, with the shoutout on the way" do

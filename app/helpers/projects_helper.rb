@@ -168,7 +168,7 @@ module ProjectsHelper
   # Your build days as cells. The days gone show how they went, from Hackatime: "hit" with your pace's minutes on
   # your linked projects (or more), "some" with less, "missed" with none, or "skip" for the one your skip day
   # covered. Today shows its time so far (and fills in the same way, under its ring) once there is some. Ahead of it
-  # are the play party, the day your hours would be in ("goal") and the deadline ("due", which an extension moves):
+  # are the play party, the day your hours would be in ("goal") and the deadline ("due"):
   # on its own after a gap when your days end before it, or in among them when they run on past it. Days run on
   # streak time (2am to 2am where you are), like the streak does.
   def project_schedule(project, today: project.user.streak_today_date)

@@ -72,19 +72,19 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     users(:orpheus).update!(timezone: "America/New_York")
     sign_in_as_orpheus
 
-    travel_to Time.utc(2026, 10, 23, 3) do # 11pm on Oct 22 in New York: still open
+    travel_to Time.utc(2026, 10, 30, 3) do # 11pm on Oct 29 in New York: still open
       get project_ship_path
       assert_select "form.ship__form"
       get project_path
       assert_select ".project__ship", /Ship/
     end
 
-    travel_to Time.utc(2026, 10, 23, 5) do
+    travel_to Time.utc(2026, 10, 30, 5) do
       get project_ship_path
       assert_response :success
       assert_select ".ship__done[data-state=closed] .ship__done-title", "Shipping's closed."
-      assert_select ".ship__done-text", /was Oct 20\./
-      assert_select ".ship__done-text", { text: /Oct 22/, count: 0 }, "the grace is never mentioned"
+      assert_select ".ship__done-text", /was Oct 27\./
+      assert_select ".ship__done-text", { text: /Oct 29/, count: 0 }, "the grace is never mentioned"
       assert_select "form.ship__form", 0
       assert_no_difference -> { Ship.count } do
         post project_ship_path, params: { ship: ship_params }
@@ -92,13 +92,6 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to project_ship_path
       get project_path
       assert_select ".project__ship", 0
-    end
-
-    projects(:orpheus).create_extension!(reason: "exams", status: "approved")
-    travel_to Time.utc(2026, 10, 29, 12) do
-      post project_ship_path, params: { ship: ship_params }
-      assert_redirected_to project_ship_path
-      assert_equal 1, Ship.count
     end
   end
 

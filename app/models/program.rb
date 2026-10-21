@@ -1,8 +1,9 @@
 # wrong tool itself: when it runs, and how hours turn into a handheld (the rates are in Shop).
 module Program
-  # Launches Oct 6 and runs for two weeks.
-  DATES = Date.new(2026, 10, 6)..Date.new(2026, 10, 20)
-  # An approved extension (Extension) moves someone's deadline this much later.
+  # Launches Oct 6 and runs for three weeks: two, and then a week more.
+  DATES = Date.new(2026, 10, 6)..Date.new(2026, 10, 27)
+  # What an extension (Extension) was: this many days past the old last day. wrong tool itself runs that long now, so
+  # one moves nothing, and nobody can ask (Project#extension_requestable?).
   EXTENSION_DAYS = 7
   # Ship stays open this many days past the deadline, quietly: nobody's told, and the site keeps saying the deadline.
   SHIP_GRACE_DAYS = 2
@@ -13,8 +14,10 @@ module Program
   # What a milestone of logged hours gets you, besides dollars (Shop): the console itself sits wherever its price
   # does on your track (ProjectsHelper#project_milestones).
   MILESTONES = { 5 => "shoutout" }.freeze
-  # Two weeks, for weekly hours and pair weeks: the first runs to Sunday, the second to the end.
-  WEEKS = [ DATES.begin..Date.new(2026, 10, 12), Date.new(2026, 10, 13)..DATES.end ].freeze
+  # Three weeks, for weekly hours and pair weeks: the first runs to Sunday, the second to the old last day, the third to
+  # the end.
+  WEEKS = [ DATES.begin..Date.new(2026, 10, 12), Date.new(2026, 10, 13)..Date.new(2026, 10, 20),
+            Date.new(2026, 10, 21)..DATES.end ].freeze
   # wrong tool's Slack channels: #wrong, for shoutouts, and everyone's added to both when they first sign in.
   SLACK_CHANNEL_ID = "C0C5UHLAAP5"
   SLACK_CHANNEL_IDS = [ SLACK_CHANNEL_ID, "C0C60KQ0XLJ" ].freeze
