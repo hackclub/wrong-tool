@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ShipTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @project = projects(:orpheus)
     link_hackatime(@project.user)
@@ -81,7 +83,34 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal 10.5, @project.reload.hours_approved
   end
 
+  test "the reminder DMs everyone who hasn't shipped, sent back counts, and a dry run sends nothing" do
+    require "rake"
+    Rails.application.load_tasks unless Rake::Task.task_defined?("ships:remind")
+    ship_now(hours: 2)
+    projects(:ana).ships.create!(title: "Pong in Figma", description: "Two paddles, one ball, and every frame is a Figma component.",
+                                 repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours: 1,
+                                 screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "rejected")
+
+    with_env("DRY_RUN" => "1") { capture_io { Rake::Task["ships:remind"].execute } }
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
+
+    capture_io { Rake::Task["ships:remind"].execute }
+    dms = enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
+    assert_equal [ "U0ANA" ], dms.map { |job| job[:args].first }
+    assert_equal "wrong tool ends Oct 27, and *Pong in Figma* hasn't shipped yet. If it's playable, ship it, finished or not.\n" \
+                 ":clippy-hopeful: clippy is holding the door open for you. :blob-wiggle:", dms.first[:args].second
+    assert_equal [ "Ship it", "https://wrong.hackclub.com/ship" ], dms.first[:args].third["link"]
+  end
+
   private
+    def with_env(vars)
+      originals = vars.keys.index_with { |key| ENV[key] }
+      vars.each { |key, value| ENV[key] = value }
+      yield
+    ensure
+      originals.each { |key, value| ENV[key] = value }
+    end
+
     def ship_now(hours:)
       @project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every beat is a cell lighting up in time.",
                              repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://example.com/beat",
