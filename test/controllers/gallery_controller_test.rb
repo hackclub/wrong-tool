@@ -19,24 +19,35 @@ class GalleryControllerTest < ActionDispatch::IntegrationTest
     assert_select ".sheet-tab[aria-current=page]", /Gallery/
   end
 
-  test "anyone sees each project's approved game, by the name everyone sees, and not who made it" do
-    ship!(projects(:ana), "Old Pong", status: "approved")
+  test "anyone sees each project's latest ship, whatever review made of it, by the name everyone sees" do
+    ship!(projects(:ana), "Old Pong", status: "rejected")
     pong = ship!(projects(:ana), "Pong in Figma", status: "approved", approved_hours: 6)
-    ship!(projects(:ana), "Pong again", status: "in_review")
-    ship!(projects(:orpheus), "Rejected rhythm", status: "rejected")
+    rhythm = ship!(projects(:orpheus), "Rhythm sheet", status: "in_review")
 
     get gallery_path
 
     assert_response :success
-    assert_select ".gallery__card", 1
+    assert_select ".gallery__card", 2, "one card a project: its latest ship"
+    assert_select ".gallery__title", { text: "Old Pong", count: 0 }
     assert_select "##{dom_id(pong)}" do
       assert_select ".gallery__title", "Pong in Figma"
+      assert_select ".gallery__status[data-status=approved]", "Approved"
       assert_select ".gallery__tool", /in Figma · 6 hrs/
       assert_select ".gallery__maker", /pixelana/
       assert_select "a.gallery__link--play[href='https://example.com/pong-in-figma']", "Play"
       assert_select "a.gallery__link[href='https://github.com/pixelana/game']", "Code"
     end
+    assert_select "##{dom_id(rhythm)} .gallery__status", "In review"
     assert_no_match(/Ana Lovelace|ana@hackclub/, response.body)
+  end
+
+  test "not approved, it's still there, saying so" do
+    ship!(projects(:ana), "Pong in Figma", status: "rejected")
+
+    get gallery_path
+
+    assert_select ".gallery__card", 1
+    assert_select ".gallery__status[data-status=rejected]", "Not approved"
   end
 
   test "filtered by the wrong tool, and your own game is yours" do

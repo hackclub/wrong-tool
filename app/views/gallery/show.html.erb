@@ -1,7 +1,8 @@
 <% content_for :title, "Gallery · Wrong Tool" %>
 <% project = current_user&.project %>
 
-<%# Every game that shipped (GalleryController): a card each, newest first, by the name everyone else sees. %>
+<%# Every game that shipped (GalleryController): a card each, newest first, by the name everyone else sees, and
+    where review's at with it. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
   <%= render "onboarding/formula_bar", name_box: "A1",
@@ -13,7 +14,7 @@
         <div class="leaderboard__heading">
           <h1 class="project__title">Gallery</h1>
           <p class="leaderboard__note">
-            <% if @total.zero? %>Nothing's shipped yet. The first games show up here once they're approved.
+            <% if @total.zero? %>Nothing's shipped yet. The first games show up here as soon as they ship.
             <% else %><%= pluralize(@total, "game") %> built with the wrong tool, newest first.<% end %>
           </p>
         </div>
@@ -37,7 +38,10 @@
                 <%= image_tag url_for(ship.screenshot), alt: "", loading: "lazy" %>
               </a>
               <div class="gallery__body">
-                <h2 class="gallery__title"><%= ship.title %></h2>
+                <div class="gallery__heading">
+                  <h2 class="gallery__title"><%= ship.title %></h2>
+                  <span class="gallery__status" data-status="<%= ship.status %>"><%= gallery_status(ship) %></span>
+                </div>
                 <p class="gallery__tool">
                   <%= Project.preposition_for(ship.project.tool) %> <%= ship.project.tool_name %> ·
                   <%= number_with_precision(ship.approved_hours || ship.hours, precision: 1, strip_insignificant_zeros: true) %> hrs
@@ -60,7 +64,7 @@
       <% end %>
 
       <p class="leaderboard__footnote">
-        Every approved ship, as it was approved. Hours are the ones it was approved with.
+        Every project's latest ship, as it was shipped. Hours are the ones it was approved with, once it's approved.
         <% unless project %><%= link_to "Build one of your own", onboarding_path %>.<% end %>
       </p>
     </div>
