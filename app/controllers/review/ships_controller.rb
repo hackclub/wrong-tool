@@ -9,6 +9,11 @@ class Review::ShipsController < Review::BaseController
     claim
   end
 
+  # Ships from before evidence was gathered get theirs the first time they're opened.
+  before_action only: :show do
+    ShipEvidence.request(@ship) unless @ship.evidence
+  end
+
   private
     def claim
       @claim = ReviewClaim.take(@ship, current_user) if @ship.in_review? && current_user.reviewer?
@@ -20,7 +25,8 @@ class Review::ShipsController < Review::BaseController
     end
 
     def set_ship
-      @ship = Ship.includes(:decided_by, review_decisions: :reviewer, project: :user).find(params[:ship_id] || params[:id])
+      @ship = Ship.includes(:decided_by, :evidence, review_decisions: :reviewer, flags: :dismissed_by, project: :user)
+                  .find(params[:ship_id] || params[:id])
       not_found unless current_user.may_review?(@ship)
     end
 end

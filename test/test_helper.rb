@@ -29,6 +29,10 @@ Hackatime.stubbed_projects = {
 }
 Hackatime.stubbed_spans = {}
 
+# Nor GitHub (no repo is there, unless a test says so) or anyone's demo link (each answers 200, unless a test says).
+Github.stubbed = {}
+DemoProbe.stubbed = {}
+
 module HackClubAuthHelpers
   def mock_hack_club_auth(uid: "ident!heidi", email: "heidi@hackclub.com", name: "Heidi Hakkuun", first_name: "Heidi",
                           slack_id: "U0HEIDI", verification_status: "verified", ysws_eligible: true, address: HQ_ADDRESS,

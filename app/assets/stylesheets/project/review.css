@@ -190,6 +190,128 @@
     }
   }
 
+  /* What we found: Hackatime a day as a strip of cells (darker, more time), sessions and commits as tables. */
+  .review__evidence-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .review__evidence-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+
+    .admin__heading {
+      margin: 0;
+    }
+
+    form {
+      margin-inline-start: auto;
+    }
+  }
+
+  .review__subheading {
+    margin: 8px 0 0;
+    font: 600 13px var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .review__days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .review__day {
+    inline-size: 16px;
+    block-size: 16px;
+    border: 1px solid var(--border-grid);
+    background: var(--surface-grid);
+
+    &[data-level="1"] { background: #c6e8d2; }
+    &[data-level="2"] { background: #8fd0a8; }
+    &[data-level="3"] { background: #3e9d63; }
+    &[data-level="4"] { background: var(--green-dark); }
+  }
+
+  .review__table {
+    font-size: 13px;
+
+    td a {
+      color: var(--blue-700);
+    }
+  }
+
+  .review__commits {
+    max-block-size: 360px;
+    overflow: auto;
+  }
+
+  .review__duplicates {
+    margin: 0;
+    padding-inline-start: 18px;
+    font: 13px var(--font-cell);
+
+    a {
+      color: var(--blue-700);
+    }
+  }
+
+  /* Flags: red ones open, with the box to dismiss them; warnings folded; dismissed ones last. */
+  .review__flags {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font: 13px var(--font-cell);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .review__flag {
+    padding: 6px 8px;
+    border-inline-start: 3px solid var(--border-header);
+    background: var(--surface-header);
+
+    &[data-severity="danger"] {
+      border-color: var(--red);
+      background: #fdecee;
+    }
+
+    &[data-severity="warn"] {
+      border-color: var(--amber-900);
+      background: var(--yellow-100);
+    }
+
+    summary {
+      cursor: pointer;
+    }
+
+    ul {
+      margin: 6px 0 0;
+      padding-inline-start: 18px;
+    }
+  }
+
+  .review__dismiss {
+    display: flex;
+    gap: 6px;
+    margin-block-start: 6px;
+
+    input {
+      flex: 1;
+      min-inline-size: 0;
+      padding: 4px 6px;
+      border: 1px solid var(--border-header);
+      font: 12px var(--font-cell);
+    }
+  }
+
   .admin [data-decision="changes_requested"] {
     color: var(--amber-900);
   }

@@ -66,6 +66,9 @@ Rails.application.routes.draw do
     resources :ships, only: :show do
       resources :decisions, only: :create
       resource :claim, only: %i[create update]
+      # Gathering its evidence again, and dismissing a flag (with why).
+      resource :evidence, only: :create
+      resources :flags, only: :update
     end
   end
 

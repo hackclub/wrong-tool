@@ -1,6 +1,7 @@
 # Deciding a ship in review (Review::ShipsController): approve it (the hours it grants for the shop, or fewer with a
 # reason, and what was checked), ask for changes, or reject it for good. Each call is a ReviewDecision, made once,
-# with the ship locked so two reviewers can't both decide it, and not while someone else is on it (ReviewClaim).
+# with the ship locked so two reviewers can't both decide it, not while someone else is on it (ReviewClaim), and no
+# approving with a red flag nobody's dismissed (ShipFlag).
 # Then the claim's let go and Clippy DMs the maker (ReviewNotifier).
 module ShipReview
   # The decision, saved, or with what's wrong with it (in errors). A ship that's been decided already, or that this
@@ -20,6 +21,8 @@ module ShipReview
         made.errors.add(:base, "That one's been decided already.")
       elsif ReviewClaim.held_by_other?(ship, by)
         made.errors.add(:base, "Someone else is on this one.")
+      elsif made.approved? && (red = ship.flags.open.danger.pluck(:title)).any?
+        made.errors.add(:base, "Dismiss the red flags first, with why: #{red.to_sentence}")
       elsif made.save
         apply(ship, made)
         ReviewClaim.release(ship)

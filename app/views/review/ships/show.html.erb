@@ -4,8 +4,9 @@
 <% others = project.ships.where.not(id: @ship.id).includes(:decided_by, review_decisions: :reviewer).order(created_at: :desc) %>
 <% history = (@ship.review_decisions.to_a + others.flat_map(&:review_decisions)).sort_by { |decision| [ decision.created_at, decision.id ] }.reverse %>
 
-<%# One ship to review: what was submitted on the left, and the decision on the right, sticky, so it's in reach
-    however far down you are. Then every call made on this project's ships, and its earlier ships. Real names and
+<%# One ship to review: what was submitted and what we found about it (ShipEvidence) on the left, and its flags and
+    the decision on the right, sticky, so it's in reach however far down you are. Then every call made on this
+    project's ships, and its earlier ships. Real names and
     emails are here, so nothing on this page is recorded. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
@@ -22,6 +23,8 @@
           <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %><%= user.name.presence || user.public_name %>
           (<%= user.email %><% if user.slack_display_name.present? %>, <%= user.slack_display_name %> on Slack<% end %>).
         </p>
+        <% if notice %><p class="leaderboard__note" role="status"><%= notice %></p><% end %>
+        <% if alert %><p class="leaderboard__note" role="alert"><%= alert %></p><% end %>
       </header>
 
       <div class="review__columns">
@@ -55,6 +58,8 @@
               </figure>
             <% end %>
           </section>
+
+          <%= render "review/ships/evidence", ship: @ship, evidence: @ship.evidence %>
 
           <section aria-labelledby="review-history">
             <h2 class="admin__heading" id="review-history">Every call on this project</h2>
@@ -96,6 +101,7 @@
 
         <aside class="review__panel" aria-labelledby="review-decision">
           <h2 class="admin__heading" id="review-decision">Decision</h2>
+          <%= render "review/ships/flags", ship: @ship %>
           <% if @claim && @claim.user != current_user %>
             <p class="leaderboard__note review__claim" data-claimed="other">
               <%= reviewer_name(@claim.user) %> is on this one, since <%= @claim.claimed_at.strftime("%H:%M") %> UTC. You can

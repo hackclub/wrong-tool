@@ -1,0 +1,126 @@
+<%# locals: (ship:, evidence:) %>
+<%# What was gathered about the ship (ShipEvidence): its Hackatime time a day and its long sessions, its repo and
+    commits, the demo link and the same links shipped elsewhere. Times are the maker's. Resync gathers it again. %>
+<% data = evidence&.data || {} %>
+<% time = data["hackatime"] %>
+<% repo = data["repo"] %>
+<% zone = ActiveSupport::TimeZone[time&.dig("timezone") || ship.project.user.time_zone.tzinfo.identifier] || ship.project.user.time_zone %>
+<% hrs = ->(seconds) { number_with_precision(seconds.to_i / 3600.0, precision: 1, strip_insignificant_zeros: true) } %>
+
+<section class="review__evidence-block" aria-labelledby="review-evidence">
+  <div class="review__evidence-head">
+    <h2 class="admin__heading" id="review-evidence">What we found</h2>
+    <% if evidence&.built? %>
+      <small class="admin__muted">gathered <%= time_ago_in_words(evidence.built_at) %> ago</small>
+    <% end %>
+    <%= button_to "Resync", review_ship_evidence_path(ship), class: "admin__button", form: { data: { turbo: false } } %>
+  </div>
+
+  <% if evidence.nil? || (evidence.pending? && evidence.built_at.nil?) %>
+    <p class="leaderboard__note" data-evidence="pending">Gathering it: Hackatime, GitHub and the demo link. Reload in a minute.</p>
+  <% elsif evidence.status == "failed" && evidence.built_at.nil? %>
+    <p class="leaderboard__note" data-evidence="failed">Couldn't gather it (<%= evidence.error %>). Resync to try again.</p>
+  <% else %>
+    <% problems = evidence.sources.reject { |_source, health| health == "ok" } %>
+    <% if problems.any? %>
+      <p class="leaderboard__note"><% problems.each do |source, health| %><%= source.humanize %>: <%= health %>. <% end %></p>
+    <% end %>
+
+    <% if time %>
+      <h3 class="review__subheading">Hackatime · <%= ship.hackatime_projects.join(", ").presence || "no project" %></h3>
+      <p class="leaderboard__note">
+        <%= hrs.(time["tracked_seconds"]) %> hrs tracked from <%= Program::HACKATIME_START.strftime("%b %-d") %> to the ship
+        <% if time["longest_seconds"].to_i.positive? %>· longest session <%= hrs.(time["longest_seconds"]) %> hrs<% end %>
+        <% if time.key?("after_last_commit_seconds") %>· <%= hrs.(time["after_last_commit_seconds"]) %> hrs after the last commit<% end %>
+        · their time (<%= zone.tzinfo.identifier %>)
+      </p>
+      <% first_day = Program::HACKATIME_START %>
+      <% last_day = [ ship.created_at.in_time_zone(zone).to_date, first_day ].max %>
+      <ol class="review__days" aria-label="Time a day">
+        <% (first_day..last_day).each do |day| %>
+          <% seconds = time["days"].to_h.fetch(day.iso8601, 0) %>
+          <% level = seconds.zero? ? 0 : seconds < 30.minutes ? 1 : seconds < 1.hour ? 2 : seconds < 2.hours ? 3 : 4 %>
+          <li class="review__day" data-level="<%= level %>" title="<%= day.strftime("%a %b %-d") %>: <%= hrs.(seconds) %> hrs">
+            <span class="visually-hidden"><%= day.strftime("%b %-d") %>: <%= hrs.(seconds) %> hrs</span>
+          </li>
+        <% end %>
+      </ol>
+      <% if time["long_sessions"].present? %>
+        <div class="admin__scroll">
+          <table class="leaderboard__table admin__table review__table">
+            <caption class="visually-hidden">Sessions of an hour or more</caption>
+            <thead><tr><th scope="col">Session of an hour or more</th><th class="leaderboard__number" scope="col">Hours</th></tr></thead>
+            <tbody>
+              <% time["long_sessions"].each do |session| %>
+                <% starts = Time.zone.parse(session["start"]).in_time_zone(zone) %>
+                <tr>
+                  <td><%= starts.strftime("%a %b %-d, %H:%M") %>–<%= Time.zone.parse(session["end"]).in_time_zone(zone).strftime("%H:%M") %></td>
+                  <td class="leaderboard__number"><%= hrs.(session["seconds"]) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% if repo %>
+      <h3 class="review__subheading">Repo</h3>
+      <% if !repo["on_github"] %>
+        <p class="leaderboard__note">Not on GitHub, so nothing about it's checked. Open it yourself.</p>
+      <% elsif repo["missing"] %>
+        <p class="leaderboard__note">GitHub has no public repo at <%= repo["name"] %>.</p>
+      <% else %>
+        <p class="leaderboard__note">
+          <%= link_to repo["name"], "https://github.com/#{repo["name"]}", target: "_blank", rel: "noopener" %>
+          · made <%= Time.zone.parse(repo["created_at"]).strftime("%b %-d, %Y") if repo["created_at"] %>
+          <% if repo["fork"] %>· a fork of <%= repo["parent"] %><% end %>
+          · <%= repo["readme"] ? "has a README" : "no README" %>
+          · <%= pluralize(repo["commits"].size, "commit") %> since <%= Program::HACKATIME_START.strftime("%b %-d") %>
+          <% if repo["commit_authors"].present? %>
+            by <%= repo["commit_authors"].map { |author, count| "#{author} (#{count})" }.to_sentence %>
+          <% end %>
+        </p>
+        <% if repo["commits"].any? %>
+          <div class="admin__scroll review__commits">
+            <table class="leaderboard__table admin__table review__table">
+              <caption class="visually-hidden">Commits, newest first</caption>
+              <thead><tr><th scope="col">When</th><th scope="col">Commit</th><th scope="col">By</th></tr></thead>
+              <tbody>
+                <% repo["commits"].each do |commit| %>
+                  <tr>
+                    <td><%= Time.zone.parse(commit["at"]).in_time_zone(zone).strftime("%b %-d, %H:%M") %></td>
+                    <td><%= link_to commit["message"].presence || commit["sha"].first(7), commit["url"], target: "_blank", rel: "noopener" %></td>
+                    <td><%= commit["login"] || commit["author"] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if (demo = data["demo"]) %>
+      <h3 class="review__subheading">Demo</h3>
+      <p class="leaderboard__note">
+        <%= link_to ship.demo_url, ship.demo_url, target: "_blank", rel: "noopener" %>
+        <%= demo["reachable"] ? "opens" : "doesn't open" %>
+        (<%= demo["status"] ? "answers #{demo["status"]}" : demo["error"] %>)
+      </p>
+    <% end %>
+
+    <% if data["duplicates"].present? %>
+      <h3 class="review__subheading">The same links, shipped by another project</h3>
+      <ul class="review__duplicates">
+        <% data["duplicates"].each do |other| %>
+          <li>
+            <% other_ship = Ship.find_by(id: other["ship_id"]) %>
+            <%= other_ship && current_user.may_review?(other_ship) ? link_to(other["title"], review_ship_path(other_ship)) : other["title"] %>
+            <span class="admin__muted">· same <%= other["links"].to_sentence %> link · <%= ReviewHelper::SHIP_STATUS_LABELS.fetch(other["status"], other["status"]) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+</section>

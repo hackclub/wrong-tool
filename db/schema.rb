@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -273,6 +273,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_140000) do
     t.index ["project_id"], name: "index_seller_requests_on_project_id"
   end
 
+  create_table "ship_evidences", force: :cascade do |t|
+    t.bigint "ship_id", null: false
+    t.string "status", default: "pending", null: false
+    t.jsonb "data", default: {}, null: false
+    t.jsonb "sources", default: {}, null: false
+    t.text "error"
+    t.datetime "built_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ship_id"], name: "index_ship_evidences_on_ship_id", unique: true
+  end
+
+  create_table "ship_flags", force: :cascade do |t|
+    t.bigint "ship_id", null: false
+    t.string "kind", null: false
+    t.string "severity", null: false
+    t.string "title", null: false
+    t.jsonb "details", default: {}, null: false
+    t.bigint "dismissed_by_id"
+    t.datetime "dismissed_at"
+    t.text "dismiss_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dismissed_by_id"], name: "index_ship_flags_on_dismissed_by_id"
+    t.index ["ship_id", "kind"], name: "index_ship_flags_on_ship_id_and_kind", unique: true
+  end
+
   create_table "ships", force: :cascade do |t|
     t.integer "project_id", null: false
     t.string "title", null: false
@@ -520,6 +547,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_140000) do
   add_foreign_key "rewards", "users"
   add_foreign_key "seller_requests", "projects"
   add_foreign_key "seller_requests", "users", column: "decided_by_id"
+  add_foreign_key "ship_evidences", "ships"
+  add_foreign_key "ship_flags", "ships"
+  add_foreign_key "ship_flags", "users", column: "dismissed_by_id"
   add_foreign_key "ships", "projects"
   add_foreign_key "ships", "users", column: "decided_by_id"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

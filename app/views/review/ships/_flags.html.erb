@@ -1,0 +1,30 @@
+<%# locals: (ship:) %>
+<%# What's odd about the ship (ShipFlag): red flags first, each with a box to dismiss it with why (a red flag holds up
+    approving until it is), then warnings, then the dismissed, with who and why. %>
+<% flags = ship.flags.sort_by { |flag| [ flag.danger? ? 0 : 1, flag.created_at ] } %>
+<% open, dismissed = flags.partition { |flag| !flag.dismissed? } %>
+<section class="review__flags" id="review-flags" aria-label="Flags">
+  <% if flags.empty? %>
+    <p class="admin__muted"><%= ship.evidence&.built? ? "No flags." : "Flags come once the evidence is in." %></p>
+  <% end %>
+  <% open.each do |flag| %>
+    <details class="review__flag" data-severity="<%= flag.severity %>" <%= "open" if flag.danger? %>>
+      <summary><strong><%= flag.danger? ? "Red flag" : "Warning" %>:</strong> <%= flag.title %></summary>
+      <%= form_with url: review_ship_flag_path(ship, flag), method: :patch, class: "review__dismiss", data: { turbo: false } do |form| %>
+        <%= form.label :dismiss_reason, "Why it's fine", for: "dismiss_#{flag.id}", class: "visually-hidden" %>
+        <%= form.text_field :dismiss_reason, id: "dismiss_#{flag.id}", placeholder: "Why it's fine (#{ShipFlag::DISMISS_REASON_MIN}+ characters)" %>
+        <%= form.button "Dismiss", class: "admin__button" %>
+      <% end %>
+    </details>
+  <% end %>
+  <% if dismissed.any? %>
+    <details class="review__flag" data-severity="dismissed">
+      <summary><%= pluralize(dismissed.size, "dismissed flag") %></summary>
+      <ul>
+        <% dismissed.each do |flag| %>
+          <li><%= flag.title %> <span class="admin__muted">· <%= reviewer_name(flag.dismissed_by) %>: <%= flag.dismiss_reason %></span></li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</section>

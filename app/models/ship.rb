@@ -12,6 +12,10 @@ class Ship < ApplicationRecord
   belongs_to :project
   belongs_to :decided_by, class_name: "User", optional: true
   has_many :review_decisions, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :ship
+  has_many :review_claims, dependent: :delete_all
+  # What its reviewer sees about it besides what was submitted, gathered once it's shipped, and what's odd about it.
+  has_one :evidence, class_name: "ShipEvidence", dependent: :destroy
+  has_many :flags, class_name: "ShipFlag", dependent: :destroy
   has_one_attached :screenshot
 
   # The checkbox under the screenshot: it shows the game running inside the tool, not a mockup.
@@ -28,6 +32,8 @@ class Ship < ApplicationRecord
   validate :screenshot_is_an_image
   validates :screenshot_shows_game, acceptance: { message: "has to show the game running, not a mockup", accept: true },
                                     on: :create
+
+  after_create_commit { ShipEvidence.request(self) }
 
   scope :in_review, -> { where(status: "in_review") }
   scope :approved, -> { where(status: "approved") }

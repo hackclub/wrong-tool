@@ -83,6 +83,39 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#review-waiting ~ div tr##{dom_id(again)}"
   end
 
+  test "the page shows what was found, resyncs it, and dismisses a flag with why" do
+    sign_in_as(users(:orpheus))
+    get review_ship_path(@ship)
+    assert_select "[data-evidence=pending]", /Gathering it/
+
+    Github.stubbed = { "ana/pong" => { repo: Github::Repo.new(full_name: "ana/pong", created_at: Time.utc(2026, 10, 8), pushed_at: nil,
+                                                              fork: false, parent: nil, stars: 0),
+                                       commits: [ Github::Commit.new(sha: "abc1234", message: "paddles", author_name: "Ana", author_login: "ana",
+                                                                     at: @ship.created_at - 1.hour, url: "https://github.com/ana/pong/commit/abc1234") ],
+                                       readme: true } }
+    link_hackatime(users(:ana), token: "token-heidi")
+    ShipEvidence.build!(@ship.reload)
+    get review_ship_path(@ship)
+    assert_select ".review__evidence-block", /0 hrs tracked from Oct 6 to the ship/
+    assert_select ".review__evidence-block", /1 commit since Oct 6\s+by ana \(1\)/
+    assert_select ".review__commits a[href='https://github.com/ana/pong/commit/abc1234']", "paddles"
+    assert_select ".review__days .review__day[data-level='0']", (@ship.created_at.in_time_zone(users(:ana).reload.time_zone).to_date - Program::HACKATIME_START).to_i + 1
+    flag = @ship.flags.find_by!(kind: "few_commits")
+    assert_select ".review__flag[data-severity=warn]", /Warning:\s*Only 1 commit since wrong tool started/
+
+    patch review_ship_flag_path(@ship, flag), params: { dismiss_reason: "short" }
+    assert_equal "Dismiss reason needs at least 10 characters: why it's fine", flash[:alert]
+    patch review_ship_flag_path(@ship, flag), params: { dismiss_reason: "it's a one-file Figma export" }
+    assert flag.reload.dismissed?
+    follow_redirect!
+    assert_select ".review__flag[data-severity=dismissed]", /1 dismissed flag.*Orpheus: it's a one-file Figma export/m
+
+    assert_enqueued_with(job: ShipEvidenceJob) { post review_ship_evidence_path(@ship) }
+    assert_redirected_to review_ship_path(@ship)
+  ensure
+    Github.stubbed = {}
+  end
+
   test "reviewers never open their own ship" do
     users(:ana).update!(review_roles: [ "reviewer" ])
     sign_in_as(users(:ana))
