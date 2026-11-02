@@ -1,0 +1,70 @@
+<% content_for :title, "Gallery · Wrong Tool" %>
+<% project = current_user&.project %>
+
+<%# Every game that shipped (GalleryController): a card each, newest first, by the name everyone else sees. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1",
+        formula: "=COUNTA(shipped#{"[#{@tool}]" if @tool})  →  #{@ships.size}" %>
+
+  <main class="project__sheet">
+    <div class="gallery">
+      <header class="leaderboard__header">
+        <div class="leaderboard__heading">
+          <h1 class="project__title">Gallery</h1>
+          <p class="leaderboard__note">
+            <% if @total.zero? %>Nothing's shipped yet. The first games show up here once they're approved.
+            <% else %><%= pluralize(@total, "game") %> built with the wrong tool, newest first.<% end %>
+          </p>
+        </div>
+        <% if @tools.size > 1 %>
+          <nav class="leaderboard__sorts gallery__tools" aria-label="Built in">
+            <%= link_to "All", gallery_path, class: "leaderboard__sort", aria: { current: ("page" unless @tool) } %>
+            <% @tools.each do |tool| %>
+              <%= link_to PublicStats::TOOL_LABELS[tool], gallery_path(tool:), class: "leaderboard__sort",
+                    aria: { current: ("page" if @tool == tool) } %>
+            <% end %>
+          </nav>
+        <% end %>
+      </header>
+
+      <% if @ships.any? %>
+        <ul class="gallery__grid">
+          <% @ships.each do |ship| %>
+            <% maker = ship.project.user %>
+            <li class="gallery__card" id="<%= dom_id(ship) %>" <%= "data-yours" if ship.project == project %>>
+              <a class="gallery__shot" href="<%= ship.demo_url %>" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                <%= image_tag url_for(ship.screenshot), alt: "", loading: "lazy" %>
+              </a>
+              <div class="gallery__body">
+                <h2 class="gallery__title"><%= ship.title %></h2>
+                <p class="gallery__tool">
+                  <%= Project.preposition_for(ship.project.tool) %> <%= ship.project.tool_name %> ·
+                  <%= number_with_precision(ship.approved_hours || ship.hours, precision: 1, strip_insignificant_zeros: true) %> hrs
+                </p>
+                <p class="gallery__description"><%= ship.description %></p>
+                <div class="gallery__footer">
+                  <span class="leaderboard__builder gallery__maker">
+                    <%= avatar_tag(maker, "leaderboard__avatar") %>
+                    <span class="leaderboard__name"><%= ship.project == project ? "You" : maker.public_name %></span>
+                  </span>
+                  <span class="gallery__links">
+                    <%= link_to "Code", ship.repo_url, class: "gallery__link", target: "_blank", rel: "noopener" %>
+                    <%= link_to "Play", ship.demo_url, class: "gallery__link gallery__link--play", target: "_blank", rel: "noopener" %>
+                  </span>
+                </div>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <p class="leaderboard__footnote">
+        Every approved ship, as it was approved. Hours are the ones it was approved with.
+        <% unless project %><%= link_to "Build one of your own", onboarding_path %>.<% end %>
+      </p>
+    </div>
+  </main>
+
+  <%= render "onboarding/tabs", current: :gallery, project_open: project.present? %>
+</div>

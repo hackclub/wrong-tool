@@ -21,6 +21,8 @@ Rails.application.routes.draw do
   end
   # wrong tool in numbers, for anyone: totals only, never anyone on their own (PublicStats).
   get "stats" => "stats#show", as: :stats
+  # Every game that shipped, for anyone: each project's latest approved ship.
+  get "gallery" => "gallery#show", as: :gallery
   resource :buddy, only: :show do
     # A pomodoro together: start one, see how it's going (polled), and join your buddy's.
     resource :pomodoro, only: %i[show create], controller: "buddy_pomodoros" do

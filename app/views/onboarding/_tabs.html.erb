@@ -33,10 +33,15 @@
       Shop<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
   <% end %>
-  <%# The shop's public: someone just looking has it as a tab beside onboarding. %>
-  <% if current == :shop && !project_open %>
-    <%= link_to shop_path, class: "sheet-tab", aria: { current: "page" } do %>
+  <%# The shop and the gallery are public: someone just looking has them as tabs beside onboarding. %>
+  <% if current.in?(%i[shop gallery]) && !project_open %>
+    <%= link_to shop_path, class: "sheet-tab", aria: { current: ("page" if current == :shop) } do %>
       Shop<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
+    <% end %>
+  <% end %>
+  <% if project_open || current.in?(%i[shop gallery]) %>
+    <%= link_to gallery_path, class: "sheet-tab", aria: { current: ("page" if current == :gallery) } do %>
+      Gallery<%= inline_svg_tag "icons/arrow-drop-down.svg", class: "icon", aria_hidden: true %>
     <% end %>
   <% end %>
   <%# A sum at the right, the way a sheet totals a selection: the shop puts how far your pick is there. %>
