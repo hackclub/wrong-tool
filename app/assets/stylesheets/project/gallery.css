@@ -49,6 +49,14 @@
     }
   }
 
+  .gallery__no-shot {
+    block-size: 100%;
+    display: grid;
+    place-items: center;
+    font: 600 18px var(--font-mono);
+    color: var(--text-secondary);
+  }
+
   .gallery__body {
     flex: 1;
     display: flex;

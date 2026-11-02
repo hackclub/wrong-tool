@@ -49,6 +49,20 @@ class GalleryControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/approved|in review/i, css_select(".gallery__card").text)
   end
 
+  test "a ship whose screenshot's gone still shows: with the project's, or the tool's name" do
+    pong = ship!(projects(:ana), "Pong in Figma")
+    pong.screenshot.purge
+    rhythm = ship!(projects(:orpheus), "Rhythm sheet")
+    rhythm.screenshot.purge
+    projects(:orpheus).screenshot.attach(screenshot_upload)
+
+    get gallery_path
+
+    assert_response :success
+    assert_select "##{dom_id(pong)} .gallery__no-shot", "Figma"
+    assert_select "##{dom_id(rhythm)} .gallery__shot img"
+  end
+
   test "filtered by the wrong tool, and your own game is yours" do
     ship!(projects(:ana), "Pong in Figma")
     rhythm = ship!(projects(:orpheus), "Rhythm sheet")

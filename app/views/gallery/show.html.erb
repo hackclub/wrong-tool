@@ -33,8 +33,11 @@
           <% @ships.each do |ship| %>
             <% maker = ship.project.user %>
             <li class="gallery__card" id="<%= dom_id(ship) %>" <%= "data-yours" if ship.project == project %>>
+              <%# The ship's screenshot, or the project's if the ship's has gone; with neither, the tool's name in its place. %>
+              <% shot = gallery_screenshot(ship) %>
               <a class="gallery__shot" href="<%= ship.demo_url %>" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-                <%= image_tag url_for(ship.screenshot), alt: "", loading: "lazy" %>
+                <% if shot %><%= image_tag url_for(shot), alt: "", loading: "lazy" %>
+                <% else %><span class="gallery__no-shot"><%= ship.project.tool_name %></span><% end %>
               </a>
               <div class="gallery__body">
                 <h2 class="gallery__title"><%= ship.title %></h2>
