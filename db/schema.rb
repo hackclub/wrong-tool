@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -217,6 +217,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_130000) do
     t.datetime "last_call_dmed_at"
     t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
+  end
+
+  create_table "review_claims", force: :cascade do |t|
+    t.bigint "ship_id", null: false
+    t.bigint "user_id", null: false
+    t.string "queue", default: "review", null: false
+    t.datetime "claimed_at", null: false
+    t.datetime "heartbeat_at", null: false
+    t.index ["ship_id", "queue"], name: "index_review_claims_on_ship_id_and_queue", unique: true
+    t.index ["user_id"], name: "index_review_claims_on_user_id"
   end
 
   create_table "review_decisions", force: :cascade do |t|
@@ -502,6 +512,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_130000) do
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
+  add_foreign_key "review_claims", "ships"
+  add_foreign_key "review_claims", "users"
   add_foreign_key "review_decisions", "ships"
   add_foreign_key "review_decisions", "users", column: "reviewer_id"
   add_foreign_key "rewards", "pairs"

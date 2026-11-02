@@ -96,7 +96,25 @@
 
         <aside class="review__panel" aria-labelledby="review-decision">
           <h2 class="admin__heading" id="review-decision">Decision</h2>
-          <% if @ship.in_review? && current_user.reviewer? %>
+          <% if @claim && @claim.user != current_user %>
+            <p class="leaderboard__note review__claim" data-claimed="other">
+              <%= reviewer_name(@claim.user) %> is on this one, since <%= @claim.claimed_at.strftime("%H:%M") %> UTC. You can
+              look; it's theirs to decide until they do, or for <%= ReviewClaim::IDLE.in_minutes.to_i %> minutes after they
+              leave it.
+            </p>
+            <% if current_user.admin? %>
+              <%= button_to "Take over", review_ship_claim_path(@ship), class: "admin__button", form: { data: { turbo: false } } %>
+            <% end %>
+            <%= button_to "Next ship", review_next_path, params: { after: @ship.id }, class: "admin__button", form: { data: { turbo: false } } %>
+          <% elsif @claim %>
+            <div class="review__claim" data-claimed="mine" data-controller="review-claim"
+                 data-review-claim-url-value="<%= review_ship_claim_path(@ship) %>"
+                 data-review-claim-every-value="<%= ReviewClaim::HEARTBEAT.in_milliseconds %>">
+              <p class="admin__muted">You're on it: others see it read-only until you decide, or for
+                <%= ReviewClaim::IDLE.in_minutes.to_i %> minutes after you leave it.</p>
+              <%= button_to "Skip", review_next_path, params: { after: @ship.id, skip: 1 }, class: "admin__button",
+                    form: { data: { turbo: false } } %>
+            </div>
             <%= render "review/ships/decision_form", ship: @ship, decision: @decision %>
           <% elsif @ship.in_review? %>
             <p class="leaderboard__note">Waiting on a reviewer.</p>

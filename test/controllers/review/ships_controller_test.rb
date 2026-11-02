@@ -48,7 +48,7 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     post review_ship_decisions_path(@ship), params: { review: { decision: "approved", approved_hours: "6", deflation_reason: "1.5h was another game",
                                                                 justification: "Played it to 10 points; each frame really is a component." } }
     assert_redirected_to review_root_path
-    assert_equal "Pong in Figma: approved.", flash[:notice]
+    assert_equal "Pong in Figma: approved. That's the whole queue.", flash[:notice]
     assert @ship.reload.approved?
     assert_equal [ 6, users(:orpheus) ], [ @ship.approved_hours, @ship.decided_by ]
     assert_equal [ "U0ANA" ], enqueued_jobs.select { |job| job[:job] == SlackMessageJob }.map { |job| job[:args].first }

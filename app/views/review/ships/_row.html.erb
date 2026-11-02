@@ -1,6 +1,6 @@
-<%# locals: (ship:) %>
+<%# locals: (ship:, claim: nil) %>
 <%# One ship in the list: who, their project, what they shipped (a link to it in full, unless it's yours), the hours
-    it took, when, and where it stands. %>
+    it took, when, and where it stands: who's on it, while it's in review and someone is. %>
 <% project = ship.project %>
 <% user = project.user %>
 <tr id="<%= dom_id(ship) %>" data-status="<%= ship.status %>">
@@ -21,6 +21,9 @@
   <td><%= ship.created_at.strftime("%b %-d") %></td>
   <td data-decision="<%= ship.status %>">
     <%= ship_status_label(ship) %>
+    <% if claim %>
+      <small class="admin__muted" data-claimed><%= claim.user == current_user ? "you're on it" : "#{reviewer_name(claim.user)} is on it" %></small>
+    <% end %>
     <% unless ship.in_review? %>
       <small class="admin__muted"><%= reviewer_name(ship.decided_by) %> · <%= ship.decided_at.strftime("%b %-d") %></small>
     <% end %>

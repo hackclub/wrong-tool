@@ -58,11 +58,14 @@ Rails.application.routes.draw do
     resource :impersonation, only: :destroy
   end
 
-  # Reviewing ships: the queue, each ship in full, and deciding it. For admins and reviewers (User::REVIEW_ROLES).
+  # Reviewing ships: the queue, each ship in full (opening one claims it; the page keeps the claim alive, and an
+  # admin can take it over), deciding it, and on to the next. For admins and reviewers (User::REVIEW_ROLES).
   namespace :review do
     root "queue#show"
+    post "next" => "next#create", as: :next
     resources :ships, only: :show do
       resources :decisions, only: :create
+      resource :claim, only: %i[create update]
     end
   end
 

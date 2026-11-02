@@ -14,11 +14,15 @@
         <h1 class="project__title">Review</h1>
         <p class="leaderboard__note">
           Oldest first: a ship that's shipped again after changes joins at the back. Open one to approve it, ask for
-          changes (they get <%= Ship::CHANGES_DAYS %> days to ship them) or reject it for good. Clippy DMs them your note
-          either way. You've decided <%= pluralize(@decided_today, "ship") %> today;
+          changes (they get <%= Ship::CHANGES_DAYS %> days to ship them) or reject it for good, and you're taken to the
+          next. Opening one claims it, so nobody else decides it while you're on it. Clippy DMs them your note either
+          way. You've decided <%= pluralize(@decided_today, "ship") %> today;
           <%= project_hours(shipped_hours) %> hrs across every project that's shipped.
         </p>
         <% if notice %><p class="leaderboard__note" role="status"><%= notice %></p><% end %>
+        <% if current_user.reviewer? && @waiting.any? %>
+          <%= button_to "Start reviewing", review_next_path, class: "admin__button", form: { data: { turbo: false } } %>
+        <% end %>
         <% if alert %><p class="leaderboard__note" role="alert"><%= alert %></p><% end %>
       </header>
 
@@ -42,7 +46,7 @@
                 </thead>
                 <tbody>
                   <% ships.each do |ship| %>
-                    <%= render "review/ships/row", ship: %>
+                    <%= render "review/ships/row", ship:, claim: (@claims[ship.id] if ship.in_review?) %>
                   <% end %>
                 </tbody>
               </table>

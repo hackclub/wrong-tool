@@ -39,6 +39,27 @@
     }
   }
 
+  /* Who's on it: you (with Skip), or someone else (the page is theirs to decide). */
+  .review__claim {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+
+    p {
+      flex: 1;
+      margin: 0;
+    }
+
+    &[data-claimed="other"] {
+      padding: 8px 10px;
+      background: var(--yellow-100);
+      color: var(--amber-900);
+    }
+  }
+
   .review__form {
     display: flex;
     flex-direction: column;
