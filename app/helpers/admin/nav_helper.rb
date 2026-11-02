@@ -4,7 +4,8 @@ module Admin::NavHelper
   def admin_pages
     [
       { label: "Orders", path: admin_orders_path, about: "Consoles claimed with approved hours, to order and mark ordered." },
-      { label: "Review", path: review_root_path, about: "Every ship in full, to approve, ask for changes or reject. Reviewers see it too." },
+      { label: "Review", path: review_root_path, about: "Every ship in full, to approve, ask for changes, reject or send on. Reviewers see it too." },
+      { label: "Fraud check", path: review_root_path(queue: "fraud"), about: "Every ship from when it's shipped, to score how much you trust it. Fraud reviewers see it too." },
       { label: "Extensions", path: admin_extensions_path, about: "Who's asked for more time to ship, and why." },
       { label: "Sellers", path: admin_seller_requests_path, about: "Who's asked for their console from another seller, to save on customs." },
       { label: "Projects", path: admin_projects_path, about: "Every project, searchable, and each in full." },
@@ -17,6 +18,6 @@ module Admin::NavHelper
 
   # What a count on the admin home means, for the page it's on.
   def admin_waiting_label(label)
-    { "Orders" => "to order", "Review" => "in review" }.fetch(label, "waiting")
+    { "Orders" => "to order", "Review" => "to review", "Fraud check" => "to check" }.fetch(label, "waiting")
   end
 end

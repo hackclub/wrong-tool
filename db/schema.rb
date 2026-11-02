@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -240,6 +240,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_150000) do
     t.text "deflation_reason"
     t.string "video_url"
     t.datetime "created_at", null: false
+    t.integer "trust_score"
+    t.boolean "mark_sus", default: false, null: false
     t.index ["reviewer_id", "created_at"], name: "index_review_decisions_on_reviewer_id_and_created_at"
     t.index ["reviewer_id"], name: "index_review_decisions_on_reviewer_id"
     t.index ["ship_id"], name: "index_review_decisions_on_ship_id"
@@ -314,8 +316,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_150000) do
     t.bigint "decided_by_id"
     t.datetime "decided_at"
     t.decimal "approved_hours", precision: 6, scale: 2
+    t.string "fraud_status"
+    t.integer "fraud_score"
+    t.string "review_hold"
+    t.text "hold_note"
+    t.datetime "review_approved_at"
     t.index ["decided_by_id"], name: "index_ships_on_decided_by_id"
     t.index ["project_id"], name: "index_ships_on_project_id"
+    t.index ["status", "fraud_status"], name: "index_ships_on_status_and_fraud_status"
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|

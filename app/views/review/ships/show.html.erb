@@ -1,8 +1,8 @@
-<% content_for :title, "#{@ship.title} · Review · Wrong Tool" %>
+<% content_for :title, "#{@ship.title} · #{queue == "fraud" ? "Fraud check" : "Review"} · Wrong Tool" %>
 <% project = @ship.project %>
 <% user = project.user %>
 <% others = project.ships.where.not(id: @ship.id).includes(:decided_by, review_decisions: :reviewer).order(created_at: :desc) %>
-<% history = (@ship.review_decisions.to_a + others.flat_map(&:review_decisions)).sort_by { |decision| [ decision.created_at, decision.id ] }.reverse %>
+<% history = visible_decisions(@ship.review_decisions.to_a + others.flat_map(&:review_decisions)).sort_by { |decision| [ decision.created_at, decision.id ] }.reverse %>
 
 <%# One ship to review: what was submitted and what we found about it (ShipEvidence) on the left, and its flags and
     the decision on the right, sticky, so it's in reach however far down you are. Then every call made on this
@@ -16,7 +16,7 @@
     <div class="admin review ph-no-capture">
       <header>
         <%= render "review/nav" %>
-        <p class="leaderboard__note"><%= link_to "← The queue", review_root_path %></p>
+        <p class="leaderboard__note"><%= link_to "← The queue", review_root_path(**in_queue) %></p>
         <h1 class="project__title"><%= @ship.title %></h1>
         <p class="leaderboard__note">
           Shipped <%= @ship.created_at.strftime("%b %-d, %H:%M") %> UTC by
@@ -100,8 +100,13 @@
         </div>
 
         <aside class="review__panel" aria-labelledby="review-decision">
-          <h2 class="admin__heading" id="review-decision">Decision</h2>
+          <h2 class="admin__heading" id="review-decision"><%= queue == "fraud" ? "Fraud check" : "Decision" %></h2>
           <%= render "review/ships/flags", ship: @ship %>
+          <% if @ship.in_review? && @ship.review_hold %>
+            <p class="review__hold" data-hold="<%= @ship.review_hold %>">
+              <strong><%= @ship.review_hold == "fraud" ? "Sent to fraud" : "Sent to an admin" %>:</strong> <%= @ship.hold_note %>
+            </p>
+          <% end %>
           <% if @claim && @claim.user != current_user %>
             <p class="leaderboard__note review__claim" data-claimed="other">
               <%= reviewer_name(@claim.user) %> is on this one, since <%= @claim.claimed_at.strftime("%H:%M") %> UTC. You can
@@ -109,26 +114,43 @@
               leave it.
             </p>
             <% if current_user.admin? %>
-              <%= button_to "Take over", review_ship_claim_path(@ship), class: "admin__button", form: { data: { turbo: false } } %>
+              <%= button_to "Take over", review_ship_claim_path(@ship, **in_queue), class: "admin__button", form: { data: { turbo: false } } %>
             <% end %>
-            <%= button_to "Next ship", review_next_path, params: { after: @ship.id }, class: "admin__button", form: { data: { turbo: false } } %>
+            <%= button_to "Next ship", review_next_path, params: { after: @ship.id, **in_queue }, class: "admin__button", form: { data: { turbo: false } } %>
           <% elsif @claim %>
             <div class="review__claim" data-claimed="mine" data-controller="review-claim"
-                 data-review-claim-url-value="<%= review_ship_claim_path(@ship) %>"
+                 data-review-claim-url-value="<%= review_ship_claim_path(@ship, **in_queue) %>"
                  data-review-claim-every-value="<%= ReviewClaim::HEARTBEAT.in_milliseconds %>">
               <p class="admin__muted">You're on it: others see it read-only until you decide, or for
                 <%= ReviewClaim::IDLE.in_minutes.to_i %> minutes after you leave it.</p>
-              <%= button_to "Skip", review_next_path, params: { after: @ship.id, skip: 1 }, class: "admin__button",
+              <%= button_to "Skip", review_next_path, params: { after: @ship.id, skip: 1, **in_queue }, class: "admin__button",
                     form: { data: { turbo: false } } %>
             </div>
-            <%= render "review/ships/decision_form", ship: @ship, decision: @decision %>
-          <% elsif @ship.in_review? %>
-            <p class="leaderboard__note">Waiting on a reviewer.</p>
-          <% else %>
+            <% if queue == "fraud" %>
+              <%= render "review/ships/fraud_form", ship: @ship, verdict: @verdict %>
+            <% else %>
+              <%= render "review/ships/decision_form", ship: @ship, decision: @decision %>
+            <% end %>
+          <% elsif !@ship.in_review? %>
             <p class="leaderboard__note" data-decision="<%= @ship.status %>">
               <%= ship_decision(@ship) %><% if @ship.approved? %>, with <%= project_hours(@ship.approved_hours || @ship.hours) %> hrs to spend<% end %>.
               <% if @ship.changes_requested? %>They can ship again until <%= @ship.changes_due_at.strftime("%b %-d") %>.<% end %>
             </p>
+          <% elsif queue == "fraud" %>
+            <p class="leaderboard__note">Checked: <%= fraud_status_label(@ship).downcase %><% if @ship.fraud_score %>, <%= @ship.fraud_score %>/10<% end %>.
+              <%= @ship.awaiting_fraud? ? "It's approved, so it's done." : "Waiting on a reviewer." %></p>
+          <% elsif @ship.awaiting_fraud? %>
+            <p class="leaderboard__note" data-decision="approved">Approved. It completes once the fraud check passes.</p>
+          <% elsif @ship.review_hold %>
+            <p class="leaderboard__note"><%= @ship.review_hold == "fraud" ? "It's back here once the fraud check passes." : "It's an admin's to decide." %></p>
+          <% else %>
+            <p class="leaderboard__note">Waiting on a reviewer.</p>
+          <% end %>
+          <% if current_user.fraud_reviewer? && queue == "review" && @ship.fraud_status %>
+            <p class="admin__muted">Fraud check: <%= fraud_status_label(@ship).downcase %><% if @ship.fraud_score %>, <%= @ship.fraud_score %>/10<% end %>.
+              <%= link_to "Open it there", review_ship_path(@ship, queue: "fraud") if @ship.fraud_unchecked? && @ship.in_review? %></p>
+          <% elsif current_user.reviewer? && queue == "fraud" && @ship.in_review? && !@ship.awaiting_fraud? %>
+            <p class="admin__muted"><%= link_to "Open it in the review queue", review_ship_path(@ship) %></p>
           <% end %>
         </aside>
       </div>

@@ -1,0 +1,37 @@
+<%# locals: (ship:, verdict:) %>
+<%# The fraud check: how much you trust it, 1 to 10, what you saw (fraud reviewers only), and a sus mark. Over
+    FraudCheck::PASS_OVER passes; that or under rejects it, final, and they're told only that it can't be accepted. %>
+<%= form_with model: verdict, scope: :verdict, url: review_ship_fraud_verdict_path(ship), method: :post, class: "review__form",
+      data: { turbo: false } do |form| %>
+  <% if verdict.errors.any? %>
+    <ul class="review__errors" role="alert">
+      <% verdict.errors.full_messages.each do |message| %><li><%= message %></li><% end %>
+    </ul>
+  <% end %>
+
+  <fieldset class="review__scores">
+    <legend>How much do you trust it?</legend>
+    <% (1..10).each do |score| %>
+      <label class="review__score" data-passes="<%= FraudCheck.passes?(score) %>">
+        <%= form.radio_button :trust_score, score %>
+        <span><%= score %></span>
+      </label>
+    <% end %>
+  </fieldset>
+  <p class="review__hint">
+    <%= FraudCheck::PASS_OVER %> or under rejects it for good. <%= FraudCheck::PASS_OVER + 1 %> to <%= FraudCheck::SUS_UP_TO %>
+    passes, marked sus; over that passes.
+  </p>
+
+  <div class="review__field">
+    <%= form.label :justification, "What you saw (fraud reviewers only)" %>
+    <%= form.text_area :justification, rows: 4 %>
+  </div>
+
+  <label class="review__check">
+    <%= form.check_box :mark_sus %>
+    Mark it sus, whatever the score
+  </label>
+
+  <%= form.submit "Submit", class: "admin__button review__submit" %>
+<% end %>

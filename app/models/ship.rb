@@ -4,6 +4,12 @@
 # for CHANGES_DAYS, deadline or not; rejected is final. Every call is kept (review_decisions).
 class Ship < ApplicationRecord
   STATUSES = %w[in_review changes_requested approved rejected].freeze
+  # The fraud check (FraudCheck): unchecked until a fraud reviewer scores it, then passed (good, or sus: it passes, and
+  # staff see the mark) or fraud (rejected, final). Ships decided before the check have none.
+  FRAUD_STATUSES = %w[unchecked good sus fraud].freeze
+  # Sent on by a reviewer (ShipReview.decide): to fraud, out of the review queue until the fraud check passes, or to an
+  # admin, out of it for everyone else.
+  HOLDS = %w[fraud admin].freeze
   # How long you have to ship again with the changes asked for, from the day they're asked.
   CHANGES_DAYS = 7
   DESCRIPTION_MIN = 40
@@ -33,6 +39,11 @@ class Ship < ApplicationRecord
   validates :screenshot_shows_game, acceptance: { message: "has to show the game running, not a mockup", accept: true },
                                     on: :create
 
+  validates :fraud_status, inclusion: { in: FRAUD_STATUSES }, allow_nil: true
+  validates :review_hold, inclusion: { in: HOLDS }, allow_nil: true
+
+  before_create :start_fraud_check
+  after_create :note_fraud_check_kept, if: -> { @fraud_check_from }
   after_create_commit { ShipEvidence.request(self) }
 
   scope :in_review, -> { where(status: "in_review") }
@@ -46,9 +57,17 @@ class Ship < ApplicationRecord
   def approved? = status == "approved"
   def rejected? = status == "rejected"
 
-  # The call that decided it (the latest verdict), for its note to the maker.
+  # The call that decided it (the latest verdict, or failing the fraud check), for its note to the maker.
   def verdict
-    review_decisions.select { |decision| ReviewDecision::VERDICTS.include?(decision.decision) }.last
+    review_decisions.select { |decision| ReviewDecision::FINAL.include?(decision.decision) }.last
+  end
+
+  def fraud_unchecked? = fraud_status == "unchecked"
+  def fraud_passed? = %w[good sus].include?(fraud_status)
+
+  # A reviewer approved it, and it's waiting on the fraud check to complete.
+  def awaiting_fraud?
+    in_review? && review_approved_at.present?
   end
 
   # Asked for changes, the end of the CHANGES_DAYS-th day after, where they are.
@@ -65,6 +84,23 @@ class Ship < ApplicationRecord
   end
 
   private
+    # A ship starts the fraud check, unless the project's last passed one, with fewer than
+    # FraudCheck::KEEP_UNDER_HOURS added since: then it keeps that one's.
+    def start_fraud_check
+      self.fraud_status = "unchecked"
+      last = project.ships.where(fraud_status: %w[good sus]).order(:created_at, :id).last
+      return unless last && hours - last.hours < FraudCheck::KEEP_UNDER_HOURS
+
+      self.fraud_status, self.fraud_score = last.fraud_status, last.fraud_score
+      @fraud_check_from = last
+    end
+
+    def note_fraud_check_kept
+      review_decisions.create!(queue: "fraud", decision: "fraud_pass", trust_score: fraud_score, mark_sus: fraud_status == "sus",
+                               justification: "Kept from the ship before (#{@fraud_check_from.hours.to_f.round(1)} hrs): under " \
+                                              "#{FraudCheck::KEEP_UNDER_HOURS} hrs added since.")
+    end
+
     def screenshot_is_an_image
       return unless screenshot.attached?
 

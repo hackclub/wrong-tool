@@ -18,12 +18,12 @@ class Admin::HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "/admin", admin_root_path
     assert_select ".admin__nav a[aria-current=page]", "Admin"
-    assert_equal %w[Admin Orders Review Extensions Sellers Projects People Numbers Bandit Blazer], css_select(".admin__nav a").map(&:text)
+    assert_equal [ "Admin", "Orders", "Review", "Fraud check", "Extensions", "Sellers", "Projects", "People", "Numbers", "Bandit", "Blazer" ], css_select(".admin__nav a").map(&:text)
     assert_select ".formula-bar__content", /3 waiting/
     assert_select "a.admin__tile[href=?][data-waiting]", admin_extensions_path, /Extensions\s*1\s*waiting/
     assert_select "a.admin__tile[href=?][data-waiting]", admin_seller_requests_path, /Sellers\s*2\s*waiting/
-    assert_select "a.admin__tile[href=?]:not([data-waiting])", review_root_path, /Review\s*0\s*in review/
-    assert_select ".admin__table--pages tbody tr", 9
+    assert_select "a.admin__tile[href=?]:not([data-waiting])", review_root_path, /Review\s*0\s*to review/
+    assert_select ".admin__table--pages tbody tr", 10
     assert_select ".admin__table--pages th a[href=?]", "/admin/blazer", "Blazer"
     assert_select ".admin__table--pages tr", text: /Projects.*Every project, searchable.*#{Project.count}/m
 

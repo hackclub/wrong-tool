@@ -89,7 +89,7 @@ class Review::ClaimsControllerTest < ActionDispatch::IntegrationTest
 
     post review_ship_decisions_path(@first), params: { review: { decision: "changes_requested", note_to_maker: "The maze has no exit." } }
     assert_redirected_to review_ship_path(@third), "past the second (Ana's on it)"
-    assert_equal "Inbox Maze: changes requested. Next up.", flash[:notice]
+    assert_equal "Inbox Maze: asked for changes. Next up.", flash[:notice]
     assert_nil ReviewClaim.find_by(ship: @first), "decided, so let go"
 
     post review_next_path, params: { after: @third.id, skip: 1 }

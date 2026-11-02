@@ -2,6 +2,6 @@
 class Review::EvidencesController < Review::ShipsController
   def create
     ShipEvidence.request(@ship)
-    redirect_to review_ship_path(@ship), notice: "Gathering it again. Reload in a minute."
+    redirect_to helpers.review_ship_here(@ship), notice: "Gathering it again. Reload in a minute."
   end
 end

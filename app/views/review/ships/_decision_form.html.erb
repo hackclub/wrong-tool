@@ -1,7 +1,7 @@
 <%# locals: (ship:, decision:) %>
-<%# Deciding it: approve, ask for changes or reject, then only that one's fields (CSS: .review__form:has(...)). The
-    note goes to them in Clippy's DM; the justification is for staff. Approving takes what you checked, and the
-    hours: all it took, or fewer with why. %>
+<%# Deciding it: approve, ask for changes, reject or send it on, then only that one's fields (CSS:
+    .review__form:has(...)). The note goes to them in Clippy's DM; the justification is for staff (and, sending it on,
+    for whoever gets it). Approving takes what you checked, and the hours: all it took, or fewer with why. %>
 <%= form_with model: decision, scope: :review, url: review_ship_decisions_path(ship), method: :post, class: "review__form",
       data: { turbo: false } do |form| %>
   <% if decision.errors.any? %>
@@ -12,9 +12,9 @@
 
   <fieldset class="review__verdicts">
     <legend class="visually-hidden">Decision</legend>
-    <% { "approved" => "Approve", "changes_requested" => "Request changes", "rejected" => "Reject" }.each do |value, label| %>
+    <% { "approved" => "Approve", "changes_requested" => "Request changes", "rejected" => "Reject", "hold" => "Send on" }.each do |value, label| %>
       <label class="review__verdict">
-        <%= form.radio_button :decision, value %>
+        <%= form.radio_button :decision, value, checked: value == (decision.hold? ? "hold" : decision.decision) %>
         <span><%= label %></span>
       </label>
     <% end %>
@@ -23,6 +23,15 @@
   <p class="review__hint" data-when="approved">The hours go to them to spend in the shop.</p>
   <p class="review__hint" data-when="changes_requested">They get <%= Ship::CHANGES_DAYS %> days to make them and ship again, even after shipping's closed.</p>
   <p class="review__hint" data-when="rejected">Final: they can't ship again. For ships that shouldn't be here at all; anything honest that falls short is a request for changes.</p>
+  <p class="review__hint" data-when="hold">Not yours to call: it leaves the queue for whoever you send it to, with your note. They're told nothing.</p>
+
+  <fieldset class="review__field review__holds" data-when="hold">
+    <legend>Send it to</legend>
+    <% if ship.fraud_unchecked? %>
+      <label><%= form.radio_button :hold, "fraud", checked: decision.decision != "send_admin" %> Fraud: it's back here once the fraud check passes</label>
+    <% end %>
+    <label><%= form.radio_button :hold, "admin", checked: decision.decision == "send_admin" || !ship.fraud_unchecked? %> An admin: it's theirs to decide</label>
+  </fieldset>
 
   <div class="review__field" data-when="approved">
     <%= form.label :approved_hours, "Hours to approve" %>
@@ -35,7 +44,7 @@
     <%= form.text_area :deflation_reason, rows: 2 %>
   </div>
 
-  <div class="review__field">
+  <div class="review__field" data-when="approved changes_requested rejected">
     <%= form.label :note_to_maker do %>
       <span data-when="approved">Note to them (optional)</span>
       <span data-when="changes_requested">What to change (they'll read it)</span>
@@ -48,6 +57,7 @@
     <%= form.label :justification do %>
       <span data-when="approved">What you checked, and what's in it (staff only)</span>
       <span data-when="changes_requested rejected">Anything for staff (optional)</span>
+      <span data-when="hold">What they should look at</span>
     <% end %>
     <%= form.text_area :justification, rows: 4 %>
   </div>

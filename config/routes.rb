@@ -58,13 +58,16 @@ Rails.application.routes.draw do
     resource :impersonation, only: :destroy
   end
 
-  # Reviewing ships: the queue, each ship in full (opening one claims it; the page keeps the claim alive, and an
-  # admin can take it over), deciding it, and on to the next. For admins and reviewers (User::REVIEW_ROLES).
+  # Reviewing ships: the queues (review, and ?queue=fraud for the fraud check), each ship in full (opening one claims
+  # it; the page keeps the claim alive, and an admin can take it over), deciding it, and on to the next. For admins,
+  # reviewers and fraud reviewers (User::REVIEW_ROLES).
   namespace :review do
     root "queue#show"
     post "next" => "next#create", as: :next
     resources :ships, only: :show do
       resources :decisions, only: :create
+      # The fraud check's trust score.
+      resource :fraud_verdict, only: :create
       resource :claim, only: %i[create update]
       # Gathering its evidence again, and dismissing a flag (with why).
       resource :evidence, only: :create

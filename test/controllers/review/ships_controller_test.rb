@@ -19,7 +19,8 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".formula-bar__content", /1 waiting/
-    assert_select ".admin__nav a[aria-current=page]", "Queue"
+    assert_select ".admin__nav a[aria-current=page]", "Review"
+    assert_select ".admin__nav a[href=?]", review_root_path(queue: "fraud"), "Fraud check"
     assert_select ".admin__nav a[href=?]", admin_root_path, "Admin"
     assert_select "tr##{dom_id(@ship)}", text: /Ana Lovelace.*Pong in Figma.*Figma · pong.*7\.5.*In review/m
     assert_select "tr##{dom_id(@ship)} a[href=?]", review_ship_path(@ship), "Pong in Figma"
@@ -33,7 +34,8 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin__ship-shot img[alt='Screenshot of Pong in Figma']"
     assert_select "#review-history + p", /None yet/
     assert_select "form[action=?]", review_ship_decisions_path(@ship) do
-      assert_select "input[type=radio][name='review[decision]']", 3
+      assert_select "input[type=radio][name='review[decision]']", 4
+      assert_select "input[type=radio][name='review[hold]']", 2
       assert_select "input[type=radio][value=approved][checked]"
       assert_select "input[name='review[approved_hours]'][value='7.5'][max='7.5']"
     end
@@ -45,6 +47,7 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='review[approved_hours]'][value='6.0']", 1, "what they typed stays"
     assert @ship.reload.in_review?
 
+    @ship.update!(fraud_status: "good", fraud_score: 9)
     post review_ship_decisions_path(@ship), params: { review: { decision: "approved", approved_hours: "6", deflation_reason: "1.5h was another game",
                                                                 justification: "Played it to 10 points; each frame really is a component." } }
     assert_redirected_to review_root_path
@@ -130,18 +133,51 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert @ship.reload.in_review?
   end
 
-  test "fraud reviewers can look, but not decide" do
+  test "fraud reviewers land in the fraud check, score it, and can't decide it" do
     users(:orpheus).update!(review_roles: [ "fraud" ])
     Rails.configuration.x.admin_slack_ids = []
     sign_in_as(users(:orpheus))
+    get review_root_path
+    assert_select "h1", "Fraud check"
+    assert_equal [ "Fraud check" ], css_select(".admin__nav a").map(&:text)
+    assert_select "tr##{dom_id(@ship)} a[href=?]", review_ship_path(@ship, queue: "fraud")
+
     get review_ship_path(@ship)
-    assert_response :success
+    assert_select "#review-decision", "Fraud check"
     assert_select "form[action=?]", review_ship_decisions_path(@ship), 0
-    assert_select ".review__panel", /Waiting on a reviewer/
+    assert_select "form[action=?] input[type=radio][name='verdict[trust_score]']", review_ship_fraud_verdict_path(@ship), 10
+    assert_equal "fraud", ReviewClaim.find_by(ship: @ship).queue
 
     post review_ship_decisions_path(@ship), params: { review: { decision: "rejected", note_to_maker: "Looks fake to me." } }
     assert_response :unprocessable_entity
     assert @ship.reload.in_review?
+
+    post review_ship_fraud_verdict_path(@ship), params: { verdict: { trust_score: "9", justification: "short" } }
+    assert_response :unprocessable_entity
+    assert_select ".review__errors li", /Justification needs at least 10/
+
+    post review_ship_fraud_verdict_path(@ship), params: { verdict: { trust_score: "9", justification: "Real heartbeats, real commits.", mark_sus: "1" } }
+    assert_redirected_to review_root_path(queue: "fraud")
+    assert_equal "Pong in Figma: passed the fraud check. That's the whole queue.", flash[:notice]
+    assert_equal [ "sus", 9 ], [ @ship.reload.fraud_status, @ship.fraud_score ]
+
+    get review_ship_path(@ship)
+    assert_select ".review__call[data-decision=fraud_pass]", /Passed the fraud check.*Orpheus.*9\/10, marked sus.*Real heartbeats/m
+  end
+
+  test "reviewers never see the fraud check's score or note" do
+    @ship.review_decisions.create!(queue: "fraud", decision: "fraud_pass", reviewer: users(:orpheus), trust_score: 6,
+                                   justification: "Some hours look scripted.")
+    @ship.update!(fraud_status: "sus", fraud_score: 6)
+    heidi = User.create!(hca_id: "ident!heidi", first_name: "Heidi", review_roles: [ "reviewer" ])
+    Rails.configuration.x.admin_slack_ids = []
+    sign_in_as(heidi)
+    get review_ship_path(@ship)
+    assert_response :success
+    assert_select ".review__call", 0
+    assert_no_match(/scripted|6\/10|sus/, response.body)
+    get review_ship_path(@ship, queue: "fraud")
+    assert_response :not_found
   end
 
   test "nobody else can see it, or decide" do

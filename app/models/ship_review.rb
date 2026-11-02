@@ -1,41 +1,87 @@
-# Deciding a ship in review (Review::ShipsController): approve it (the hours it grants for the shop, or fewer with a
-# reason, and what was checked), ask for changes, or reject it for good. Each call is a ReviewDecision, made once,
-# with the ship locked so two reviewers can't both decide it, not while someone else is on it (ReviewClaim), and no
-# approving with a red flag nobody's dismissed (ShipFlag).
-# Then the claim's let go and Clippy DMs the maker (ReviewNotifier).
+# Deciding a ship in the review queue (Review::DecisionsController): approve it (the hours it grants for the shop, or
+# fewer with a reason, and what was checked), ask for changes, reject it for good, or send it on, to fraud or an
+# admin, with a note for them. Each call is a ReviewDecision, made with the ship locked so two reviewers can't both
+# decide it, not while someone else is on it (ReviewClaim), and no approving with a red flag nobody's dismissed
+# (ShipFlag).
+#
+# A ship completes once it's approved and has passed the fraud check (FraudCheck), whichever comes second
+# (finalize_if_ready): only then are the hours theirs, and Clippy tells them (ReviewNotifier). Until then it's in
+# review, to them. Asking for changes or rejecting tells them at once.
 module ShipReview
+  # Where a reviewer can send a ship instead of deciding it, as the decision it makes.
+  SENDS = { "fraud" => "send_fraud", "admin" => "send_admin" }.freeze
+
   # The decision, saved, or with what's wrong with it (in errors). A ship that's been decided already, or that this
-  # person can't decide, gets an error and stays as it was.
-  def self.decide(ship, by:, decision:, note_to_maker: nil, justification: nil, approved_hours: nil, deflation_reason: nil,
+  # person can't decide now, gets an error and stays as it was. `hold` is where "hold" sends it (fraud or admin).
+  def self.decide(ship, by:, decision:, hold: nil, note_to_maker: nil, justification: nil, approved_hours: nil, deflation_reason: nil,
                   video_url: nil)
-    made = ReviewDecision.new(ship:, reviewer: by, queue: "review", decision:, note_to_maker:, justification:,
-                              video_url:, approved_hours: (approved_hours.presence if decision == "approved"),
-                              deflation_reason: (deflation_reason if decision == "approved"))
+    decision = SENDS.fetch(hold.to_s, "hold") if decision == "hold"
+    approving = decision == "approved"
+    made = ReviewDecision.new(ship:, reviewer: by, queue: "review", decision:, justification:, video_url:,
+                              note_to_maker: (note_to_maker unless ReviewDecision::HOLDS.include?(decision)),
+                              approved_hours: (approved_hours.presence if approving), deflation_reason: (deflation_reason if approving))
+    finalized = false
 
     ship.with_lock do
-      if !ReviewDecision::VERDICTS.include?(decision)
-        made.errors.add(:decision, "should be approve, request changes or reject")
-      elsif !by.reviewer? || !by.may_review?(ship)
-        made.errors.add(:base, "You can't decide this one.")
-      elsif !ship.in_review?
-        made.errors.add(:base, "That one's been decided already.")
-      elsif ReviewClaim.held_by_other?(ship, by)
-        made.errors.add(:base, "Someone else is on this one.")
-      elsif made.approved? && (red = ship.flags.open.danger.pluck(:title)).any?
-        made.errors.add(:base, "Dismiss the red flags first, with why: #{red.to_sentence}")
+      if (refusal = refusal(ship, by, made))
+        made.errors.add(:base, refusal)
       elsif made.save
         apply(ship, made)
-        ReviewClaim.release(ship)
+        finalized = finalize_if_ready(ship) if made.approved?
       end
     end
 
-    ReviewNotifier.decided(ship) if made.persisted?
+    ReviewNotifier.decided(ship) if made.persisted? && (finalized || made.changes_requested? || made.rejected?)
     made
   end
 
-  def self.apply(ship, decision)
-    ship.update!(status: decision.decision, decided_by: decision.reviewer, decided_at: decision.created_at,
-                 approved_hours: (decision.approved_hours if decision.approved?))
+  # Approved and passed the fraud check: it's done. The hours are the approval's, and so is who decided it. Called with
+  # the ship locked, by whichever came second; true if it completed just now (so the caller tells them).
+  def self.finalize_if_ready(ship)
+    return false unless ship.awaiting_fraud? && ship.fraud_passed?
+
+    approval = ship.review_decisions.reload.select(&:approved?).last
+    ship.update!(status: "approved", approved_hours: approval.approved_hours, decided_by: approval.reviewer, decided_at: Time.current,
+                 review_hold: nil, hold_note: nil)
+    ReviewClaim.release(ship)
+    true
   end
-  private_class_method :apply
+
+  # Why this person can't make this call on this ship right now, or nil.
+  def self.refusal(ship, by, made)
+    if !ReviewDecision::VERDICTS.include?(made.decision) && !made.hold?
+      "Pick approve, request changes, reject, or send it on to fraud or an admin."
+    elsif !by.reviewer? || !by.may_review?(ship)
+      "You can't decide this one."
+    elsif !ship.in_review?
+      "That one's been decided already."
+    elsif ship.awaiting_fraud?
+      "It's approved already, and waiting on the fraud check."
+    elsif ship.review_hold == "admin" && !by.admin?
+      "It's been sent to an admin, so it's theirs to decide."
+    elsif ship.review_hold == "fraud" && !by.admin?
+      "It's been sent to fraud: it's back in the queue once the fraud check passes."
+    elsif made.decision == "send_fraud" && !ship.fraud_unchecked?
+      "The fraud check's done already."
+    elsif ReviewClaim.held_by_other?(ship, by)
+      "Someone else is on this one."
+    elsif made.approved? && (red = ship.flags.open.danger.pluck(:title)).any?
+      "Dismiss the red flags first, with why: #{red.to_sentence}"
+    end
+  end
+
+  def self.apply(ship, decision)
+    case decision.decision
+    when "approved"
+      ship.update!(review_approved_at: decision.created_at, review_hold: nil, hold_note: nil)
+    when "send_fraud", "send_admin"
+      ship.update!(review_hold: SENDS.key(decision.decision), hold_note: decision.justification)
+      ReviewClaim.release(ship, queue: "review")
+    else
+      ship.update!(status: decision.decision, decided_by: decision.reviewer, decided_at: decision.created_at, approved_hours: nil,
+                   review_hold: nil, hold_note: nil, review_approved_at: nil)
+      ReviewClaim.release(ship)
+    end
+  end
+  private_class_method :refusal, :apply
 end

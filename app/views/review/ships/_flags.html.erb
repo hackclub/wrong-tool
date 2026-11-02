@@ -10,7 +10,7 @@
   <% open.each do |flag| %>
     <details class="review__flag" data-severity="<%= flag.severity %>" <%= "open" if flag.danger? %>>
       <summary><strong><%= flag.danger? ? "Red flag" : "Warning" %>:</strong> <%= flag.title %></summary>
-      <%= form_with url: review_ship_flag_path(ship, flag), method: :patch, class: "review__dismiss", data: { turbo: false } do |form| %>
+      <%= form_with url: review_ship_flag_path(ship, flag, **in_queue), method: :patch, class: "review__dismiss", data: { turbo: false } do |form| %>
         <%= form.label :dismiss_reason, "Why it's fine", for: "dismiss_#{flag.id}", class: "visually-hidden" %>
         <%= form.text_field :dismiss_reason, id: "dismiss_#{flag.id}", placeholder: "Why it's fine (#{ShipFlag::DISMISS_REASON_MIN}+ characters)" %>
         <%= form.button "Dismiss", class: "admin__button" %>

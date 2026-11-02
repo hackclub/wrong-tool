@@ -1,6 +1,6 @@
-<%# The review pages (ReviewHelper#review_pages): the one you're on is marked. %>
+<%# The review pages (ReviewHelper#review_pages): the queue you're in is marked. %>
 <nav class="admin__nav" aria-label="Review pages">
   <% review_pages.each do |page| %>
-    <%= link_to page[:label], page[:path], aria: { current: ("page" if current_page?(page[:path])) } %>
+    <%= link_to page[:label], page[:path], aria: { current: ("page" if page[:queue] == queue) } %>
   <% end %>
 </nav>

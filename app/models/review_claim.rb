@@ -41,7 +41,8 @@ class ReviewClaim < ApplicationRecord
     where(ship:, user:, queue:).update_all(heartbeat_at: Time.current).positive?
   end
 
-  def self.release(ship, queue: "review")
-    where(ship:, queue:).delete_all
+  # Lets the ship go in one queue, or in every queue once it's decided.
+  def self.release(ship, queue: nil)
+    (queue ? where(ship:, queue:) : where(ship:)).delete_all
   end
 end

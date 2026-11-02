@@ -105,6 +105,101 @@ class ShipReviewTest < ActiveSupport::TestCase
                  ":clippy-emotional: clippy is sad about this one. :crying_dino:", dm_args.second
   end
 
+  test "an approval waits on the fraud check, and whichever comes second completes it" do
+    ship = ship_now(hours: 6, fraud: "unchecked")
+    decide(ship, "approved", approved_hours: "6", justification: checked)
+    assert ship.reload.in_review?, "still in review, to them"
+    assert ship.awaiting_fraud?
+    assert_equal 0, @project.reload.hours_approved
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }, "nobody's told yet"
+    assert_equal "It's approved already, and waiting on the fraud check.",
+                 decide(ship, "rejected", note_to_maker: "Changed my mind.").errors.full_messages.first
+
+    fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
+    verdict = FraudCheck.verdict(ship, by: fraud, score: "8", note: "Real heartbeats, real commits.")
+    assert verdict.persisted?
+    assert ship.reload.approved?
+    assert_equal [ "good", 8, 6, @reviewer ], [ ship.fraud_status, ship.fraud_score, ship.approved_hours, ship.decided_by ]
+    assert_equal 6, @project.reload.hours_approved
+    assert_match(/is approved\. 6 hrs are yours/, dm_args.second)
+  end
+
+  test "the fraud check first, then the approval completes it at once" do
+    fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
+    ship = ship_now(hours: 6, fraud: "unchecked")
+    FraudCheck.verdict(ship, by: fraud, score: "6", note: "Some odd hours, but fine.")
+    assert_equal "sus", ship.reload.fraud_status, "5 to 7 passes, marked sus"
+    assert ship.in_review?
+
+    decide(ship, "approved", approved_hours: "6", justification: checked)
+    assert ship.reload.approved?
+  end
+
+  test "failing the fraud check rejects it, final, whatever a reviewer said, and they're told only that" do
+    fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
+    ship = ship_now(hours: 6, fraud: "unchecked")
+    decide(ship, "approved", approved_hours: "6", justification: checked)
+
+    assert_includes FraudCheck.verdict(ship, by: fraud, score: "3", note: "x").errors.full_messages, "Justification needs at least 10 characters: what you saw"
+    assert_includes FraudCheck.verdict(ship, by: fraud, score: "11", note: "Heartbeats from a script.").errors.full_messages, "Trust score should be 1 to 10"
+    verdict = FraudCheck.verdict(ship, by: fraud, score: "3", note: "Heartbeats from a script, every 30s.")
+    assert verdict.persisted?
+    assert ship.reload.rejected?
+    assert_equal [ "fraud", 3, nil, fraud ], [ ship.fraud_status, ship.fraud_score, ship.approved_hours, ship.decided_by ]
+    assert_not @project.reload.may_ship?
+    assert_equal "*Beat Sheet* wasn't approved, and it can't be shipped again:\n>#{FraudCheck::REJECT_NOTE}\n" \
+                 ":clippy-emotional: clippy is sad about this one. :crying_dino:", dm_args.second
+    assert_not_includes dm_args.second, "script"
+    assert_equal "That one's been decided already.", FraudCheck.verdict(ship, by: fraud, score: "9", note: "On second thought.").errors.full_messages.first
+  end
+
+  test "only fraud reviewers check, never their own, and a reviewer can't" do
+    ship = ship_now(hours: 2, fraud: "unchecked")
+    assert_equal [ "You can't check this one." ], FraudCheck.verdict(ship, by: @reviewer, score: "9", note: "Looks real to me.").errors.full_messages
+    users(:orpheus).update!(review_roles: [ "fraud" ])
+    assert_equal [ "You can't check this one." ], FraudCheck.verdict(ship, by: users(:orpheus), score: "9", note: "Trust me, it's mine.").errors.full_messages
+  end
+
+  test "sending it on: to fraud, out of the review queue until it passes; to an admin, theirs to decide" do
+    fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
+    ship = ship_now(hours: 2, fraud: "unchecked")
+    assert_includes decide(ship, "hold", hold: "fraud", justification: "hm").errors.full_messages, "Justification needs at least 10 characters: what they should look at"
+    sent = decide(ship, "hold", hold: "fraud", justification: "The commits are all from one night.", note_to_maker: "not for them")
+    assert_equal [ "send_fraud", nil ], [ sent.decision, sent.note_to_maker ]
+    assert_equal [ "fraud", "The commits are all from one night." ], [ ship.reload.review_hold, ship.hold_note ]
+    assert_not_includes ReviewQueue.waiting("review", @reviewer), ship
+    assert_equal ship, ReviewQueue.waiting("fraud", fraud).first
+    assert_nil ReviewQueue.next_for(fraud, queue: "fraud"), "never opened for you: opened from the list"
+    assert_equal "It's been sent to fraud: it's back in the queue once the fraud check passes.",
+                 decide(ship, "approved", approved_hours: "2", justification: checked).errors.full_messages.first
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }, "they're told nothing"
+
+    FraudCheck.verdict(ship, by: fraud, score: "9", note: "One night, but a real one.")
+    assert_nil ship.reload.review_hold
+    assert_includes ReviewQueue.waiting("review", @reviewer), ship, "back in the review queue"
+
+    decide(ship, "hold", hold: "admin", justification: "Not sure this counts as a game.")
+    assert_not_includes ReviewQueue.waiting("review", @reviewer), ship
+    with_admins("U0ORPHEUS") do
+      assert_equal ship, ReviewQueue.waiting("review", users(:orpheus)).first, "admins see it, first"
+      assert_equal "It's been sent to an admin, so it's theirs to decide.",
+                   decide(ship, "rejected", note_to_maker: "Not a game at all.").errors.full_messages.first
+    end
+  end
+
+  test "a reship keeps the last passing fraud check under 3 hours added, and starts again past it" do
+    first = ship_now(hours: 4, fraud: "sus")
+    first.update!(fraud_score: 6, status: "changes_requested")
+    kept = @project.ships.create!(first.attributes.slice("title", "description", "repo_url", "demo_url").merge(hours: 6.5, screenshot: upload, screenshot_shows_game: true))
+    assert_equal [ "sus", 6 ], [ kept.fraud_status, kept.fraud_score ]
+    assert_equal [ [ "fraud", "fraud_pass", nil ] ], kept.review_decisions.map { |decision| [ decision.queue, decision.decision, decision.reviewer ] }
+    assert_match(/Kept from the ship before \(4\.0 hrs\)/, kept.review_decisions.first.justification)
+
+    kept.update!(status: "changes_requested")
+    again = @project.ships.create!(first.attributes.slice("title", "description", "repo_url", "demo_url").merge(hours: 9.5, screenshot: upload, screenshot_shows_game: true))
+    assert again.fraud_unchecked?, "3 hours or more since the last check"
+  end
+
   test "no DM to someone who stopped Clippy's messages" do
     users(:orpheus).update!(slack_muted_at: Time.current)
     decide(ship_now(hours: 2), "rejected", note_to_maker: "Not a game at all.")
@@ -122,6 +217,10 @@ class ShipReviewTest < ActiveSupport::TestCase
       enqueued_jobs.select { |job| job[:job] == SlackMessageJob }.last[:args].then { |args| [ args[0], args[1], args[2].except("_aj_ruby2_keywords") ] }
     end
 
+    def upload
+      Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png")
+    end
+
     def with_admins(*slack_ids)
       before = Rails.configuration.x.admin_slack_ids
       Rails.configuration.x.admin_slack_ids = slack_ids
@@ -130,10 +229,11 @@ class ShipReviewTest < ActiveSupport::TestCase
       Rails.configuration.x.admin_slack_ids = before
     end
 
-    def ship_now(hours:)
+    # Passed the fraud check already, unless it says otherwise, so an approval completes it.
+    def ship_now(hours:, fraud: "good")
       @project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every beat is a cell lighting up in time.",
                              repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://example.com/beat",
                              hours:, screenshot: Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png"),
-                             screenshot_shows_game: true)
+                             screenshot_shows_game: true).tap { |ship| ship.update!(fraud_status: fraud) }
     end
 end

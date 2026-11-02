@@ -13,7 +13,7 @@
     <% if evidence&.built? %>
       <small class="admin__muted">gathered <%= time_ago_in_words(evidence.built_at) %> ago</small>
     <% end %>
-    <%= button_to "Resync", review_ship_evidence_path(ship), class: "admin__button", form: { data: { turbo: false } } %>
+    <%= button_to "Resync", review_ship_evidence_path(ship, **in_queue), class: "admin__button", form: { data: { turbo: false } } %>
   </div>
 
   <% if evidence.nil? || (evidence.pending? && evidence.built_at.nil?) %>
@@ -116,7 +116,7 @@
         <% data["duplicates"].each do |other| %>
           <li>
             <% other_ship = Ship.find_by(id: other["ship_id"]) %>
-            <%= other_ship && current_user.may_review?(other_ship) ? link_to(other["title"], review_ship_path(other_ship)) : other["title"] %>
+            <%= other_ship && current_user.may_review?(other_ship) ? link_to(other["title"], review_ship_here(other_ship)) : other["title"] %>
             <span class="admin__muted">· same <%= other["links"].to_sentence %> link · <%= ReviewHelper::SHIP_STATUS_LABELS.fetch(other["status"], other["status"]) %></span>
           </li>
         <% end %>

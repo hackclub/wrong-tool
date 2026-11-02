@@ -1,29 +1,43 @@
-<% content_for :title, "Review · Wrong Tool" %>
+<% fraud = queue == "fraud" %>
+<% content_for :title, "#{fraud ? "Fraud check" : "Review"} · Wrong Tool" %>
 <% shipped_hours = Ship.latest_per_project.sum(:hours) %>
 
-<%# The review queue: the ships waiting, oldest first, then the latest decided. Each opens in full to decide. Real
-    names and emails are here, so nothing on this page is recorded. %>
+<%# A queue (ReviewQueue): the ships waiting in it, sent-on ones first with their note, then oldest first; then the
+    latest decided. Each opens in full to decide. Real names and emails are here, so nothing on this page is
+    recorded. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
-  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=REVIEW(wrong tool)  →  #{@waiting.size} waiting" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=#{fraud ? "FRAUD" : "REVIEW"}(wrong tool)  →  #{@waiting.size} waiting" %>
 
   <main class="project__sheet">
     <div class="admin ph-no-capture">
       <header>
         <%= render "review/nav" %>
-        <h1 class="project__title">Review</h1>
-        <p class="leaderboard__note">
-          Oldest first: a ship that's shipped again after changes joins at the back. Open one to approve it, ask for
-          changes (they get <%= Ship::CHANGES_DAYS %> days to ship them) or reject it for good, and you're taken to the
-          next. Opening one claims it, so nobody else decides it while you're on it. Clippy DMs them your note either
-          way. You've decided <%= pluralize(@decided_today, "ship") %> today;
-          <%= project_hours(shipped_hours) %> hrs across every project that's shipped.
-        </p>
-        <% if notice %><p class="leaderboard__note" role="status"><%= notice %></p><% end %>
-        <% if current_user.reviewer? && @waiting.any? %>
-          <%= button_to "Start reviewing", review_next_path, class: "admin__button", form: { data: { turbo: false } } %>
+        <h1 class="project__title"><%= fraud ? "Fraud check" : "Review" %></h1>
+        <% if fraud %>
+          <p class="leaderboard__note">
+            Every ship from the moment it's shipped, the ones a reviewer sent here first. Score how much you trust it,
+            1 to 10: over <%= FraudCheck::PASS_OVER %> passes (up to <%= FraudCheck::SUS_UP_TO %> is marked sus), and
+            <%= FraudCheck::PASS_OVER %> or under rejects it for good. A ship completes once it's approved and passed,
+            whichever comes second. Only fraud reviewers see scores and notes; they're told only that it can't be accepted.
+            You've checked <%= pluralize(@decided_today, "ship") %> today.
+          </p>
+        <% else %>
+          <p class="leaderboard__note">
+            Oldest first: a ship that's shipped again after changes joins at the back. Open one to approve it, ask for
+            changes (they get <%= Ship::CHANGES_DAYS %> days to ship them), reject it for good, or send it on to fraud or
+            an admin, and you're taken to the next. Opening one claims it, so nobody else decides it while you're on it.
+            Clippy DMs them your note either way. An approval completes once the fraud check passes
+            (<%= pluralize(@awaiting_fraud, "approved ship") %> waiting on it). You've decided
+            <%= pluralize(@decided_today, "ship") %> today; <%= project_hours(shipped_hours) %> hrs across every project
+            that's shipped.
+          </p>
         <% end %>
+        <% if notice %><p class="leaderboard__note" role="status"><%= notice %></p><% end %>
         <% if alert %><p class="leaderboard__note" role="alert"><%= alert %></p><% end %>
+        <% if @waiting.any? %>
+          <%= button_to "Start", review_next_path, params: in_queue, class: "admin__button", form: { data: { turbo: false } } %>
+        <% end %>
       </header>
 
       <% { "Waiting" => [ "review-waiting", @waiting, "Nothing's waiting." ],

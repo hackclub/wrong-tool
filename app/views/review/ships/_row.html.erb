@@ -1,9 +1,10 @@
 <%# locals: (ship:, claim: nil) %>
 <%# One ship in the list: who, their project, what they shipped (a link to it in full, unless it's yours), the hours
-    it took, when, and where it stands: who's on it, while it's in review and someone is. %>
+    it took, when, and where it stands: who's on it, while it's in review and someone is, and where it was sent, with
+    the note, if a reviewer sent it on. %>
 <% project = ship.project %>
 <% user = project.user %>
-<tr id="<%= dom_id(ship) %>" data-status="<%= ship.status %>">
+<tr id="<%= dom_id(ship) %>" data-status="<%= ship.status %>" data-hold="<%= ship.review_hold if ship.in_review? %>">
   <th scope="row">
     <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %>
     <%= user.name.presence || user.public_name %>
@@ -11,7 +12,7 @@
   </th>
   <td>
     <% if current_user.may_review?(ship) %>
-      <%= link_to ship.title, review_ship_path(ship) %>
+      <%= link_to ship.title, review_ship_here(ship) %>
     <% else %>
       <%= ship.title %> <span class="admin__muted">(yours)</span>
     <% end %>
@@ -21,6 +22,11 @@
   <td><%= ship.created_at.strftime("%b %-d") %></td>
   <td data-decision="<%= ship.status %>">
     <%= ship_status_label(ship) %>
+    <% if ship.in_review? && ship.review_hold %>
+      <small class="admin__muted" data-held><%= ship.review_hold == "fraud" ? "sent to fraud" : "sent to an admin" %>: <%= ship.hold_note %></small>
+    <% elsif ship.awaiting_fraud? %>
+      <small class="admin__muted">approved, waiting on the fraud check</small>
+    <% end %>
     <% if claim %>
       <small class="admin__muted" data-claimed><%= claim.user == current_user ? "you're on it" : "#{reviewer_name(claim.user)} is on it" %></small>
     <% end %>

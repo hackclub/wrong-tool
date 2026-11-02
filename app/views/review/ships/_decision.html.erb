@@ -1,11 +1,13 @@
 <%# locals: (decision:, current:) %>
-<%# One call on a ship: what, who, when, the hours it granted, and what they wrote: the note the maker got, and the
-    justification only staff see. One on an earlier ship says which. %>
+<%# One call on a ship: what, who, when, the hours it granted (or the trust score), and what they wrote: the note
+    the maker got, and the justification only staff see. One on an earlier ship says which. Wrong tool's own (a
+    fraud check kept from the ship before) are by nobody. %>
 <li class="review__call" id="<%= dom_id(decision) %>" data-decision="<%= decision.decision %>">
   <p class="review__call-head">
     <strong><%= review_decision_label(decision) %></strong>
-    · <%= reviewer_name(decision.reviewer) %> · <%= decision.created_at.strftime("%b %-d, %H:%M") %>
+    · <%= decision.reviewer ? reviewer_name(decision.reviewer) : "wrong tool" %> · <%= decision.created_at.strftime("%b %-d, %H:%M") %>
     <% if decision.approved? && decision.approved_hours %>· <%= project_hours(decision.approved_hours) %> hrs<% end %>
+    <% if decision.trust_score %>· <%= decision.trust_score %>/10<% if decision.mark_sus %>, marked sus<% end %><% end %>
     <% unless current %><span class="admin__muted">· an earlier ship (<%= project_hours(decision.ship.hours) %> hrs)</span><% end %>
   </p>
   <% if decision.note_to_maker.present? %>
