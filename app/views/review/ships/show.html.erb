@@ -1,0 +1,113 @@
+<% content_for :title, "#{@ship.title} · Review · Wrong Tool" %>
+<% project = @ship.project %>
+<% user = project.user %>
+<% others = project.ships.where.not(id: @ship.id).includes(:decided_by, review_decisions: :reviewer).order(created_at: :desc) %>
+<% history = (@ship.review_decisions.to_a + others.flat_map(&:review_decisions)).sort_by { |decision| [ decision.created_at, decision.id ] }.reverse %>
+
+<%# One ship to review: what was submitted on the left, and the decision on the right, sticky, so it's in reach
+    however far down you are. Then every call made on this project's ships, and its earlier ships. Real names and
+    emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=SHIP(#{@ship.title})  →  #{ship_decision(@ship)}" %>
+
+  <main class="project__sheet">
+    <div class="admin review ph-no-capture">
+      <header>
+        <%= render "review/nav" %>
+        <p class="leaderboard__note"><%= link_to "← The queue", review_root_path %></p>
+        <h1 class="project__title"><%= @ship.title %></h1>
+        <p class="leaderboard__note">
+          Shipped <%= @ship.created_at.strftime("%b %-d, %H:%M") %> UTC by
+          <%= avatar_tag(user, "admin__avatar", aria: { hidden: true }, role: nil, title: nil) %><%= user.name.presence || user.public_name %>
+          (<%= user.email %><% if user.slack_display_name.present? %>, <%= user.slack_display_name %> on Slack<% end %>).
+        </p>
+      </header>
+
+      <div class="review__columns">
+        <div class="review__evidence">
+          <section class="admin__tiles" aria-label="The numbers">
+            <div class="admin__tile"><span>Status</span><strong data-decision="<%= @ship.status %>"><%= ship_status_label(@ship) %></strong>
+              <% unless @ship.in_review? %><small><%= reviewer_name(@ship.decided_by) %> · <%= @ship.decided_at.strftime("%b %-d") %></small><% end %>
+            </div>
+            <div class="admin__tile"><span>Hours when shipped</span><strong><%= project_hours(@ship.hours) %></strong><small><%= project_hours(project.hours_logged) %> now</small></div>
+            <div class="admin__tile"><span>Project</span>
+              <strong><%= current_user.admin? ? link_to(project.title, admin_project_path(project)) : project.title %></strong>
+              <small><%= project.tool_name %> · <%= project.idea %></small>
+            </div>
+            <div class="admin__tile"><span>Console</span><strong><%= project_prize_name(project) %></strong><small><%= project_hours_label(project, @ship.hours) %></small></div>
+          </section>
+
+          <section class="admin__ship" aria-labelledby="review-submitted">
+            <h2 class="admin__heading" id="review-submitted">What they submitted</h2>
+            <dl class="admin__ship-details">
+              <dt>Repo</dt><dd><%= link_to @ship.repo_url, @ship.repo_url, target: "_blank", rel: "noopener" %></dd>
+              <dt>Demo</dt><dd><%= link_to @ship.demo_url, @ship.demo_url, target: "_blank", rel: "noopener" %></dd>
+              <dt>Hackatime</dt><dd><%= @ship.hackatime_projects.join(", ").presence || "no Hackatime project" %></dd>
+              <dt>Description</dt><dd class="admin__ship-description"><%= @ship.description %></dd>
+            </dl>
+            <% if @ship.screenshot.attached? %>
+              <figure class="admin__ship-shot">
+                <%= link_to url_for(@ship.screenshot), target: "_blank", rel: "noopener" do %>
+                  <%= image_tag url_for(@ship.screenshot), alt: "Screenshot of #{@ship.title}" %>
+                <% end %>
+                <figcaption class="admin__muted">They said it shows the game running in <%= project.tool_name %>, not a mockup.</figcaption>
+              </figure>
+            <% end %>
+          </section>
+
+          <section aria-labelledby="review-history">
+            <h2 class="admin__heading" id="review-history">Every call on this project</h2>
+            <% if history.empty? %>
+              <p class="leaderboard__note">None yet: this is its first ship.</p>
+            <% else %>
+              <ol class="review__history">
+                <% history.each do |decision| %>
+                  <%= render "review/ships/decision", decision:, current: decision.ship_id == @ship.id %>
+                <% end %>
+              </ol>
+            <% end %>
+          </section>
+
+          <% if others.any? %>
+            <section aria-labelledby="review-others">
+              <h2 class="admin__heading" id="review-others">Earlier ships of this project</h2>
+              <div class="admin__scroll">
+                <table class="leaderboard__table admin__table admin__table--ships">
+                  <thead>
+                    <tr>
+                      <th scope="col">Who</th>
+                      <th scope="col">Ship</th>
+                      <th class="leaderboard__number" scope="col">Hours</th>
+                      <th scope="col">Shipped</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% others.each do |ship| %>
+                      <%= render "review/ships/row", ship: %>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          <% end %>
+        </div>
+
+        <aside class="review__panel" aria-labelledby="review-decision">
+          <h2 class="admin__heading" id="review-decision">Decision</h2>
+          <% if @ship.in_review? && current_user.reviewer? %>
+            <%= render "review/ships/decision_form", ship: @ship, decision: @decision %>
+          <% elsif @ship.in_review? %>
+            <p class="leaderboard__note">Waiting on a reviewer.</p>
+          <% else %>
+            <p class="leaderboard__note" data-decision="<%= @ship.status %>">
+              <%= ship_decision(@ship) %><% if @ship.approved? %>, with <%= project_hours(@ship.approved_hours || @ship.hours) %> hrs to spend<% end %>.
+              <% if @ship.changes_requested? %>They can ship again until <%= @ship.changes_due_at.strftime("%b %-d") %>.<% end %>
+            </p>
+          <% end %>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>

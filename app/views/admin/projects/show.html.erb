@@ -36,11 +36,11 @@
         <div class="admin__tile">
           <span>Ship</span>
           <% if (ship = @project.ship_in_review) %>
-            <strong><%= link_to "In review", admin_ship_path(ship) %></strong><small>since <%= project_date(ship.created_at.to_date) %></small>
+            <strong><%= link_to "In review", review_ship_path(ship) %></strong><small>since <%= project_date(ship.created_at.to_date) %></small>
           <% elsif @project.shipped? %>
-            <strong data-decision="approved">Approved</strong><small><%= link_to "see the ship", admin_ship_path(ships.first) %></small>
+            <strong data-decision="approved">Approved</strong><small><%= link_to "see the ship", review_ship_path(ships.first) %></small>
           <% elsif ships.any? %>
-            <strong data-decision="rejected">Sent back</strong><small><%= link_to "see the ship", admin_ship_path(ships.first) %></small>
+            <strong data-decision="<%= ships.first.status %>"><%= ship_status_label(ships.first) %></strong><small><%= link_to "see the ship", review_ship_path(ships.first) %></small>
           <% else %>
             <strong>Not yet</strong><small><%= @project.tracking? ? "can ship" : "needs Hackatime first" %></small>
           <% end %>
@@ -125,7 +125,7 @@
               </thead>
               <tbody>
                 <% ships.each do |ship| %>
-                  <%= render "admin/ships/row", ship: %>
+                  <%= render "review/ships/row", ship: %>
                 <% end %>
               </tbody>
             </table>

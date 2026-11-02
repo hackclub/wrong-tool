@@ -100,6 +100,50 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "asked for changes, it opens again with what to change and what you shipped, even after it's all closed" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+    sign_in_as_orpheus
+    post project_ship_path, params: { ship: ship_params }
+    ship = projects(:orpheus).ship_in_review
+
+    travel_to Time.utc(2026, 11, 20, 12) do
+      ship.update!(status: "changes_requested", decided_at: Time.current)
+      ship.review_decisions.create!(decision: "changes_requested", note_to_maker: "The demo asks me to sign in.")
+
+      get project_ship_path
+      assert_select ".ship__changes", /A reviewer asked for changes\..*ship it again by\s+Nov 27/m
+      assert_select ".ship__changes .ship__note", "The demo asks me to sign in."
+      assert_select "textarea#ship_description", /every beat is a cell/
+      assert_select "input#ship_demo_url[value='https://example.com/beat']"
+
+      assert_difference -> { Ship.count } do
+        post project_ship_path, params: { ship: ship_params.merge(demo_url: "https://example.com/beat-public") }
+      end
+      assert projects(:orpheus).ship_in_review
+      get project_ship_path
+      assert_select ".ship__done-title", "Shipped."
+    end
+  end
+
+  test "rejected, it says why and never opens again" do
+    link_hackatime(users(:orpheus))
+    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+    sign_in_as_orpheus
+    post project_ship_path, params: { ship: ship_params }
+    ship = projects(:orpheus).ship_in_review
+    ship.update!(status: "rejected", decided_at: Time.current)
+    ship.review_decisions.create!(decision: "rejected", note_to_maker: "This is someone else's game.")
+
+    get project_ship_path
+    assert_select ".ship__done[data-state=rejected] .ship__done-title", "Not approved."
+    assert_select ".ship__note", "This is someone else's game."
+    assert_select "form.ship__form", 0
+    assert_no_difference -> { Ship.count } do
+      post project_ship_path, params: { ship: ship_params }
+    end
+  end
+
   private
     def sign_in_as_orpheus
       mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS")

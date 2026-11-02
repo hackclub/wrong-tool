@@ -308,6 +308,15 @@
     }
   }
 
+  /* Whether someone reviews ships: a box each, and Save. */
+  .admin__roles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    white-space: nowrap;
+  }
+
   .admin__avatar {
     inline-size: 20px;
     block-size: 20px;

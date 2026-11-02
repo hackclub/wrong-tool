@@ -1,7 +1,9 @@
 <% content_for :title, "Ship · #{@project.title} · Wrong Tool" %>
 
-<%# Shipping your project, over the whole sheet: the form (with what it still needs), then once it's in, that it's
-    in review. Past the deadline (and its quiet grace, which this never mentions), that it's closed. %>
+<%# Shipping your project, over the whole sheet: the form (with what it still needs, and what to change if a
+    reviewer asked), then once it's in, that it's in review. Past the deadline (and its quiet grace, which this never
+    mentions), that it's closed; rejected, why. %>
+<% last = @project.latest_ship %>
 <div class="ship" data-controller="project"
      data-project-clippy-value="<%= flash[:clippy] %>"
      data-project-mood-value="<%= @closed ? "thinking" : "happy" %>"
@@ -14,7 +16,22 @@
     <span class="ship__formula">=SHIP(<%= project_file_name(@project) %>)</span>
   </header>
 
-  <% if @closed %>
+  <% if @closed && last&.rejected? %>
+    <main class="ship__done" data-state="rejected">
+      <div class="project__clippy" data-project-target="clippy">
+        <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
+      </div>
+      <h2 class="ship__done-title">Not approved.</h2>
+      <p class="ship__done-text"><%= last.title %> wasn't approved, so it can't be shipped again.</p>
+      <% if (note = last.verdict&.note_to_maker).present? %>
+        <blockquote class="ship__note"><%= note %></blockquote>
+      <% end %>
+      <p class="ship__done-text">If you think that's a mistake, say so in #wrong.</p>
+      <div class="ship__done-actions">
+        <%= link_to "Back to project", project_path, class: "onboarding-button onboarding-button--primary ship__button" %>
+      </div>
+    </main>
+  <% elsif @closed %>
     <main class="ship__done" data-state="closed">
       <div class="project__clippy" data-project-target="clippy">
         <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
@@ -31,7 +48,7 @@
         <%= clippy_sprite_tag("project__sprite", data: { project_target: "sprite" }) %>
       </div>
       <h2 class="ship__done-title">Shipped.</h2>
-      <p class="ship__done-text"><%= @ship.title %> is in review. You'll hear in #wrong once it's approved.</p>
+      <p class="ship__done-text"><%= @ship.title %> is in review. Clippy will DM you on Slack once someone's looked at it.</p>
       <div class="ship__done-actions">
         <%= link_to "Back to project", project_path, class: "onboarding-button onboarding-button--primary ship__button" %>
       </div>
@@ -59,6 +76,15 @@
                   action: "input->ship#check change->ship#check" } do |form| %>
       <div class="ship__body">
         <div class="ship__fields">
+          <% if last&.reshippable? %>
+            <div class="ship__changes" role="note">
+              <strong>A reviewer asked for changes.</strong> Make them, then ship it again by
+              <%= last.changes_due_at.strftime("%b %-d") %>.
+              <% if (note = last.verdict&.note_to_maker).present? %>
+                <blockquote class="ship__note"><%= note %></blockquote>
+              <% end %>
+            </div>
+          <% end %>
           <%= render "ships/field", form:, ship: @ship, attribute: :title, label: "Title" do %>
             <%= form.text_field :title, maxlength: 80, required: true, class: "ship__input ship__input--title",
                   data: { ship_target: "title" }, aria: { invalid: @ship.errors[:title].any? } %>

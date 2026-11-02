@@ -47,49 +47,23 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal @project.screenshot.blob, ship.screenshot.blob
   end
 
-  test "deciding is an admin's call, made once, and the ship that stands is each project's newest" do
+  test "the ship that stands is each project's newest" do
     first = ship_now(hours: 3)
-    assert_not first.decide!("maybe", by: users(:ana))
-    assert first.decide!("rejected", by: users(:ana))
-    assert first.rejected?
-    assert_equal users(:ana), first.decided_by
-    assert_not first.decide!("approved", by: users(:ana)), "decided already"
-    assert first.reload.rejected?
-
+    first.update!(status: "changes_requested")
     second = ship_now(hours: 5)
     assert_equal [ second ], Ship.latest_per_project.to_a
     assert_equal 5, Ship.latest_per_project.sum(:hours)
     assert_equal [ first ], Ship.where(created_at: ..first.created_at).latest_per_project.to_a, "as of a time, the newest then"
+    assert_equal second, @project.reload.latest_ship
   end
 
-  test "approving grants the hours it took to spend, or fewer if the admin says, and the most of any approved ship counts" do
-    assert_equal 0, @project.hours_approved
-    first = ship_now(hours: 6)
-    first.decide!("approved", by: users(:ana), hours: "99")
-    assert_equal 6, first.approved_hours, "never more than it took"
-    assert_equal 6, @project.reload.hours_approved
-
-    rejected = ship_now(hours: 9)
-    rejected.decide!("rejected", by: users(:ana), hours: "9")
-    assert_nil rejected.approved_hours
-    assert_equal 6, @project.reload.hours_approved
-
-    second = ship_now(hours: 11)
-    second.decide!("approved", by: users(:ana), hours: "10.5")
-    assert_equal 10.5, second.approved_hours
-    assert_equal 10.5, @project.reload.hours_approved, "each ship counts every hour up to it, so the most, not the sum"
-
-    ship_now(hours: 2).decide!("approved", by: users(:ana), hours: "-4")
-    assert_equal 10.5, @project.reload.hours_approved
-  end
-
-  test "the reminder DMs everyone who hasn't shipped, sent back counts, and a dry run sends nothing" do
+  test "the reminder DMs everyone who hasn't shipped, asked for changes counts, and a dry run sends nothing" do
     require "rake"
     Rails.application.load_tasks unless Rake::Task.task_defined?("ships:remind")
     ship_now(hours: 2)
     projects(:ana).ships.create!(title: "Pong in Figma", description: "Two paddles, one ball, and every frame is a Figma component.",
                                  repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours: 1,
-                                 screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "rejected")
+                                 screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "changes_requested")
 
     with_env("DRY_RUN" => "1") { capture_io { Rake::Task["ships:remind"].execute } }
     assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
@@ -111,7 +85,7 @@ class ShipTest < ActiveSupport::TestCase
     ana.update!(hackatime_projects: [ "heidis-game" ])
     ana.ships.create!(title: "Pong in Figma", description: "Two paddles, one ball, and every frame is a Figma component.",
                       repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours: 1,
-                      screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "rejected")
+                      screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "changes_requested")
     ana.user.streak_activities.create!(activity_date: Program::DATES.begin, coded_seconds: 2 * 3600)
 
     with_env("DRY_RUN" => "1") { capture_io { Rake::Task["ships:last_call"].execute } }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -217,6 +217,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_120000) do
     t.datetime "last_call_dmed_at"
     t.index ["buddy_code"], name: "index_projects_on_buddy_code", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id", unique: true
+  end
+
+  create_table "review_decisions", force: :cascade do |t|
+    t.bigint "ship_id", null: false
+    t.bigint "reviewer_id"
+    t.string "queue", default: "review", null: false
+    t.string "decision", null: false
+    t.text "note_to_maker"
+    t.text "justification"
+    t.decimal "approved_hours", precision: 6, scale: 2
+    t.text "deflation_reason"
+    t.string "video_url"
+    t.datetime "created_at", null: false
+    t.index ["reviewer_id", "created_at"], name: "index_review_decisions_on_reviewer_id_and_created_at"
+    t.index ["reviewer_id"], name: "index_review_decisions_on_reviewer_id"
+    t.index ["ship_id"], name: "index_review_decisions_on_ship_id"
   end
 
   create_table "rewards", force: :cascade do |t|
@@ -469,6 +485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_120000) do
     t.text "address"
     t.text "phone_number"
     t.text "birthdate"
+    t.string "review_roles", default: [], null: false, array: true
     t.index ["hackatime_uid"], name: "index_users_on_hackatime_uid", unique: true
     t.index ["hca_id"], name: "index_users_on_hca_id", unique: true
   end
@@ -485,6 +502,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_120000) do
   add_foreign_key "pairs", "projects", column: "first_project_id"
   add_foreign_key "pairs", "projects", column: "second_project_id"
   add_foreign_key "projects", "users"
+  add_foreign_key "review_decisions", "ships"
+  add_foreign_key "review_decisions", "users", column: "reviewer_id"
   add_foreign_key "rewards", "pairs"
   add_foreign_key "rewards", "users"
   add_foreign_key "seller_requests", "projects"

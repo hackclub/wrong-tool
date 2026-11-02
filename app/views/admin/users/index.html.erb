@@ -1,7 +1,7 @@
 <% content_for :title, "People · Wrong Tool admin" %>
 
-<%# Everyone who's signed in, newest first: who they are, what they pledged, where they've got to, and a button to
-    see the site as them. Real names and emails are here, so nothing on this page is recorded. %>
+<%# Everyone who's signed in, newest first: who they are, what they pledged, where they've got to, whether they
+    review ships, and a button to see the site as them. Real names and emails are here, so nothing on this page is recorded. %>
 <div class="spreadsheet onboarding project">
   <%= render "pages/app_bar" %>
   <%= render "onboarding/formula_bar", name_box: "A1", formula: "=USERS(wrong tool)  →  #{@total}" %>
@@ -14,6 +14,8 @@
         <p class="leaderboard__note">
           Newest first. "View as" shows you the site as they see it, until you stop from the strip at the bottom; nothing
           you do as them is marked as yours, so look, don't touch. You can't view as yourself or another admin.
+          Reviewers decide ships at <%= link_to "/review", review_root_path %>; fraud reviewers check they're real.
+          Admins are both.
         </p>
         <%= form_with url: admin_users_path, method: :get, class: "admin__search" do |form| %>
           <%= form.search_field :q, value: @query, placeholder: "Name, email, Slack or Hack Club ID", aria: { label: "Search people" },
@@ -37,6 +39,7 @@
                 <th scope="col">Slack</th>
                 <th scope="col">Project</th>
                 <th class="leaderboard__number" scope="col">Streak</th>
+                <th scope="col">Reviews</th>
                 <th scope="col">Signed in</th>
                 <th scope="col"><span class="visually-hidden">View as</span></th>
               </tr>
@@ -66,6 +69,19 @@
                     <% end %>
                   </td>
                   <td class="leaderboard__number"><%= user.current_streak %></td>
+                  <td>
+                    <% if user.listed_admin? %>
+                      <span class="admin__muted">as an admin</span>
+                    <% else %>
+                      <%= form_with url: admin_user_path(user), method: :patch, class: "admin__roles", data: { turbo: false } do |form| %>
+                        <%= hidden_field_tag :q, @query if @query.present? %>
+                        <% { "reviewer" => "Reviewer", "fraud" => "Fraud" }.each do |role, label| %>
+                          <label><%= check_box_tag "review_roles[]", role, user.review_roles.include?(role), id: "#{dom_id(user)}_#{role}" %> <%= label %></label>
+                        <% end %>
+                        <%= form.button "Save", class: "admin__button" %>
+                      <% end %>
+                    <% end %>
+                  </td>
                   <td>
                     <%= user.created_at.strftime("%b %-d") %>
                     <% if user.streak_synced_at %><small class="admin__muted">synced <%= time_ago_in_words(user.streak_synced_at) %> ago</small><% end %>

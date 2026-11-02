@@ -1,0 +1,6 @@
+<%# The review pages (ReviewHelper#review_pages): the one you're on is marked. %>
+<nav class="admin__nav" aria-label="Review pages">
+  <% review_pages.each do |page| %>
+    <%= link_to page[:label], page[:path], aria: { current: ("page" if current_page?(page[:path])) } %>
+  <% end %>
+</nav>

@@ -335,6 +335,28 @@
     text-wrap: pretty;
   }
 
+  /* What a reviewer said: the changes they asked for, over the form, or why it wasn't approved. */
+  .ship__changes {
+    padding: 12px 14px;
+    border: 1px solid var(--border-header);
+    border-inline-start: 3px solid var(--amber-900);
+    background: var(--yellow-100);
+    font: 14px/1.45 var(--font-cell);
+    color: var(--text-primary);
+  }
+
+  .ship__note {
+    max-inline-size: 460px;
+    margin: 8px 0 0;
+    padding-inline-start: 10px;
+    border-inline-start: 3px solid var(--border-header);
+    font: 14px/1.45 var(--font-cell);
+    color: var(--text-primary);
+    white-space: pre-line;
+    text-align: start;
+    overflow-wrap: anywhere;
+  }
+
   .ship__done-actions {
     display: flex;
     flex-wrap: wrap;

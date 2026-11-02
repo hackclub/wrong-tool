@@ -1,0 +1,55 @@
+<% content_for :title, "Review · Wrong Tool" %>
+<% shipped_hours = Ship.latest_per_project.sum(:hours) %>
+
+<%# The review queue: the ships waiting, oldest first, then the latest decided. Each opens in full to decide. Real
+    names and emails are here, so nothing on this page is recorded. %>
+<div class="spreadsheet onboarding project">
+  <%= render "pages/app_bar" %>
+  <%= render "onboarding/formula_bar", name_box: "A1", formula: "=REVIEW(wrong tool)  →  #{@waiting.size} waiting" %>
+
+  <main class="project__sheet">
+    <div class="admin ph-no-capture">
+      <header>
+        <%= render "review/nav" %>
+        <h1 class="project__title">Review</h1>
+        <p class="leaderboard__note">
+          Oldest first: a ship that's shipped again after changes joins at the back. Open one to approve it, ask for
+          changes (they get <%= Ship::CHANGES_DAYS %> days to ship them) or reject it for good. Clippy DMs them your note
+          either way. You've decided <%= pluralize(@decided_today, "ship") %> today;
+          <%= project_hours(shipped_hours) %> hrs across every project that's shipped.
+        </p>
+        <% if notice %><p class="leaderboard__note" role="status"><%= notice %></p><% end %>
+        <% if alert %><p class="leaderboard__note" role="alert"><%= alert %></p><% end %>
+      </header>
+
+      <% { "Waiting" => [ "review-waiting", @waiting, "Nothing's waiting." ],
+           "Decided lately" => [ "review-decided", @decided, "None yet." ] }.each do |heading, (id, ships, empty)| %>
+        <section aria-labelledby="<%= id %>">
+          <h2 class="admin__heading" id="<%= id %>"><%= heading %></h2>
+          <% if ships.empty? %>
+            <p class="leaderboard__note"><%= empty %></p>
+          <% else %>
+            <div class="admin__scroll">
+              <table class="leaderboard__table admin__table admin__table--ships">
+                <thead>
+                  <tr>
+                    <th scope="col">Who</th>
+                    <th scope="col">Ship</th>
+                    <th class="leaderboard__number" scope="col">Hours</th>
+                    <th scope="col">Shipped</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% ships.each do |ship| %>
+                    <%= render "review/ships/row", ship: %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+  </main>
+</div>

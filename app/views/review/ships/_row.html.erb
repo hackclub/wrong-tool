@@ -1,6 +1,6 @@
 <%# locals: (ship:) %>
-<%# One ship in the list: who, their project, what they shipped (a link to it in full), the hours it took, when, and
-    where it stands. %>
+<%# One ship in the list: who, their project, what they shipped (a link to it in full, unless it's yours), the hours
+    it took, when, and where it stands. %>
 <% project = ship.project %>
 <% user = project.user %>
 <tr id="<%= dom_id(ship) %>" data-status="<%= ship.status %>">
@@ -10,7 +10,11 @@
     <small class="admin__muted"><%= user.email %><% if user.slack_display_name.present? %> · <%= user.slack_display_name %><% end %></small>
   </th>
   <td>
-    <%= link_to ship.title, admin_ship_path(ship) %>
+    <% if current_user.may_review?(ship) %>
+      <%= link_to ship.title, review_ship_path(ship) %>
+    <% else %>
+      <%= ship.title %> <span class="admin__muted">(yours)</span>
+    <% end %>
     <small class="admin__muted"><%= project.tool_name %> · <%= ship.hackatime_projects.join(", ").presence || "no Hackatime project" %></small>
   </td>
   <td class="leaderboard__number"><%= project_hours(ship.hours) %></td>
@@ -18,7 +22,7 @@
   <td data-decision="<%= ship.status %>">
     <%= ship_status_label(ship) %>
     <% unless ship.in_review? %>
-      <small class="admin__muted"><%= ship.decided_by&.first_name.presence || "someone" %> · <%= ship.decided_at.strftime("%b %-d") %></small>
+      <small class="admin__muted"><%= reviewer_name(ship.decided_by) %> · <%= ship.decided_at.strftime("%b %-d") %></small>
     <% end %>
   </td>
 </tr>

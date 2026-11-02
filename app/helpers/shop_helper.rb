@@ -117,6 +117,7 @@ module ShopHelper
   def shop_ship_status(project)
     if project.shipped? then [ "#{project_hours(project.hours_to_spend)} hrs", "done" ]
     elsif project.ship_in_review then [ "in review", "review" ]
+    elsif project.latest_ship&.reshippable? then [ "changes asked", "review" ]
     else [ "not yet", "none" ]
     end
   end

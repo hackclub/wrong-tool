@@ -1,11 +1,12 @@
 # Shipping your project: the form, and once it's submitted, that it's in review. Opens once you're set up and your
 # hours come from a Hackatime project, and closes after your deadline, with a couple of quiet days' grace
-# (Project#ship_cutoff).
+# (Project#ship_cutoff). Asked for changes, it opens again with what to change and what you shipped last; rejected,
+# it says why, and never opens again.
 class ShipsController < ApplicationController
   before_action :require_set_up_project
 
   def show
-    @ship = @project.ship_in_review || @project.ships.build(title: @project.title, repo_url: @project.repo_url)
+    @ship = @project.ship_in_review || new_ship
     @closed = !@ship.persisted? && !@project.may_ship?
   end
 
@@ -28,6 +29,13 @@ class ShipsController < ApplicationController
   end
 
   private
+    # Asked for changes, it starts from what you shipped then.
+    def new_ship
+      last = @project.latest_ship
+      last = nil unless last&.changes_requested?
+      @project.ships.build(title: @project.title, repo_url: @project.repo_url, description: last&.description, demo_url: last&.demo_url)
+    end
+
     def require_set_up_project
       @project = current_user&.project
       return redirect_to onboarding_path unless @project

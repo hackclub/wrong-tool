@@ -19,6 +19,22 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr##{dom_id(users(:orpheus))}", text: /admin/
   end
 
+  test "admins make someone a reviewer or fraud reviewer, and take it back" do
+    sign_in_as(users(:orpheus))
+    get admin_users_path
+    assert_select "tr##{dom_id(users(:ana))} form[action=?] input[type=checkbox][name='review_roles[]']", admin_user_path(users(:ana)), 2
+    assert_select "tr##{dom_id(users(:orpheus))}", text: /as an admin/
+
+    patch admin_user_path(users(:ana)), params: { review_roles: %w[reviewer fraud nonsense], q: "pixel" }
+    assert_redirected_to admin_users_path(q: "pixel", anchor: dom_id(users(:ana)))
+    assert_equal %w[reviewer fraud], users(:ana).reload.review_roles
+    assert users(:ana).reviewer?
+
+    patch admin_user_path(users(:ana))
+    assert_empty users(:ana).reload.review_roles
+    assert_not users(:ana).review_staff?
+  end
+
   test "searching narrows it" do
     sign_in_as(users(:orpheus))
     get admin_users_path(q: "pixel")

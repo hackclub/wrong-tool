@@ -90,6 +90,19 @@ class User < ApplicationRecord
     Rails.env.development? || listed_admin?
   end
 
+  # Who can review ships, besides admins (who can do everything): reviewers decide them, fraud reviewers check
+  # they're real. An admin gives these on the People page.
+  REVIEW_ROLES = %w[reviewer fraud].freeze
+
+  def reviewer? = admin? || review_roles.include?("reviewer")
+  def fraud_reviewer? = admin? || review_roles.include?("fraud")
+  def review_staff? = reviewer? || fraud_reviewer?
+
+  # Nobody reviews their own ship, unless they're an admin.
+  def may_review?(ship)
+    admin? || (review_staff? && ship.project.user_id != id)
+  end
+
   # On the list of admins (config/initializers), rather than an admin because it's development.
   def listed_admin?
     slack_id.present? && Rails.configuration.x.admin_slack_ids.include?(slack_id)

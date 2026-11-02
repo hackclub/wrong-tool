@@ -40,8 +40,8 @@ Rails.application.routes.draw do
   delete "n/:token/stop" => "nudge_links#unmute"
 
   # How Clippy's nudges are doing, and what the bandit's learned, wrong tool's numbers day by day, everyone who's
-  # signed in, with seeing the site as any of them, who's asked for more time to ship or for another seller, and every ship in full, to
-  # approve or send back. Admins only.
+  # signed in (with seeing the site as any of them, and who reviews ships), and who's asked for more time to ship or
+  # for another seller. Admins only.
   namespace :admin do
     # Every admin page, and what's waiting on an admin.
     root "home#show"
@@ -50,13 +50,20 @@ Rails.application.routes.draw do
     resources :extensions, only: %i[index update]
     resources :seller_requests, only: %i[index update]
     resources :orders, only: %i[index update]
-    resources :ships, only: %i[index show update]
     resources :projects, only: %i[index show]
-    resources :users, only: :index do
+    resources :users, only: %i[index update] do
       resource :impersonation, only: :create
     end
     # Stopping has to work while you're someone who isn't an admin.
     resource :impersonation, only: :destroy
+  end
+
+  # Reviewing ships: the queue, each ship in full, and deciding it. For admins and reviewers (User::REVIEW_ROLES).
+  namespace :review do
+    root "queue#show"
+    resources :ships, only: :show do
+      resources :decisions, only: :create
+    end
   end
 
   # SQL against the database (config/blazer.yml). Anyone who isn't an admin, or is viewing as someone, gets a not

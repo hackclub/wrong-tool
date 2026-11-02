@@ -66,7 +66,7 @@ class OrderTest < ActiveSupport::TestCase
 
   test "from a seller an admin approved for that console, if there is one" do
     approve(hours: 10)
-    @project.seller_requests.create!(prize: "miyoo", url: "https://www.amazon.de/dp/B0MIYOO").decide!("approved", by: users(:ana))
+    @project.seller_requests.create!(prize: "miyoo", url: "https://www.amazon.de/dp/B0MIYOO").tap { |ship| ship.update!(status: "approved") }
     order = buy("miyoo")
     assert_equal "https://www.amazon.de/dp/B0MIYOO", order.seller_url
     assert_equal "amazon.de", order.seller_name
@@ -95,6 +95,6 @@ class OrderTest < ActiveSupport::TestCase
       @project.ships.create!(title: "Beat Sheet", description: "A rhythm game where every cell is a drum pad, built in Sheets.",
                              repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://beat.sheet", hours:,
                              screenshot: Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png"), screenshot_shows_game: true)
-              .decide!("approved", by: users(:ana))
+              .tap { |ship| ship.update!(status: "approved") }
     end
 end

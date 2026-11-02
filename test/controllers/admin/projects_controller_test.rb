@@ -58,14 +58,14 @@ class Admin::ProjectsControllerTest < ActionDispatch::IntegrationTest
 
     get admin_project_path(@ana)
     assert_select ".admin__ship-details a[href=?]", admin_project_path(projects(:orpheus)), "A rhythm game in Spreadsheet"
-    assert_select ".admin__tile a[href=?]", admin_ship_path(ship), "In review"
+    assert_select ".admin__tile a[href=?]", review_ship_path(ship), "In review"
     assert_select "#admin-project-ships ~ div tr##{dom_id(ship)}", /In review/
 
     get admin_projects_path
-    assert_select "tr##{dom_id(@ana)} a[href=?]", admin_ship_path(ship), "In review"
+    assert_select "tr##{dom_id(@ana)} a[href=?]", review_ship_path(ship), "In review"
     assert_select "tr##{dom_id(@ana)} a[href=?]", admin_project_path(projects(:orpheus)), "A rhythm game in Spreadsheet"
 
-    get admin_ship_path(ship)
+    get review_ship_path(ship)
     assert_select ".admin__tile a[href=?]", admin_project_path(@ana), "Pong in Figma"
   end
 

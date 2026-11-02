@@ -1,0 +1,179 @@
+/* The review pages (/review): a ship's evidence on the left and its decision panel on the right, sticky, so it's in
+   reach however far down you've read; on a phone, the panel follows the evidence. The rest is the admin pages' look
+   (project/admin.css). */
+@layer sections {
+  .admin.review {
+    max-inline-size: 1280px;
+  }
+
+  .review__columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 28px;
+    align-items: start;
+
+    @media (width < 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .review__evidence {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-inline-size: 0;
+  }
+
+  .review__panel {
+    position: sticky;
+    inset-block-start: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border-header);
+    background: var(--surface-grid);
+
+    @media (width < 900px) {
+      position: static;
+    }
+  }
+
+  .review__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font: 13px var(--font-cell);
+  }
+
+  /* Only the picked verdict's fields and words. */
+  .review__form:has([value="approved"]:checked) [data-when]:not([data-when~="approved"]),
+  .review__form:has([value="changes_requested"]:checked) [data-when]:not([data-when~="changes_requested"]),
+  .review__form:has([value="rejected"]:checked) [data-when]:not([data-when~="rejected"]) {
+    display: none;
+  }
+
+  .review__verdicts {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--border-control);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .review__verdict {
+    flex: 1;
+    position: relative;
+    text-align: center;
+    cursor: pointer;
+
+    & + & {
+      border-inline-start: 1px solid var(--border-control);
+    }
+
+    input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    span {
+      display: block;
+      padding: 7px 4px;
+      font-weight: 500;
+    }
+
+    &:has(input:checked) span {
+      background: var(--blue-100);
+      color: var(--blue-700);
+    }
+
+    &:has(input:focus-visible) span {
+      outline: 2px solid var(--selection);
+      outline-offset: -2px;
+    }
+  }
+
+  .review__hint {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  .review__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    textarea,
+    input[type="url"] {
+      padding: 6px 8px;
+      border: 1px solid var(--border-header);
+      font: 13px var(--font-cell);
+      resize: vertical;
+    }
+  }
+
+  .review__submit {
+    align-self: flex-start;
+  }
+
+  .review__errors {
+    margin: 0;
+    padding: 8px 8px 8px 24px;
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+
+  .review__history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: 13px var(--font-cell);
+  }
+
+  .admin .review__call[data-decision] {
+    padding: 8px 10px;
+    color: var(--text-primary);
+    border-inline-start: 3px solid var(--border-header);
+    background: var(--surface-header);
+
+    &[data-decision="approved"] {
+      border-color: var(--green);
+    }
+
+    &[data-decision="rejected"] {
+      border-color: var(--red);
+    }
+  }
+
+  .review__call-head,
+  .review__call-text {
+    margin: 0;
+  }
+
+  .review__call-text {
+    margin-block-start: 4px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+
+    a {
+      color: var(--blue-700);
+    }
+  }
+
+  .admin [data-decision="changes_requested"] {
+    color: var(--amber-900);
+  }
+
+  .admin [data-decision="rejected"] {
+    color: var(--red);
+  }
+}

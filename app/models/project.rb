@@ -345,6 +345,16 @@ class Project < ApplicationRecord
     ships.in_review.order(:created_at).last
   end
 
+  # Your newest ship, whatever happened to it: the one that stands.
+  def latest_ship
+    ships.select(&:persisted?).max_by { |ship| [ ship.created_at, ship.id ] }
+  end
+
+  # A reviewer rejected a ship of yours, which is final: no shipping again.
+  def ship_rejected?
+    ships.any?(&:rejected?)
+  end
+
   # When you have to ship by: wrong tool's last day, everyone's, extension or not (Program::EXTENSION_DAYS).
   def deadline
     Program::DATES.end
@@ -363,8 +373,11 @@ class Project < ApplicationRecord
     last_day.in_time_zone(user.time_zone).end_of_day
   end
 
+  # Rejected, never again. Asked for changes, you can ship them in for Ship::CHANGES_DAYS, even after it's all closed.
   def may_ship?(now: Time.current)
-    now <= ship_cutoff
+    return false if ship_rejected?
+
+    latest_ship&.reshippable?(now:) || now <= ship_cutoff
   end
 
   # Nobody can ask for more time any more: wrong tool's last day is where an extension would have taken you.

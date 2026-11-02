@@ -86,11 +86,11 @@
                   </td>
                   <td>
                     <% if (ship = project.ship_in_review) %>
-                      <%= link_to "In review", admin_ship_path(ship) %>
+                      <%= link_to "In review", review_ship_path(ship) %>
                     <% elsif project.shipped? %>
-                      <%= link_to "Approved", admin_ship_path(project.ships.max_by(&:created_at)), data: { decision: "approved" } %>
-                    <% elsif project.ships.any? %>
-                      <%= link_to "Sent back", admin_ship_path(project.ships.max_by(&:created_at)), data: { decision: "rejected" } %>
+                      <%= link_to "Approved", review_ship_path(project.ships.max_by(&:created_at)), data: { decision: "approved" } %>
+                    <% elsif (ship = project.ships.max_by(&:created_at)) %>
+                      <%= link_to ship_status_label(ship), review_ship_path(ship), data: { decision: ship.status } %>
                     <% else %>
                       <span class="admin__muted">—</span>
                     <% end %>

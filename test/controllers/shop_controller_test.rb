@@ -229,7 +229,7 @@ class ShopControllerTest < ActionDispatch::IntegrationTest
       projects(:orpheus).ships.create!(title: "Beat Sheet", description: "A rhythm game where every cell is a drum pad, built in Sheets.",
                                        repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://beat.sheet", hours:,
                                        screenshot: fixture_file_upload("screenshot.png", "image/png"), screenshot_shows_game: true)
-                         .decide!("approved", by: users(:ana))
+                         .tap { |ship| ship.update!(status: "approved") }
     end
 
     def sign_in_as(_auth)

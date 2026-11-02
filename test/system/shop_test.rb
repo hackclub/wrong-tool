@@ -132,7 +132,7 @@ class ShopTest < ApplicationSystemTestCase
     projects(:orpheus).ships.create!(title: "Beat Sheet", description: "A rhythm game where every cell is a drum pad, built in Sheets.",
                                      repo_url: "https://github.com/orpheus/beat-sheet", demo_url: "https://beat.sheet", hours: 20,
                                      screenshot: Rack::Test::UploadedFile.new(file_fixture("screenshot.png"), "image/png"), screenshot_shows_game: true)
-                      .decide!("approved", by: users(:ana))
+                      .tap { |ship| ship.update!(status: "approved") }
     visit shop_path
     assert_selector ".shop__say", text: "20 hours to spend. that covers the Mini Plus in gray, so it's yours to buy.", wait: 5
     assert_selector "#shop-miyoo[data-state=ready] .shop__tile-tag", exact_text: "ready"

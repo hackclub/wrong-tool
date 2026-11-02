@@ -1,14 +1,17 @@
 # One time someone shipped their project: the title, description, links and screenshot they submitted (kept as they
-# were, whatever happens to the project after) and the hours it took. It's in review until an admin approves it or
-# sends it back (Admin::ShipsController); sent back, they can ship again.
+# were, whatever happens to the project after) and the hours it took. It's in review until a reviewer approves it,
+# asks for changes or rejects it (ShipReview, from Review::ShipsController). Asked for changes, they can ship again
+# for CHANGES_DAYS, deadline or not; rejected is final. Every call is kept (review_decisions).
 class Ship < ApplicationRecord
-  STATUSES = %w[in_review approved rejected].freeze
-  DECISIONS = %w[approved rejected].freeze
+  STATUSES = %w[in_review changes_requested approved rejected].freeze
+  # How long you have to ship again with the changes asked for, from the day they're asked.
+  CHANGES_DAYS = 7
   DESCRIPTION_MIN = 40
   URL = %r{\Ahttps?://\S+\z}
 
   belongs_to :project
   belongs_to :decided_by, class_name: "User", optional: true
+  has_many :review_decisions, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :ship
   has_one_attached :screenshot
 
   # The checkbox under the screenshot: it shows the game running inside the tool, not a mockup.
@@ -33,17 +36,26 @@ class Ship < ApplicationRecord
   scope :latest_per_project, -> { where(id: select("MAX(id)").group(:project_id)) }
 
   def in_review? = status == "in_review"
+  def changes_requested? = status == "changes_requested"
   def approved? = status == "approved"
   def rejected? = status == "rejected"
 
-  # An admin's call, made once: false if it's been made already (or isn't a decision). Approving grants the hours it
-  # took for the shop to spend (Project#hours_approved), or fewer if the admin says so; never more, never below 0.
-  def decide!(decision, by:, hours: nil)
-    return false unless in_review? && DECISIONS.include?(decision)
+  # The call that decided it (the latest verdict), for its note to the maker.
+  def verdict
+    review_decisions.select { |decision| ReviewDecision::VERDICTS.include?(decision.decision) }.last
+  end
 
-    approved_hours = (hours.presence&.to_d&.clamp(0, self.hours) || self.hours if decision == "approved")
-    update!(status: decision, decided_by: by, decided_at: Time.current, approved_hours:)
-    true
+  # Asked for changes, the end of the CHANGES_DAYS-th day after, where they are.
+  def changes_due_at
+    return unless changes_requested? && decided_at
+
+    zone = project.user.time_zone
+    (decided_at.in_time_zone(zone).to_date + CHANGES_DAYS).in_time_zone(zone).end_of_day
+  end
+
+  # Asked for changes and still in time to ship them.
+  def reshippable?(now: Time.current)
+    changes_requested? && changes_due_at.present? && now <= changes_due_at
   end
 
   private

@@ -1,6 +1,6 @@
 namespace :ships do
-  # One time, the day before the deadline: Clippy DMs everyone who hasn't shipped (nothing approved or in review, so
-  # someone sent back is asked again) to ship what they've got. DRY_RUN=1 lists who'd hear without sending. Nothing
+  # One time, the day before the deadline: Clippy DMs everyone who hasn't shipped (nothing approved, in review or
+  # rejected, so someone asked for changes is asked again) to ship what they've got. DRY_RUN=1 lists who'd hear without sending. Nothing
   # notes who's had it, so run it once.
   #
   #   bin/rails ships:remind DRY_RUN=1
@@ -10,7 +10,7 @@ namespace :ships do
     dm = "wrong tool ends %{deadline}, and *%{title}* hasn't shipped yet. If it's playable, ship it, finished or not.\n" \
          ":clippy-hopeful: clippy is holding the door open for you. :blob-wiggle:"
     dry_run = ENV["DRY_RUN"].present?
-    owed = Project.where.not(id: Ship.where(status: %w[approved in_review]).select(:project_id)).includes(:user).order(:id)
+    owed = Project.where.not(id: Ship.where(status: %w[approved in_review rejected]).select(:project_id)).includes(:user).order(:id)
 
     sent = owed.count do |project|
       user = project.user
@@ -29,8 +29,8 @@ namespace :ships do
     puts "#{sent} of #{owed.size} #{dry_run ? "would be " : ""}DMed."
   end
 
-  # Last call, after shipping closed: Clippy DMs everyone who never shipped (nothing approved or in review) but logged
-  # an hour or more that shipping's open for them again, through Program::LAST_CALL_THROUGH. Noted on the project
+  # Last call, after shipping closed: Clippy DMs everyone who never shipped (nothing approved, in review or rejected)
+  # but logged an hour or more that shipping's open for them again, through Program::LAST_CALL_THROUGH. Noted on the project
   # (last_call_dmed_at), so running it twice sends nothing new. DRY_RUN=1 lists who'd hear without sending.
   #
   #   bin/rails ships:last_call DRY_RUN=1
@@ -41,7 +41,7 @@ namespace :ships do
          "finished or not. If it plays, ship it.\n:clippy-hopeful: clippy propped the door back open for you. :blob-wiggle:"
     dry_run = ENV["DRY_RUN"].present?
     owed = Project.where(last_call_dmed_at: nil)
-                  .where.not(id: Ship.where(status: %w[approved in_review]).select(:project_id))
+                  .where.not(id: Ship.where(status: %w[approved in_review rejected]).select(:project_id))
                   .includes(:user).order(:id)
                   .select { |project| project.hours_logged >= 1 }
 
