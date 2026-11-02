@@ -187,13 +187,22 @@ class ProjectDeadlineTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 10, 6)..Date.new(2026, 10, 27), project.program_dates
   end
 
-  test "ship closes at the end of the deadline where you are, plus two quiet days" do
+  test "ship closes at the end of the deadline where you are, plus two quiet days, once you've shipped" do
     project = projects(:orpheus)
+    def project.shipped? = true
     assert_equal Time.utc(2026, 10, 29, 23, 59, 59), project.ship_cutoff.change(usec: 0), "UTC until they've said where they are"
 
     users(:orpheus).update!(timezone: "America/New_York")
-    assert project.reload.may_ship?(now: Time.utc(2026, 10, 30, 2))
+    project.user.reload
+    assert project.may_ship?(now: Time.utc(2026, 10, 30, 2))
     assert_not project.may_ship?(now: Time.utc(2026, 10, 30, 4))
+  end
+
+  test "never shipped, ship stays open through last call" do
+    project = projects(:orpheus)
+    assert_equal Time.utc(2026, 11, 5, 23, 59, 59), project.ship_cutoff.change(usec: 0)
+    assert project.may_ship?(now: Time.utc(2026, 11, 2, 12))
+    assert_not project.may_ship?(now: Time.utc(2026, 11, 6, 1))
   end
 
   test "nobody can ask for more time any more" do

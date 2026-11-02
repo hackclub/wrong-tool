@@ -66,7 +66,7 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ship__error", /has to show the game running/
   end
 
-  test "shipping closes after the deadline where you are, with two quiet days nobody's told about" do
+  test "never shipped, shipping stays open past the quiet days through last call, then closes" do
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     users(:orpheus).update!(timezone: "America/New_York")
@@ -79,7 +79,12 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
       assert_select ".project__ship", /Ship/
     end
 
-    travel_to Time.utc(2026, 10, 30, 5) do
+    travel_to Time.utc(2026, 11, 6, 4) do # 11pm on Nov 5 in New York: last call, still open
+      get project_ship_path
+      assert_select "form.ship__form"
+    end
+
+    travel_to Time.utc(2026, 11, 6, 6) do
       get project_ship_path
       assert_response :success
       assert_select ".ship__done[data-state=closed] .ship__done-title", "Shipping's closed."

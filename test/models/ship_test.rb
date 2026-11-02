@@ -102,6 +102,43 @@ class ShipTest < ActiveSupport::TestCase
     assert_equal [ "Ship it", "https://wrong.hackclub.com/ship" ], dms.first[:args].third["link"]
   end
 
+  test "last call DMs everyone who never shipped with an hour or more, once, and a dry run sends nothing" do
+    require "rake"
+    Rails.application.load_tasks unless Rake::Task.task_defined?("ships:last_call")
+    ship_now(hours: 2) # in review: not owed
+    ana = projects(:ana)
+    link_hackatime(ana.user, token: "token-heidi")
+    ana.update!(hackatime_projects: [ "heidis-game" ])
+    ana.ships.create!(title: "Pong in Figma", description: "Two paddles, one ball, and every frame is a Figma component.",
+                      repo_url: "https://example.com/repo", demo_url: "https://example.com/demo", hours: 1,
+                      screenshot: fixture_upload, screenshot_shows_game: true).update!(status: "rejected")
+    ana.user.streak_activities.create!(activity_date: Program::DATES.begin, coded_seconds: 2 * 3600)
+
+    with_env("DRY_RUN" => "1") { capture_io { Rake::Task["ships:last_call"].execute } }
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
+
+    capture_io { Rake::Task["ships:last_call"].execute }
+    dms = enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
+    assert_equal [ "U0ANA" ], dms.map { |job| job[:args].first }
+    assert_equal "Shipping's open again for anyone who didn't make it. *Pong in Figma* can ship until the end of Nov 5, " \
+                 "finished or not. If it plays, ship it.\n:clippy-hopeful: clippy propped the door back open for you. :blob-wiggle:",
+                 dms.first[:args].second
+    assert_not_nil ana.reload.last_call_dmed_at
+
+    clear_enqueued_jobs
+    capture_io { Rake::Task["ships:last_call"].execute }
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }, "once"
+  end
+
+  test "last call skips anyone under an hour" do
+    require "rake"
+    Rails.application.load_tasks unless Rake::Task.task_defined?("ships:last_call")
+    @project.user.streak_activities.create!(activity_date: Program::DATES.begin, coded_seconds: 30 * 60)
+
+    capture_io { Rake::Task["ships:last_call"].execute }
+    assert_empty enqueued_jobs.select { |job| job[:job] == SlackMessageJob }
+  end
+
   private
     def with_env(vars)
       originals = vars.keys.index_with { |key| ENV[key] }

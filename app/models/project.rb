@@ -355,9 +355,12 @@ class Project < ApplicationRecord
     Program::DATES.begin..deadline
   end
 
-  # Ship closes at the end of the deadline where you are, plus Program::SHIP_GRACE_DAYS nobody's told about.
+  # Ship closes at the end of the deadline where you are, plus Program::SHIP_GRACE_DAYS nobody's told about. Never
+  # shipped (sent back counts), it stays open for last call (Program::LAST_CALL_THROUGH).
   def ship_cutoff
-    (deadline + Program::SHIP_GRACE_DAYS).in_time_zone(user.time_zone).end_of_day
+    last_day = deadline + Program::SHIP_GRACE_DAYS
+    last_day = [ last_day, Program::LAST_CALL_THROUGH ].max unless shipped?
+    last_day.in_time_zone(user.time_zone).end_of_day
   end
 
   def may_ship?(now: Time.current)

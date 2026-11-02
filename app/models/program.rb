@@ -7,6 +7,9 @@ module Program
   EXTENSION_DAYS = 7
   # Ship stays open this many days past the deadline, quietly: nobody's told, and the site keeps saying the deadline.
   SHIP_GRACE_DAYS = 2
+  # Last call, after it all closed: anyone who never shipped can still ship through this day (Project#ship_cutoff), and
+  # ships:last_call DMs them to.
+  LAST_CALL_THROUGH = Date.new(2026, 11, 5)
   # The first hours pay more (Shop::FIRST_RATE an hour; Shop::RATE after), and the stats count who's past them.
   HOURS_PER_REWARD = 10
   # Hackatime time from this day on counts: only projects worked on since then can be linked.
