@@ -31,23 +31,22 @@ class GalleryControllerTest < ActionDispatch::IntegrationTest
     assert_select ".gallery__title", { text: "Old Pong", count: 0 }
     assert_select "##{dom_id(pong)}" do
       assert_select ".gallery__title", "Pong in Figma"
-      assert_select ".gallery__status[data-status=approved]", "Approved"
       assert_select ".gallery__tool", /in Figma · 6 hrs/
       assert_select ".gallery__maker", /pixelana/
       assert_select "a.gallery__link--play[href='https://example.com/pong-in-figma']", "Play"
       assert_select "a.gallery__link[href='https://github.com/pixelana/game']", "Code"
     end
-    assert_select "##{dom_id(rhythm)} .gallery__status", "In review"
+    assert_select "##{dom_id(rhythm)} .gallery__title", "Rhythm sheet"
     assert_no_match(/Ana Lovelace|ana@hackclub/, response.body)
   end
 
-  test "not approved, it's still there, saying so" do
+  test "not approved, it's still there, with nothing saying so: the gallery's a showcase" do
     ship!(projects(:ana), "Pong in Figma", status: "rejected")
 
     get gallery_path
 
     assert_select ".gallery__card", 1
-    assert_select ".gallery__status[data-status=rejected]", "Not approved"
+    assert_no_match(/approved|in review/i, css_select(".gallery__card").text)
   end
 
   test "filtered by the wrong tool, and your own game is yours" do
