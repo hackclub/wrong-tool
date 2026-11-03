@@ -32,10 +32,14 @@ class Ship < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
   validates :title, presence: true, length: { maximum: 80 }
-  validates :description, length: { minimum: DESCRIPTION_MIN, too_short: "needs at least %{count} characters" }
-  validates :repo_url, :demo_url, format: { with: URL, message: "should be a link" }
-  validates :screenshot, presence: { message: "is needed" }
-  validate :screenshot_is_an_image
+  # What the maker submitted is checked when they submit or edit it, not when a reviewer's call is saved
+  # (#record_call!): ships from before a rule existed can still be decided.
+  with_options on: %i[create update] do
+    validates :description, length: { minimum: DESCRIPTION_MIN, too_short: "needs at least %{count} characters" }
+    validates :repo_url, :demo_url, format: { with: URL, message: "should be a link" }
+    validates :screenshot, presence: { message: "is needed" }
+    validate :screenshot_is_an_image
+  end
   validates :screenshot_shows_game, acceptance: { message: "has to show the game running, not a mockup", accept: true },
                                     on: :create
 
@@ -81,6 +85,12 @@ class Ship < ApplicationRecord
   # Asked for changes and still in time to ship them.
   def reshippable?(now: Time.current)
     changes_requested? && changes_due_at.present? && now <= changes_due_at
+  end
+
+  # Saves a reviewer's or the fraud check's call. Status and holds are still checked; what the maker submitted isn't.
+  def record_call!(attributes)
+    assign_attributes(attributes)
+    save!(context: :review)
   end
 
   private

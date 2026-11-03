@@ -37,6 +37,16 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert ship.reload.approved?
   end
 
+  test "a ship from before today's rules, with no screenshot and a short description, can still be decided" do
+    ship = ship_now(hours: 3)
+    ship.screenshot.purge
+    ship.update_column(:description, "tiny")
+    assert_not ship.reload.valid?, "the maker couldn't submit it like this now"
+
+    assert decide(ship, "approved", approved_hours: "3", justification: checked).persisted?
+    assert ship.reload.approved?
+  end
+
   test "the most of any approved ship counts, since each counts every hour up to it" do
     first = ship_now(hours: 6)
     decide(first, "approved", approved_hours: "6", justification: checked)

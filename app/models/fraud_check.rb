@@ -25,12 +25,12 @@ module FraudCheck
         made.errors.add(:base, refusal)
       elsif made.save
         if pass
-          ship.update!(fraud_status: made.mark_sus || score <= SUS_UP_TO ? "sus" : "good", fraud_score: score,
+          ship.record_call!(fraud_status: made.mark_sus || score <= SUS_UP_TO ? "sus" : "good", fraud_score: score,
                        **(ship.review_hold == "fraud" ? { review_hold: nil, hold_note: nil } : {}))
           ReviewClaim.release(ship, queue: "fraud")
           finalized = ShipReview.finalize_if_ready(ship)
         else
-          ship.update!(fraud_status: "fraud", fraud_score: score, status: "rejected", decided_by: by, decided_at: made.created_at,
+          ship.record_call!(fraud_status: "fraud", fraud_score: score, status: "rejected", decided_by: by, decided_at: made.created_at,
                        approved_hours: nil, review_hold: nil, hold_note: nil, review_approved_at: nil)
           ReviewClaim.release(ship)
         end

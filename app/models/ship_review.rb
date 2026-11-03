@@ -41,7 +41,7 @@ module ShipReview
     return false unless ship.awaiting_fraud? && ship.fraud_passed?
 
     approval = ship.review_decisions.reload.select(&:approved?).last
-    ship.update!(status: "approved", approved_hours: approval.approved_hours, decided_by: approval.reviewer, decided_at: Time.current,
+    ship.record_call!(status: "approved", approved_hours: approval.approved_hours, decided_by: approval.reviewer, decided_at: Time.current,
                  review_hold: nil, hold_note: nil)
     ReviewClaim.release(ship)
     true
@@ -73,12 +73,12 @@ module ShipReview
   def self.apply(ship, decision)
     case decision.decision
     when "approved"
-      ship.update!(review_approved_at: decision.created_at, review_hold: nil, hold_note: nil)
+      ship.record_call!(review_approved_at: decision.created_at, review_hold: nil, hold_note: nil)
     when "send_fraud", "send_admin"
-      ship.update!(review_hold: SENDS.key(decision.decision), hold_note: decision.justification)
+      ship.record_call!(review_hold: SENDS.key(decision.decision), hold_note: decision.justification)
       ReviewClaim.release(ship, queue: "review")
     else
-      ship.update!(status: decision.decision, decided_by: decision.reviewer, decided_at: decision.created_at, approved_hours: nil,
+      ship.record_call!(status: decision.decision, decided_by: decision.reviewer, decided_at: decision.created_at, approved_hours: nil,
                    review_hold: nil, hold_note: nil, review_approved_at: nil)
       ReviewClaim.release(ship)
     end
