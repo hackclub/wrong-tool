@@ -28,12 +28,18 @@ class ProjectsController < ApplicationController
 
   # Signing the pledge (the onboarding controller posts it once the ceremony's done). Once you've pledged, going
   # through onboarding again leaves your pledge alone and takes you back to your project; you change your tool and
-  # pace there.
+  # pace there. Onboarding says so, with the title of the project you kept.
   def create
     return head :unauthorized unless signed_in?
 
     if (project = current_user.project)
-      return render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path }
+      PostHog.capture(
+        distinct_id: current_user.posthog_distinct_id,
+        event: "project_already_pledged"
+      ) if Rails.configuration.x.posthog_configured
+
+      return render json: { location: accept_pending_buddy_invite(project) ? buddy_path : project_path,
+                            already_pledged: true, title: project.title }
     end
 
     project = current_user.build_project
