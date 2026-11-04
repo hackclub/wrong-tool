@@ -420,14 +420,14 @@ export default class extends Controller {
   #signPledge() {
     const signedOn = isoDate(new Date())
     if (reducedMotion()) {
-      this.#set({ pledged: true, signing: false, signedOn, kept: null })
+      this.#set({ pledged: true, signing: false, signedOn })
       this.#congratulate(`Signed. I'll check in ${this.checkInsValue[this.state.buildTime]} to keep you on track.`)
       this.#showDayOne()
       this.#saveAnswers()
       return this.saveProject()
     }
 
-    this.#set({ signing: false, signTick: 0, signedOn, holdP: 1, kept: null })
+    this.#set({ signing: false, signTick: 0, signedOn, holdP: 1 })
     this.#congratulate(`Signed. I'll check in ${this.checkInsValue[this.state.buildTime]} to keep you on track.`)
     clearInterval(this.ceremonyTicker)
     this.ceremonyTicker = setInterval(() => {
