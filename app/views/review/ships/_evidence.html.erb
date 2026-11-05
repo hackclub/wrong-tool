@@ -1,6 +1,7 @@
 <%# locals: (ship:, evidence:) %>
-<%# What was gathered about the ship (ShipEvidence): its Hackatime time a day and its long sessions, its repo and
-    commits, the demo link and the same links shipped elsewhere. Times are the maker's. Resync gathers it again. %>
+<%# What was gathered about the ship (ShipEvidence): its Hackatime time a day and its long sessions, what Hackatime
+    makes of the maker's hours, its repo and commits, the demo link, the maker's Lapse timelapses of it, and the same
+    links shipped elsewhere. Reviewers only, all of it. Times are the maker's. Resync gathers it again. %>
 <% data = evidence&.data || {} %>
 <% time = data["hackatime"] %>
 <% repo = data["repo"] %>
@@ -34,6 +35,13 @@
         <% if time.key?("after_last_commit_seconds") %>· <%= hrs.(time["after_last_commit_seconds"]) %> hrs after the last commit<% end %>
         · their time (<%= zone.tzinfo.identifier %>)
       </p>
+      <% if time["trust_level"].present? %>
+        <p class="review__trust" data-trust="<%= time["trust_level"] %>">
+          <strong>Hackatime's own call:</strong> <%= Hackatime.trust_label(time["trust_level"]) %>
+          (trust level <%= time["trust_level"] %><% if time["trust_checked_at"].present? %>, <%= time["trust_stale"] ? "last asked" : "asked" %>
+          <%= time_ago_in_words(Time.zone.parse(time["trust_checked_at"])) %> ago<% end %>)<% if time["trust_stale"] %>. Hackatime wouldn't say this time<% end %>.
+        </p>
+      <% end %>
       <% first_day = Program::HACKATIME_START %>
       <% last_day = [ ship.created_at.in_time_zone(zone).to_date, first_day ].max %>
       <ol class="review__days" aria-label="Time a day">
@@ -108,6 +116,31 @@
         <%= demo["reachable"] ? "opens" : "doesn't open" %>
         (<%= demo["status"] ? "answers #{demo["status"]}" : demo["error"] %>)
       </p>
+    <% end %>
+
+    <% if (timelapses = data["lapse"]).present? %>
+      <%# Lapse recordings of the ship's Hackatime projects: watch what they said they built being built. The video
+          link is signed and may have gone stale since it was gathered, so each one links to its page on Lapse too. %>
+      <h3 class="review__subheading">Timelapses on Lapse · <%= pluralize(timelapses.size, "recording") %></h3>
+      <ul class="review__timelapses">
+        <% timelapses.each do |timelapse| %>
+          <li>
+            <p class="leaderboard__note">
+              <%= link_to timelapse["name"].presence || "Untitled", timelapse["page_url"], target: "_blank", rel: "noopener" %>
+              <% if timelapse["hackatime_project"].present? %>· <%= timelapse["hackatime_project"] %><% end %>
+              <% if timelapse["seconds"].to_i.positive? %>· <%= timelapse["seconds"].to_i.divmod(60).then { |minutes, seconds| "#{minutes}:#{"%02d" % seconds}" } %> long<% end %>
+              <% if timelapse["recorded_at"].present? %>· <%= Time.zone.parse(timelapse["recorded_at"]).in_time_zone(zone).strftime("%b %-d, %H:%M") %><% end %>
+              <% if timelapse["visibility"].present? %>· <%= timelapse["visibility"].downcase %><% end %>
+            </p>
+            <% if timelapse["playback_url"].present? %>
+              <video controls preload="none" poster="<%= timelapse["thumbnail_url"] %>" src="<%= timelapse["playback_url"] %>"></video>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% elsif evidence.sources.key?("lapse") && evidence.sources["lapse"] == "ok" %>
+      <h3 class="review__subheading">Timelapses on Lapse</h3>
+      <p class="leaderboard__note">None of this ship's Hackatime projects: they didn't record one, or not on Lapse.</p>
     <% end %>
 
     <% if data["duplicates"].present? %>

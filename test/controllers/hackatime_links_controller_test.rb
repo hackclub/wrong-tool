@@ -16,6 +16,26 @@ class HackatimeLinksControllerTest < ActionDispatch::IntegrationTest
     assert projects(:orpheus).step_done?("hackatime")
   end
 
+  test "linking keeps what Hackatime makes of their hours, and changes nothing for them" do
+    before = Hackatime.stubbed_trust
+    Hackatime.stubbed_trust = { "1001" => "red" }
+    sign_in_as_orpheus
+    mock_hackatime(token: "token-orpheus")
+    post "/auth/hackatime"
+    follow_redirect!
+
+    user = users(:orpheus).reload
+    assert_equal "red", user.hackatime_trust_level
+    assert user.hackatime_trust_checked_at.present?
+    assert user.hackatime_linked?, "Hackatime's call on them is a reviewer's business, not a door"
+    assert_equal "hop", flash[:clippy]
+    get project_path
+    assert_response :success
+    assert_no_match(/trust/i, response.body, "and nothing about it is on their own pages")
+  ensure
+    Hackatime.stubbed_trust = before
+  end
+
   test "a token Hackatime doesn't recognize links nothing" do
     sign_in_as_orpheus
     mock_hackatime(token: "nonsense")
