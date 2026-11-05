@@ -46,6 +46,15 @@ class User < ApplicationRecord
     hackatime_uid.present? && hackatime_access_token.present?
   end
 
+  # What Hackatime makes of their hours, from when they linked and from the last time a ship of theirs was gathered
+  # evidence for (Hackatime.trust, ShipEvidence). Reviewers see it; they never do.
+  def note_hackatime_trust!(level)
+    update_columns(hackatime_trust_level: level.presence, hackatime_trust_checked_at: Time.current) if persisted?
+  end
+
+  def hackatime_untrusted? = hackatime_trust_level == Hackatime::TRUST_UNTRUSTED
+  def hackatime_suspect? = hackatime_trust_level == Hackatime::TRUST_SUSPECT
+
   # Your timezone (IANA, like "America/New_York"), from your browser whenever it says something different, so it
   # follows you when you travel. Anything that isn't a real timezone is ignored.
   def remember_timezone(name)

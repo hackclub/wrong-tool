@@ -2,10 +2,12 @@
 # again on Resync), so the review page never waits on anyone else:
 #
 #   hackatime   its sessions on the ship's Hackatime projects, from Program::HACKATIME_START to the ship: time a day
-#               (in the maker's timezone), the long ones, and time after the last commit
+#               (in the maker's timezone), the long ones, time after the last commit, and what Hackatime itself
+#               makes of the maker's hours (its trust level)
 #   repo        the GitHub repo (or that it isn't on GitHub, or isn't there), its README, and the commits in the
 #               same window
 #   demo        whether the demo link opens (DemoProbe)
+#   lapse       the maker's Lapse timelapses of the ship's Hackatime projects, to watch it being built (Lapse)
 #   duplicates  other projects' ships with the same repo or demo link
 #
 # Each source says how it went (sources: "ok", or why not), and the flags are worked out again from it (ShipFlag).
@@ -38,6 +40,7 @@ class ShipEvidence < ApplicationRecord
       "hackatime" => gather(sources, "hackatime") { hackatime(ship) },
       "repo" => gather(sources, "github") { repo(ship) },
       "demo" => gather(sources, "demo") { demo(ship) },
+      "lapse" => (gather(sources, "lapse") { lapse(ship) } if Lapse.configured?),
       "duplicates" => duplicates(ship)
     }
     add_time_after_commits(data)
@@ -60,7 +63,7 @@ class ShipEvidence < ApplicationRecord
   rescue Hackatime::Expired
     sources[name] = "Hackatime stopped accepting their token"
     nil
-  rescue Hackatime::Unavailable, Github::Unavailable => error
+  rescue Hackatime::Unavailable, Github::Unavailable, Lapse::Unavailable => error
     sources[name] = "couldn't be reached (#{error.message})"
     nil
   end
@@ -73,7 +76,8 @@ class ShipEvidence < ApplicationRecord
   def self.hackatime(ship)
     user = ship.project.user
     window = window(ship)
-    return { "tracked_seconds" => 0, "days" => {}, "long_sessions" => [], "longest_seconds" => 0, "sessions" => [] } if ship.hackatime_projects.empty?
+    trust = trust(user)
+    return { "tracked_seconds" => 0, "days" => {}, "long_sessions" => [], "longest_seconds" => 0, "sessions" => [], **trust } if ship.hackatime_projects.empty?
 
     spans = Hackatime.heartbeat_spans(user, ship.hackatime_projects, start_date: Program::HACKATIME_START - 1,
                                                                      end_date: ship.created_at.utc.to_date + 2)
@@ -90,7 +94,19 @@ class ShipEvidence < ApplicationRecord
 
     { "tracked_seconds" => sessions.sum { |session| session["seconds"] }, "days" => days.sort.to_h,
       "long_sessions" => long.first(20), "longest_seconds" => long.first&.dig("seconds").to_i,
-      "sessions" => sessions.sort_by { |session| session["start"] }, "timezone" => user.time_zone.tzinfo.identifier }
+      "sessions" => sessions.sort_by { |session| session["start"] }, "timezone" => user.time_zone.tzinfo.identifier, **trust }
+  end
+
+  # What Hackatime makes of their hours now (Hackatime.trust), kept on them too so it's the latest anyone's seen.
+  # If Hackatime won't say this time, the hours still stand: a reviewer gets the last call we were told, marked as
+  # not asked just now.
+  def self.trust(user)
+    level = Hackatime.trust(user)
+    user.note_hackatime_trust!(level)
+    { "trust_level" => level, "trust_checked_at" => Time.current.iso8601 }
+  rescue Hackatime::Expired, Hackatime::Unavailable
+    { "trust_level" => user.hackatime_trust_level, "trust_checked_at" => user.hackatime_trust_checked_at&.iso8601,
+      "trust_stale" => true }
   end
 
   def self.repo(ship)
@@ -113,6 +129,12 @@ class ShipEvidence < ApplicationRecord
   def self.demo(ship)
     result = DemoProbe.check(ship.demo_url)
     { "status" => result.status, "error" => result.error, "reachable" => result.reachable? }
+  end
+
+  # The maker's Lapse timelapses of what this ship's hours were logged against (Lapse). Stored as they came: the
+  # video link is signed and goes stale, so a reviewer gets the watch page too, and Resync fetches fresh ones.
+  def self.lapse(ship)
+    Lapse.timelapses(ship.project.user.email, ship.hackatime_projects).map(&:to_h_for_evidence)
   end
 
   # Other projects' ships with this repo or demo link, however it's written (case, a trailing slash or .git, www).
@@ -142,5 +164,6 @@ class ShipEvidence < ApplicationRecord
     end
   end
 
-  private_class_method :gather, :window, :hackatime, :repo, :demo, :duplicates, :same_link, :add_time_after_commits
+  private_class_method :gather, :window, :hackatime, :trust, :repo, :demo, :lapse, :duplicates, :same_link,
+                       :add_time_after_commits
 end

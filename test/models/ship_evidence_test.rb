@@ -9,10 +9,10 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     link_hackatime(@user)
     @project = projects(:orpheus)
     @project.update!(hackatime_projects: [ "rhythm-game" ])
-    @before = [ Github.stubbed, DemoProbe.stubbed, Hackatime.stubbed_spans ]
+    @before = [ Github.stubbed, DemoProbe.stubbed, Hackatime.stubbed_spans, Hackatime.stubbed_trust, Lapse.stubbed ]
   end
 
-  teardown { Github.stubbed, DemoProbe.stubbed, Hackatime.stubbed_spans = @before }
+  teardown { Github.stubbed, DemoProbe.stubbed, Hackatime.stubbed_spans, Hackatime.stubbed_trust, Lapse.stubbed = @before }
 
   test "shipping asks for it, and it gathers Hackatime, the repo and its commits, and the demo, all from before the ship" do
     Hackatime.stubbed_spans = { "1001" => [ hackatime_span(Time.utc(2026, 10, 7, 14), 90), hackatime_span(Time.utc(2026, 10, 9, 1), 30),
@@ -34,7 +34,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
 
     evidence = ship.reload.evidence
     assert evidence.built?
-    assert_equal({ "hackatime" => "ok", "github" => "ok", "demo" => "ok" }, evidence.sources)
+    assert_equal({ "hackatime" => "ok", "github" => "ok", "demo" => "ok", "lapse" => "ok" }, evidence.sources)
     time = evidence.data["hackatime"]
     assert_equal 120 * 60, time["tracked_seconds"], "not the session after the ship"
     assert_equal({ "2026-10-07" => 90 * 60, "2026-10-08" => 30 * 60 }, time["days"], "9pm on the 8th in New York")
@@ -100,6 +100,75 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     assert_not flag.dismiss!(by: users(:ana), reason: "fine")
     assert flag.reload.dismiss!(by: users(:ana), reason: "public now, I checked by hand")
     assert approve.().persisted?
+  end
+
+  test "what Hackatime makes of their hours is gathered, kept on them, and flagged: red holds up approving, yellow warns" do
+    Hackatime.stubbed_trust = { "1001" => "red" }
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+
+    assert_equal "red", ship.evidence.data["hackatime"]["trust_level"]
+    assert_equal "red", @user.reload.hackatime_trust_level
+    assert @user.hackatime_trust_checked_at.present?
+    assert @user.hackatime_untrusted?
+    flag = ship.flags.find_by(kind: "hackatime_trust")
+    assert_equal [ "danger", "Hackatime doesn't trust their hours (trust level red)" ], [ flag.severity, flag.title ]
+
+    Hackatime.stubbed_trust = { "1001" => "yellow" }
+    ShipEvidence.build!(ship)
+    assert_equal [ "warn", "Hackatime has its doubts about them (trust level yellow)" ],
+                 ship.flags.find_by(kind: "hackatime_trust").then { |one| [ one.severity, one.title ] }
+    assert @user.reload.hackatime_suspect?
+
+    Hackatime.stubbed_trust = { "1001" => "green" }
+    ShipEvidence.build!(ship)
+    assert_nil ship.flags.find_by(kind: "hackatime_trust"), "Hackatime trusting them isn't worth saying"
+    assert_equal "green", @user.reload.hackatime_trust_level
+  end
+
+  test "Hackatime not saying what it makes of their hours leaves the hours standing, with the last call it made" do
+    Hackatime.stubbed_trust = { "1001" => "red" }
+    Hackatime.stubbed_spans = { "1001" => [ hackatime_span(Time.utc(2026, 10, 7, 14), 90) ] }
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+
+    with_hackatime_trust_down { ShipEvidence.build!(ship) }
+    time = ship.evidence.reload.data["hackatime"]
+    assert_equal "ok", ship.evidence.sources["hackatime"]
+    assert_equal 90 * 60, time["tracked_seconds"]
+    assert_equal [ "red", true ], [ time["trust_level"], time["trust_stale"] ]
+    assert_equal "danger", ship.flags.find_by(kind: "hackatime_trust").severity
+  end
+
+  test "Lapse: the maker's timelapses of the ship's Hackatime projects, newest first, and none of anyone else's" do
+    Lapse.stubbed = {
+      @user.email => [ lapse_timelapse(id: "tl1", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 7, 18)),
+                       lapse_timelapse(id: "tl2", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 9, 18)),
+                       lapse_timelapse(id: "tl3", hackatime_project: "dotfiles") ],
+      users(:ana).email => [ lapse_timelapse(id: "tl4", hackatime_project: "rhythm-game") ]
+    }
+
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+
+    lapse = ship.evidence.data["lapse"]
+    assert_equal %w[tl2 tl1], lapse.map { |timelapse| timelapse["id"] }, "theirs, for this ship's project, newest first"
+    assert_equal "https://lapse.hackclub.com/timelapse/tl2", lapse.first["page_url"]
+    assert_equal "ok", ship.evidence.sources["lapse"]
+    assert_empty ship.flags.where(kind: "lapse"), "a recording, or none, is never a flag"
+  end
+
+  test "Lapse not being set up here leaves it out, and Lapse being down only says so" do
+    Lapse.stubbed = nil
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+    assert_not ship.evidence.sources.key?("lapse")
+    assert_nil ship.evidence.data["lapse"]
+
+    Lapse.stubbed = {}
+    with_lapse_down { ShipEvidence.build!(ship) }
+    assert_equal "couldn't be reached (timed out)", ship.evidence.reload.sources["lapse"]
+    assert ship.evidence.built?, "a review never waits on Lapse"
   end
 
   test "the demo check never asks a private network" do

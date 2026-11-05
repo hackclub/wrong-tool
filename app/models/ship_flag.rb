@@ -64,6 +64,13 @@ class ShipFlag < ApplicationRecord
         flags << { kind: "time_after_commits", severity: "warn",
                    title: "#{hours.(time["after_last_commit_seconds"])} tracked after the last commit" }
       end
+      # Hackatime's own call on their hours. Red is Hackatime saying it's caught them logging time they didn't build,
+      # so it holds up approving until someone's looked and said why it's fine.
+      if [ Hackatime::TRUST_UNTRUSTED, Hackatime::TRUST_SUSPECT ].include?(time["trust_level"])
+        flags << { kind: "hackatime_trust", severity: time["trust_level"] == Hackatime::TRUST_UNTRUSTED ? "danger" : "warn",
+                   title: "#{Hackatime.trust_label(time["trust_level"])} (trust level #{time["trust_level"]})",
+                   details: { "trust_level" => time["trust_level"], "checked_at" => time["trust_checked_at"] } }
+      end
     end
 
     if sources["github"] == "ok" && repo

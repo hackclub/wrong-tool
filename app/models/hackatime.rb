@@ -4,9 +4,28 @@ require "net/http"
 # API key that reads your own stats, private or not: the projects you've logged time on since
 # Program::HACKATIME_START (to pick from; cached for a while, and Refresh on the project page asks again) and the
 # spans of time you built on them (for your streak days, which every number of hours comes from: StreakActivity).
+#
+# The same token says who you are on Hackatime and what Hackatime makes of your hours: its trust factor (TRUST_LABELS),
+# kept on you when you link and asked again whenever a ship's evidence is gathered, so a reviewer sees Hackatime's own
+# call on the hours they're approving. That's for reviewers only; nobody's ever shown their own.
 module Hackatime
   Project = Data.define(:name, :seconds) do
     def hours = (seconds / 3600.0).round(1)
+  end
+
+  # Who the token belongs to on Hackatime, and Hackatime's trust level for them ("red", "yellow", "blue", "green",
+  # or nil if it didn't say).
+  Identity = Data.define(:uid, :trust_level)
+
+  # Hackatime's trust factor as it comes: "red" is someone it's caught logging time they didn't build, "yellow"
+  # someone it has its doubts about, "blue" someone too new to have been scored, "green" someone it trusts.
+  TRUST_UNTRUSTED = "red"
+  TRUST_SUSPECT = "yellow"
+  TRUST_LABELS = { TRUST_UNTRUSTED => "Hackatime doesn't trust their hours", TRUST_SUSPECT => "Hackatime has its doubts about them",
+                   "blue" => "Hackatime hasn't scored them yet", "green" => "Hackatime trusts them" }.freeze
+
+  def self.trust_label(level)
+    TRUST_LABELS[level.to_s] || "Hackatime calls them #{level}"
   end
 
   # You haven't linked Hackatime, or it stopped accepting the token you linked with (link it again).
@@ -16,17 +35,42 @@ module Hackatime
   class Unavailable < StandardError; end
 
   # Tests set these instead of asking the real Hackatime: { token => Hackatime user ID },
-  # { Hackatime user ID => [ Project, ... ] } and { Hackatime user ID => [ span, ... ] }.
-  mattr_accessor :stubbed_users, :stubbed_projects, :stubbed_spans
+  # { Hackatime user ID => [ Project, ... ] }, { Hackatime user ID => [ span, ... ] } and
+  # { Hackatime user ID => trust level }.
+  mattr_accessor :stubbed_users, :stubbed_projects, :stubbed_spans, :stubbed_trust
 
-  # Who a token belongs to on Hackatime, or nil.
-  def self.user_id(token)
-    return stubbed_users&.[](token) if stubbed_users
+  # Who a token belongs to on Hackatime, and its trust level for them, or nil if Hackatime wouldn't say.
+  def self.identity(token)
+    if stubbed_users
+      uid = stubbed_users[token]
+      return Identity.new(uid:, trust_level: stubbed_trust&.[](uid)) if uid.present?
+      return nil
+    end
 
     response = get("/api/v1/authenticated/me", bearer: token)
-    JSON.parse(response.body)["id"]&.to_s if response.is_a?(Net::HTTPSuccess)
+    return unless response.is_a?(Net::HTTPSuccess)
+
+    me = who(JSON.parse(response.body))
+    Identity.new(uid: me["id"]&.to_s, trust_level: trust_level_in(me)) if me["id"].present?
   rescue Unavailable, JSON::ParserError
     nil
+  end
+
+  def self.user_id(token) = identity(token)&.uid
+
+  # Hackatime's trust level for someone who's linked, right now: asked again with the token they linked with, since
+  # the one kept when they linked is a snapshot and Hackatime may have made its mind up since.
+  def self.trust(user)
+    raise NotLinked unless user.hackatime_linked?
+    return stubbed_trust&.[](user.hackatime_uid) if stubbed_users
+
+    response = get("/api/v1/authenticated/me", bearer: user.hackatime_access_token)
+    raise Expired if response.is_a?(Net::HTTPUnauthorized)
+    raise Unavailable, "Hackatime answered #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+    trust_level_in(who(JSON.parse(response.body)))
+  rescue JSON::ParserError => error
+    raise Unavailable, error.message
   end
 
   def self.projects(user, refresh: false)
@@ -111,6 +155,16 @@ module Hackatime
     end
   end
 
+  # Hackatime answers /authenticated/me either way: the user, or { "data" => the user }.
+  def self.who(body)
+    body["data"].is_a?(Hash) ? body["data"] : body
+  end
+
+  # Its trust factor, which came as a nested object the day this was written and may yet come flat.
+  def self.trust_level_in(me)
+    (me.dig("trust_factor", "trust_level") || me["trust_level"]).presence&.to_s
+  end
+
   def self.get(path, bearer:)
     uri = URI("#{Rails.configuration.x.hackatime_url}#{path}")
     Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 10) do |http|
@@ -119,5 +173,5 @@ module Hackatime
   rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError, OpenSSL::SSL::SSLError => error
     raise Unavailable, error.message
   end
-  private_class_method :stats, :api_key, :get
+  private_class_method :stats, :api_key, :who, :trust_level_in, :get
 end

@@ -346,6 +346,45 @@
     overflow: auto;
   }
 
+  /* What Hackatime makes of their hours: red is it saying they've logged time they didn't build. */
+  .review__trust {
+    margin: 0;
+    padding: 6px 8px;
+    border-inline-start: 3px solid var(--border-grid);
+    font: 13px var(--font-cell);
+    color: var(--text-primary);
+
+    &[data-trust="red"] { border-inline-start-color: var(--red); }
+    &[data-trust="yellow"] { border-inline-start-color: var(--amber-900); }
+    &[data-trust="green"] { border-inline-start-color: var(--green-dark); }
+  }
+
+  /* Lapse recordings of the ship's Hackatime projects, each with its page on Lapse and the video itself. */
+  .review__timelapses {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    p {
+      margin: 0;
+    }
+
+    a {
+      color: var(--blue-700);
+    }
+
+    video {
+      inline-size: 100%;
+      max-inline-size: 420px;
+      margin-block-start: 4px;
+      border: 1px solid var(--border-grid);
+      background: var(--surface-grid);
+    }
+  }
+
   .review__duplicates {
     margin: 0;
     padding-inline-start: 18px;

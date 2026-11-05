@@ -119,6 +119,31 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     Github.stubbed = {}
   end
 
+  test "the page shows Hackatime's call on their hours and their timelapses of it, and the maker's pages show neither" do
+    before = [ Hackatime.stubbed_trust, Lapse.stubbed ]
+    link_hackatime(users(:ana), token: "token-heidi")
+    Hackatime.stubbed_trust = { "1002" => "yellow" }
+    Lapse.stubbed = { users(:ana).email => [ lapse_timelapse(id: "tl9", hackatime_project: "pong", name: "Pong, hour 2", seconds: 95) ] }
+    ShipEvidence.build!(@ship.reload)
+
+    sign_in_as(users(:orpheus))
+    get review_ship_path(@ship)
+    assert_select ".review__trust[data-trust=yellow]", /Hackatime has its doubts about them \(trust level yellow/
+    assert_select ".review__flag[data-severity=warn]", /Hackatime has its doubts about them \(trust level yellow\)/
+    assert_select ".review__timelapses a[href='https://lapse.hackclub.com/timelapse/tl9']", "Pong, hour 2"
+    assert_select ".review__timelapses", /pong · 1:35 long · Oct 8, 20:00 · unlisted/
+    assert_select ".review__timelapses video[src='https://lapse.hackclub.com/video/tl9.mp4']"
+
+    sign_in_as(users(:ana))
+    get project_path
+    assert_response :success
+    assert_no_match(/trust level|timelapse/i, response.body, "their own pages say nothing of either")
+    get project_ship_path
+    assert_no_match(/trust level|timelapse/i, response.body)
+  ensure
+    Hackatime.stubbed_trust, Lapse.stubbed = before
+  end
+
   test "reviewers never open their own ship" do
     users(:ana).update!(review_roles: [ "reviewer" ])
     sign_in_as(users(:ana))
