@@ -46,7 +46,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     assert_equal({ "orpheus" => 2 }, repo["commit_authors"])
     assert repo["readme"]
     assert evidence.data["demo"]["reachable"]
-    assert_equal [ "few_commits" ], ship.flags.pluck(:kind), "2 commits"
+    assert_equal %w[few_commits lapse_missing], ship.flags.pluck(:kind).sort, "2 commits, and a spreadsheet game with no Lapse recording"
   end
 
   test "flags: marathons, time nobody committed, a missing repo, a broken demo, and the same links as another project" do
@@ -62,7 +62,8 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     assert_equal [ [ "marathon", "danger", "A session of 6h+ without a break (longest 10h)" ],
                    [ "repo_missing", "danger", "The repo isn't public on GitHub (orpheus/beat-sheet)" ],
                    [ "duplicate", "danger", "Another project shipped the same repo link: Pong in Figma" ],
-                   [ "demo_unreachable", "warn", "The demo link answers 404" ] ].sort, flags.sort
+                   [ "demo_unreachable", "warn", "The demo link answers 404" ],
+                   [ "lapse_missing", "warn", "Built on Lapse, but no recordings of rhythm-game before the ship" ] ].sort, flags.sort
 
     Github.stubbed = { "orpheus/beat-sheet" => {
       repo: Github::Repo.new(full_name: "orpheus/beat-sheet", created_at: Time.utc(2026, 8, 1), pushed_at: nil, fork: true,
@@ -70,7 +71,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
       commits: [ commit("c1", Time.utc(2026, 10, 7, 9), "start") ] } }
     ship.flags.find_by(kind: "marathon").dismiss!(by: users(:ana), reason: "a game jam day, they said")
     ShipEvidence.build!(ship)
-    assert_equal %w[demo_unreachable duplicate few_commits fork marathon no_readme old_repo time_after_commits], ship.flags.pluck(:kind).sort,
+    assert_equal %w[demo_unreachable duplicate few_commits fork lapse_missing marathon no_readme old_repo time_after_commits], ship.flags.pluck(:kind).sort,
                  "the repo's there now; the dismissed marathon stays"
     assert ship.flags.find_by(kind: "marathon").dismissed?
     assert_equal "9h tracked after the last commit", ship.flags.find_by(kind: "time_after_commits").title
@@ -82,7 +83,8 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     ship = travel_to(Time.utc(2026, 10, 15)) { ship_now(repo_url: "https://gitlab.com/orpheus/beat-sheet") }
     ShipEvidence.build!(ship.reload)
     assert_equal "Hackatime isn't linked", ship.evidence.sources["hackatime"]
-    assert_equal [ [ "external_repo", "warn" ], [ "hackatime_unread", "warn" ] ], ship.flags.order(:kind).pluck(:kind, :severity)
+    assert_equal [ [ "external_repo", "warn" ], [ "hackatime_unread", "warn" ], [ "lapse_missing", "warn" ] ],
+                 ship.flags.order(:kind).pluck(:kind, :severity), "their Lapse is still read: it needs only their Hackatime ID"
   end
 
   test "a red flag holds up approving, until someone dismisses it with why" do
@@ -234,6 +236,31 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     @user.update!(hackatime_uid: nil, hackatime_access_token: nil)
     ShipEvidence.build!(ship.reload)
     assert_equal "Hackatime isn't linked", ship.evidence.reload.sources["lapse"]
+    assert_equal [ "hackatime_unread" ], ship.flags.where("kind LIKE 'hackatime%' OR kind LIKE 'lapse%'").pluck(:kind),
+                 "said once, by Hackatime"
+  end
+
+  test "Lapse flags, for a project built on Lapse: none recorded, far less recorded than Hackatime has, or Lapse unread" do
+    Hackatime.stubbed_spans = { "1001" => [ hackatime_span(Time.utc(2026, 10, 7, 14), 180) ] }
+    Lapse.stubbed = { "1001" => [ lapse_timelapse(id: "tl1", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 7, 17), seconds: 60 * 60) ] }
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+    flag = ship.flags.find_by(kind: "lapse_short")
+    assert_equal "Lapse recordings cover only 1h of the 3h on Hackatime before the ship", flag.title
+    assert_equal "warn", flag.severity
+
+    Lapse.stubbed["1001"] << lapse_timelapse(id: "tl2", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 7, 18), seconds: 60 * 60)
+    ShipEvidence.build!(ship)
+    assert_empty ship.flags.where(kind: %w[lapse_short lapse_missing]), "2h of 3h is close enough"
+
+    with_lapse_down { ShipEvidence.build!(ship) }
+    assert_equal "Lapse couldn't be read: couldn't be reached (timed out)", ship.flags.find_by(kind: "lapse_unread").title
+
+    @project.update_columns(tool: "shaders")
+    with_lapse_down { ShipEvidence.build!(ship.reload) }
+    Lapse.stubbed = {}
+    ShipEvidence.build!(ship.reload)
+    assert_empty ship.flags.where("kind LIKE 'lapse%'"), "a code tool records on Lapse only if it likes"
   end
 
   test "the demo check never asks a private network" do

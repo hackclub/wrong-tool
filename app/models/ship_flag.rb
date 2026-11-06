@@ -11,6 +11,10 @@ class ShipFlag < ApplicationRecord
   MARATHONS_DANGER = 3
   FEW_COMMITS = 3
   TIME_AFTER_COMMITS = 2.hours
+  # A project built on Lapse (Project#lapse_tool?) whose recordings cover less than this share of Hackatime's time, once
+  # there's at least LAPSE_SHORT_MIN of it.
+  LAPSE_COVERAGE = 0.5
+  LAPSE_SHORT_MIN = 1.hour
 
   belongs_to :ship
   belongs_to :dismissed_by, class_name: "User", optional: true
@@ -96,6 +100,27 @@ class ShipFlag < ApplicationRecord
     if demo && !demo["reachable"]
       flags << { kind: "demo_unreachable", severity: "warn",
                  title: "The demo link #{demo["status"] ? "answers #{demo["status"]}" : demo["error"]}" }
+    end
+
+    # Built on Lapse, its hours should be recordings someone can watch: none, or far fewer than Hackatime has, is worth
+    # a look (Hackatime time from an editor is fine; a reviewer says so). Code tools record on Lapse if they like.
+    if ship.project.lapse_tool? && sources.key?("lapse")
+      lapse = data["lapse"]
+      if sources["lapse"] != "ok"
+        # Not linked to Hackatime is hackatime_unread's to say; Lapse finds them by their Hackatime ID.
+        flags << { kind: "lapse_unread", severity: "warn", title: "Lapse couldn't be read: #{sources["lapse"]}" } if ship.project.user.hackatime_uid.present?
+      elsif lapse
+        recorded = lapse["seconds"].to_i
+        tracked = lapse["hackatime_seconds"]
+        since = lapse["since"] ? "since their last approved ship" : "before the ship"
+        if recorded.zero?
+          flags << { kind: "lapse_missing", severity: "warn", title: "Built on Lapse, but no recordings of #{ship.hackatime_projects.to_sentence.presence || "it"} #{since}" }
+        elsif tracked && tracked >= LAPSE_SHORT_MIN && recorded < tracked * LAPSE_COVERAGE
+          flags << { kind: "lapse_short", severity: "warn",
+                     title: "Lapse recordings cover only #{hours.(recorded)} of the #{hours.(tracked)} on Hackatime #{since}",
+                     details: { "recorded_seconds" => recorded, "hackatime_seconds" => tracked } }
+        end
+      end
     end
 
     if data["duplicates"].present?
