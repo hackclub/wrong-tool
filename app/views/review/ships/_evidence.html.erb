@@ -1,7 +1,7 @@
 <%# locals: (ship:, evidence:) %>
 <%# What was gathered about the ship (ShipEvidence): its Hackatime time a day and its long sessions, what Hackatime
-    makes of the maker's hours, its repo and commits, the demo link, the maker's Lapse timelapses of it, and the same
-    links shipped elsewhere. Reviewers only, all of it. Times are the maker's. Resync gathers it again. %>
+    makes of the maker's hours, its repo and commits, the demo link and the same links
+    shipped elsewhere. Reviewers only, all of it. Times are the maker's. Resync gathers it again. %>
 <% data = evidence&.data || {} %>
 <% time = data["hackatime"] %>
 <% repo = data["repo"] %>
@@ -116,31 +116,6 @@
         <%= demo["reachable"] ? "opens" : "doesn't open" %>
         (<%= demo["status"] ? "answers #{demo["status"]}" : demo["error"] %>)
       </p>
-    <% end %>
-
-    <% if (timelapses = data["lapse"]).present? %>
-      <%# Lapse recordings of the ship's Hackatime projects: watch what they said they built being built. The video
-          link is signed and may have gone stale since it was gathered, so each one links to its page on Lapse too. %>
-      <h3 class="review__subheading">Timelapses on Lapse · <%= pluralize(timelapses.size, "recording") %></h3>
-      <ul class="review__timelapses">
-        <% timelapses.each do |timelapse| %>
-          <li>
-            <p class="leaderboard__note">
-              <%= link_to timelapse["name"].presence || "Untitled", timelapse["page_url"], target: "_blank", rel: "noopener" %>
-              <% if timelapse["hackatime_project"].present? %>· <%= timelapse["hackatime_project"] %><% end %>
-              <% if timelapse["seconds"].to_i.positive? %>· <%= timelapse["seconds"].to_i.divmod(60).then { |minutes, seconds| "#{minutes}:#{"%02d" % seconds}" } %> long<% end %>
-              <% if timelapse["recorded_at"].present? %>· <%= Time.zone.parse(timelapse["recorded_at"]).in_time_zone(zone).strftime("%b %-d, %H:%M") %><% end %>
-              <% if timelapse["visibility"].present? %>· <%= timelapse["visibility"].downcase %><% end %>
-            </p>
-            <% if timelapse["playback_url"].present? %>
-              <video controls preload="none" poster="<%= timelapse["thumbnail_url"] %>" src="<%= timelapse["playback_url"] %>"></video>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    <% elsif evidence.sources.key?("lapse") && evidence.sources["lapse"] == "ok" %>
-      <h3 class="review__subheading">Timelapses on Lapse</h3>
-      <p class="leaderboard__note">None of this ship's Hackatime projects: they didn't record one, or not on Lapse.</p>
     <% end %>
 
     <% if data["duplicates"].present? %>
