@@ -43,7 +43,7 @@ class ShipEvidence < ApplicationRecord
     sources = {}
     data = {
       "hackatime" => gather(sources, "hackatime") { hackatime(ship) },
-      "trust" => trust(ship.project.user),
+      "trust" => trust(ship.project.user, sources),
       "repo" => gather(sources, "github") { repo(ship) },
       "demo" => gather(sources, "demo") { demo(ship) },
       "duplicates" => duplicates(ship)
@@ -105,11 +105,15 @@ class ShipEvidence < ApplicationRecord
   # source of its own, so it's there even when their hours can't be read (their token's stopped working: the admin key
   # doesn't need it). If Hackatime won't say this time, a reviewer gets the last call we were told, marked as not asked
   # just now; never linked, there's none.
-  def self.trust(user)
+  # How the asking went is noted with the other sources ("hackatime_trust"), so a reviewer sees why there's none.
+  def self.trust(user, sources)
     level = Hackatime.trust(user)
+    sources["hackatime_trust"] = level.present? ? "ok" : "Hackatime gave no trust level for Hackatime user #{user.hackatime_uid}"
     user.note_hackatime_trust!(level)
     { "trust_level" => level, "trust_checked_at" => Time.current.iso8601 }
-  rescue Hackatime::Expired, Hackatime::Unavailable
+  rescue Hackatime::Expired, Hackatime::Unavailable => error
+    via = Rails.configuration.x.hackatime_admin_api_key ? "the admin key" : "their token, since there's no admin key here"
+    sources["hackatime_trust"] = error.is_a?(Hackatime::Expired) ? "Hackatime wouldn't take #{via}" : "couldn't be reached with #{via} (#{error.message})"
     { "trust_level" => user.hackatime_trust_level, "trust_checked_at" => user.hackatime_trust_checked_at&.iso8601,
       "trust_stale" => true }
   rescue Hackatime::NotLinked

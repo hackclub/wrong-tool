@@ -15,6 +15,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
   teardown { Github.stubbed, DemoProbe.stubbed, Hackatime.stubbed_spans, Hackatime.stubbed_trust = @before }
 
   test "shipping asks for it, and it gathers Hackatime, the repo and its commits, and the demo, all from before the ship" do
+    Hackatime.stubbed_trust = { "1001" => "green" }
     Hackatime.stubbed_spans = { "1001" => [ hackatime_span(Time.utc(2026, 10, 7, 14), 90), hackatime_span(Time.utc(2026, 10, 9, 1), 30),
                                             hackatime_span(Time.utc(2026, 10, 20, 12), 60) ] }
     Github.stubbed = { "orpheus/beat-sheet" => {
@@ -34,7 +35,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
 
     evidence = ship.reload.evidence
     assert evidence.built?
-    assert_equal({ "hackatime" => "ok", "github" => "ok", "demo" => "ok" }, evidence.sources)
+    assert_equal({ "hackatime" => "ok", "hackatime_trust" => "ok", "github" => "ok", "demo" => "ok" }, evidence.sources)
     time = evidence.data["hackatime"]
     assert_equal 120 * 60, time["tracked_seconds"], "not the session after the ship"
     assert_equal({ "2026-10-07" => 90 * 60, "2026-10-08" => 30 * 60 }, time["days"], "9pm on the 8th in New York")
@@ -138,6 +139,8 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     assert_equal "ok", ship.evidence.sources["hackatime"]
     assert_equal 90 * 60, time["tracked_seconds"]
     assert_equal [ "red", true ], [ trust["trust_level"], trust["trust_stale"] ]
+    assert_equal "couldn't be reached with their token, since there's no admin key here (timed out)", ship.evidence.sources["hackatime_trust"],
+                 "and why, for the reviewer"
     assert_equal "danger", ship.flags.find_by(kind: "hackatime_trust").severity
   end
 

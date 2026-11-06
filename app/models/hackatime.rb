@@ -162,6 +162,7 @@ module Hackatime
   # The admin API's view of them (GET /api/admin/v1/user/info_batch, read-only): their trust level as it is.
   def self.admin_trust(uid)
     response = get("/api/admin/v1/user/info_batch?#{{ ids: uid }.to_query}", bearer: Rails.configuration.x.hackatime_admin_api_key)
+    raise Expired if response.is_a?(Net::HTTPUnauthorized) || response.is_a?(Net::HTTPForbidden)
     raise Unavailable, "Hackatime's admin API answered #{response.code}" unless response.is_a?(Net::HTTPSuccess)
 
     found = JSON.parse(response.body)["users"].to_a.find { |user| user["id"].to_s == uid.to_s }

@@ -30,6 +30,8 @@ Hackatime.stubbed_projects = {
 Hackatime.stubbed_spans = {}
 # What Hackatime makes of each of them, by Hackatime user ID: nothing it's said, unless a test says otherwise.
 Hackatime.stubbed_trust = {}
+# Nor its admin API, whatever key the credentials here hold: a test that wants it sets one.
+Rails.configuration.x.hackatime_admin_api_key = nil
 
 # Nor GitHub (no repo is there, unless a test says so) or anyone's demo link (each answers 200, unless a test says).
 Github.stubbed = {}
