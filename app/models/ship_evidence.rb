@@ -7,6 +7,7 @@
 #   repo        the GitHub repo (or that it isn't on GitHub, or isn't there), its README, and the commits in the
 #               same window
 #   demo        whether the demo link opens (DemoProbe)
+#   lapse       the maker's Lapse timelapses of the ship's Hackatime projects, to watch it being built (Lapse)
 #   duplicates  other projects' ships with the same repo or demo link
 #
 # Each source says how it went (sources: "ok", or why not), and the flags are worked out again from it (ShipFlag).
@@ -46,6 +47,7 @@ class ShipEvidence < ApplicationRecord
       "trust" => trust(ship.project.user, sources),
       "repo" => gather(sources, "github") { repo(ship) },
       "demo" => gather(sources, "demo") { demo(ship) },
+      "lapse" => (gather(sources, "lapse") { lapse(ship) } if Lapse.configured?),
       "duplicates" => duplicates(ship)
     }
     add_time_after_commits(data)
@@ -68,7 +70,7 @@ class ShipEvidence < ApplicationRecord
   rescue Hackatime::Expired
     sources[name] = "Hackatime stopped accepting their token"
     nil
-  rescue Hackatime::Unavailable, Github::Unavailable => error
+  rescue Hackatime::Unavailable, Github::Unavailable, Lapse::Unavailable => error
     sources[name] = "couldn't be reached (#{error.message})"
     nil
   end
@@ -142,6 +144,16 @@ class ShipEvidence < ApplicationRecord
     { "status" => result.status, "error" => result.error, "reachable" => result.reachable? }
   end
 
+  # The maker's Lapse timelapses of what this ship's hours were logged against (Lapse), found by their Hackatime ID.
+  # Stored as they came: the video link is signed and goes stale, so a reviewer gets the watch page too, and Resync
+  # fetches fresh ones.
+  def self.lapse(ship)
+    uid = ship.project.user.hackatime_uid
+    raise Hackatime::NotLinked if uid.blank?
+
+    Lapse.timelapses(uid, ship.hackatime_projects).map(&:to_h_for_evidence)
+  end
+
   # Other projects' ships with this repo or demo link, however it's written (case, a trailing slash or .git, www).
   def self.duplicates(ship)
     links = { "repo" => same_link(ship.repo_url), "demo" => same_link(ship.demo_url) }
@@ -169,6 +181,6 @@ class ShipEvidence < ApplicationRecord
     end
   end
 
-  private_class_method :gather, :window, :hackatime, :trust, :repo, :demo, :duplicates, :same_link,
+  private_class_method :gather, :window, :hackatime, :trust, :repo, :demo, :lapse, :duplicates, :same_link,
                        :add_time_after_commits
 end

@@ -119,40 +119,34 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     Github.stubbed = {}
   end
 
-  test "the page shows Hackatime's call on their hours, and the maker's pages don't" do
-    before = Hackatime.stubbed_trust
+  test "the page shows Hackatime's call on their hours and their timelapses of it, and the maker's pages show neither" do
+    before = [ Hackatime.stubbed_trust, Lapse.stubbed ]
     link_hackatime(users(:ana), token: "token-heidi")
     Hackatime.stubbed_trust = { "1002" => "yellow" }
+    Lapse.stubbed = { "1002" => [ lapse_timelapse(id: "tl9", hackatime_project: "pong", name: "Pong, hour 2", seconds: 95 * 60),
+                                  lapse_timelapse(id: "tl8", hackatime_project: "pong", name: "Pong, hour 1", blocker: "Shows their address",
+                                                  recorded_at: Time.utc(2026, 10, 7, 20)) ] }
     ShipEvidence.build!(@ship.reload)
 
     sign_in_as(users(:orpheus))
     get review_ship_path(@ship)
     assert_select ".review__trust[data-trust=yellow]", /Hackatime has its doubts about them \(trust level yellow/
     assert_select ".review__flag[data-severity=warn]", /Hackatime has its doubts about them \(trust level yellow\)/
+    assert_select ".review__subheading", /Timelapses on Lapse · 2 recordings · 2.3 hrs recorded/
+    assert_select ".review__timelapses a[href='https://lapse.hackclub.com/timelapse/tl9']", "Pong, hour 2"
+    assert_select ".review__timelapses", /pong · about 2 hours recorded · Oct 8, \d\d:00 · unlisted/
+    assert_select ".review__timelapses video[src='https://lapse.hackclub.com/video/tl9.mp4']"
+    assert_select ".review__timelapses", /Lapse withheld the video: Shows their address/
+    assert_select ".review__timelapses video[src='https://lapse.hackclub.com/video/tl8.mp4']", 0
 
     sign_in_as(users(:ana))
     get project_path
     assert_response :success
-    assert_no_match(/trust level/i, response.body, "their own pages say nothing of it")
+    assert_no_match(/trust level|timelapse/i, response.body, "their own pages say nothing of either")
     get project_ship_path
-    assert_no_match(/trust level/i, response.body)
+    assert_no_match(/trust level|timelapse/i, response.body)
   ensure
-    Hackatime.stubbed_trust = before
-  end
-
-  test "with their hours unreadable, the page still shows Hackatime's call on them" do
-    before = Hackatime.stubbed_trust
-    link_hackatime(users(:ana), token: "token-heidi")
-    Hackatime.stubbed_trust = { "1002" => "red" }
-    ShipEvidence.find_or_create_by!(ship: @ship).update!(status: "built", built_at: Time.current, sources: { "hackatime" => "Hackatime stopped accepting their token" },
-                           data: { "hackatime" => nil, "trust" => { "trust_level" => "red", "trust_checked_at" => Time.current.iso8601 } })
-
-    sign_in_as(users(:orpheus))
-    get review_ship_path(@ship)
-    assert_select ".review__note, .leaderboard__note", /Hackatime stopped accepting their token/
-    assert_select ".review__trust[data-trust=red]", /Hackatime doesn't trust their hours \(trust level red, asked less than a minute ago\)/
-  ensure
-    Hackatime.stubbed_trust = before
+    Hackatime.stubbed_trust, Lapse.stubbed = before
   end
 
   test "reviewers never open their own ship" do

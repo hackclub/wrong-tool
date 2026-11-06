@@ -36,6 +36,9 @@ Rails.configuration.x.hackatime_admin_api_key = nil
 # Nor GitHub (no repo is there, unless a test says so) or anyone's demo link (each answers 200, unless a test says).
 Github.stubbed = {}
 DemoProbe.stubbed = {}
+# Nor Lapse, which counts as set up here (stubbing it is what that means in tests): nobody has a recording, unless a
+# test says so. A test can set it to nil for a wrong tool with no Lapse program key at all.
+Lapse.stubbed = {}
 
 module HackClubAuthHelpers
   def mock_hack_club_auth(uid: "ident!heidi", email: "heidi@hackclub.com", name: "Heidi Hakkuun", first_name: "Heidi",
@@ -89,6 +92,60 @@ module HackatimeHelpers
   end
 end
 
+module LapseHelpers
+  # A timelapse as Lapse would hand it over, for Lapse.stubbed.
+  def lapse_timelapse(id:, hackatime_project:, name: "Building it", seconds: 42 * 60, recorded_at: Time.utc(2026, 10, 8, 20),
+                      visibility: "UNLISTED", blocker: nil)
+    Lapse::Timelapse.new(id:, name:, hackatime_project:, page_url: "https://lapse.hackclub.com/timelapse/#{id}",
+                         playback_url: "https://lapse.hackclub.com/video/#{id}.mp4", thumbnail_url: nil, seconds:,
+                         recorded_at:, visibility:, blocker:)
+  end
+
+  # As if the real Lapse were there, with a program key, answering these paths: a hash is the JSON it sends back, an
+  # integer just that status, and [status, hash] both. Collects what it was asked with, in `lapse_asked`.
+  def with_lapse_answering(answers, key: "pk_lapse_test")
+    was = [ Lapse.stubbed, Rails.configuration.x.lapse_program_key ]
+    Lapse.stubbed = nil
+    Rails.configuration.x.lapse_program_key = key
+    asked = lapse_asked.clear
+    http = Object.new
+    http.define_singleton_method(:get) do |path, headers = {}|
+      asked << [ path, headers["Authorization"] ]
+      answer = answers.fetch(path) { raise "Lapse wasn't expecting #{path}" }
+      status, body = case answer
+      when Integer then [ answer, "" ]
+      when Array then [ answer.first, answer.last.to_json ]
+      else [ 200, answer.to_json ]
+      end
+      Net::HTTPResponse::CODE_TO_OBJ.fetch(status.to_s).new("1.1", status.to_s, "").tap do |response|
+        response.instance_variable_set(:@body, body)
+        response.instance_variable_set(:@read, true)
+      end
+    end
+    Net::HTTP.singleton_class.alias_method(:start_without_test, :start)
+    Net::HTTP.define_singleton_method(:start) { |*, **, &block| block.call(http) }
+    yield
+  ensure
+    Net::HTTP.singleton_class.alias_method(:start, :start_without_test)
+    Net::HTTP.singleton_class.remove_method(:start_without_test)
+    Lapse.stubbed, Rails.configuration.x.lapse_program_key = was
+  end
+
+  def lapse_asked
+    @lapse_asked ||= []
+  end
+
+  # As if Lapse were set up here but not answering.
+  def with_lapse_down
+    Lapse.singleton_class.alias_method(:timelapses_without_test, :timelapses)
+    Lapse.define_singleton_method(:timelapses) { |*| raise Lapse::Unavailable, "timed out" }
+    yield
+  ensure
+    Lapse.singleton_class.alias_method(:timelapses, :timelapses_without_test)
+    Lapse.singleton_class.remove_method(:timelapses_without_test)
+  end
+end
+
 module ShopHelpers
   # As if every pick took this many hours (Shop.hours_for), for the schedule tests, whose arithmetic is about days,
   # not prices.
@@ -105,3 +162,4 @@ end
 ActiveSupport::TestCase.include ShopHelpers
 ActiveSupport::TestCase.include HackClubAuthHelpers
 ActiveSupport::TestCase.include HackatimeHelpers
+ActiveSupport::TestCase.include LapseHelpers

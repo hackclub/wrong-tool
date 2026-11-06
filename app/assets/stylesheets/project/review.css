@@ -359,6 +359,32 @@
     &[data-trust="green"] { border-inline-start-color: var(--green-dark); }
   }
 
+  /* Lapse recordings of the ship's Hackatime projects, each with its page on Lapse and the video itself. */
+  .review__timelapses {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    p {
+      margin: 0;
+    }
+
+    a {
+      color: var(--blue-700);
+    }
+
+    video {
+      inline-size: 100%;
+      max-inline-size: 420px;
+      margin-block-start: 4px;
+      border: 1px solid var(--border-grid);
+      background: var(--surface-grid);
+    }
+  }
+
   .review__duplicates {
     margin: 0;
     padding-inline-start: 18px;
