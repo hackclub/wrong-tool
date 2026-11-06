@@ -58,11 +58,13 @@ module Hackatime
 
   def self.user_id(token) = identity(token)&.uid
 
-  # Hackatime's trust level for someone who's linked, right now: asked again with the token they linked with, since
-  # the one kept when they linked is a snapshot and Hackatime may have made its mind up since.
+  # Hackatime's trust level for someone who's linked, right now, since the one kept when they linked is a snapshot and
+  # Hackatime may have made its mind up since. With the admin key (config/initializers/hackatime.rb) it's the real one;
+  # otherwise it's asked with the token they linked with, which Hackatime answers with yellow passed off as blue.
   def self.trust(user)
     raise NotLinked unless user.hackatime_linked?
     return stubbed_trust&.[](user.hackatime_uid) if stubbed_users
+    return admin_trust(user.hackatime_uid) if Rails.configuration.x.hackatime_admin_api_key
 
     response = get("/api/v1/authenticated/me", bearer: user.hackatime_access_token)
     raise Expired if response.is_a?(Net::HTTPUnauthorized)
@@ -155,6 +157,17 @@ module Hackatime
     end
   end
 
+  # The admin API's view of them (GET /api/admin/v1/user/info_batch, read-only): their trust level as it is.
+  def self.admin_trust(uid)
+    response = get("/api/admin/v1/user/info_batch?#{{ ids: uid }.to_query}", bearer: Rails.configuration.x.hackatime_admin_api_key)
+    raise Unavailable, "Hackatime's admin API answered #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+    found = JSON.parse(response.body)["users"].to_a.find { |user| user["id"].to_s == uid.to_s }
+    found&.dig("trust_level").presence&.to_s
+  rescue JSON::ParserError => error
+    raise Unavailable, error.message
+  end
+
   # Hackatime answers /authenticated/me either way: the user, or { "data" => the user }.
   def self.who(body)
     body["data"].is_a?(Hash) ? body["data"] : body
@@ -173,5 +186,5 @@ module Hackatime
   rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError, OpenSSL::SSL::SSLError => error
     raise Unavailable, error.message
   end
-  private_class_method :stats, :api_key, :who, :trust_level_in, :get
+  private_class_method :stats, :api_key, :admin_trust, :who, :trust_level_in, :get
 end

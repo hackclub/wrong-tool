@@ -23,6 +23,29 @@ class HackatimeTest < ActiveSupport::TestCase
     Hackatime.stubbed_trust = before
   end
 
+  test "with the admin key, trust is Hackatime's real call, yellow and all, asked of the admin API" do
+    link_hackatime(users(:orpheus))
+    asked = []
+    answer = { "users" => [ { "id" => 1001, "username" => "orpheus", "trust_level" => "yellow" } ] }.to_json
+    http = Object.new
+    http.define_singleton_method(:get) do |path, headers|
+      asked << [ path, headers["Authorization"] ]
+      Net::HTTPOK.new("1.1", "200", "OK").tap { |response| response.instance_variable_set(:@body, answer); response.instance_variable_set(:@read, true) }
+    end
+    was = [ Hackatime.stubbed_users, Rails.configuration.x.hackatime_admin_api_key ]
+    Hackatime.stubbed_users = nil
+    Rails.configuration.x.hackatime_admin_api_key = "hka_test"
+    Net::HTTP.singleton_class.alias_method(:start_without_test, :start)
+    Net::HTTP.define_singleton_method(:start) { |*, **, &block| block.call(http) }
+
+    assert_equal "yellow", Hackatime.trust(users(:orpheus))
+    assert_equal [ [ "/api/admin/v1/user/info_batch?ids=1001", "Bearer hka_test" ] ], asked, "the admin key, never their own token"
+  ensure
+    Net::HTTP.singleton_class.alias_method(:start, :start_without_test)
+    Net::HTTP.singleton_class.remove_method(:start_without_test)
+    Hackatime.stubbed_users, Rails.configuration.x.hackatime_admin_api_key = was
+  end
+
   test "trust levels read as what they mean, and anything new comes through as it is" do
     assert_equal "Hackatime doesn't trust their hours", Hackatime.trust_label("red")
     assert_equal "Hackatime has its doubts about them", Hackatime.trust_label("yellow")
