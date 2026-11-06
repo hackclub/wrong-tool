@@ -297,7 +297,7 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ 4.6, "4.6 of 10 hrs", true ], response.parsed_body.values_at("hours", "label", "tracking")
 
-    get project_path
+    travel_to(Time.utc(2026, 10, 7, 12)) { get project_path } # the same week, so the leaderboard's week has them
     assert_select ".project__goal-value", "4.6 of 10 hrs", "what the refresh synced, without asking Hackatime again"
     assert_select ".project__stair[data-you] .project__stair-hours", "4.6h", "the leaderboard counts the same hours"
     assert_select ".project__length input[checked]" do |inputs|

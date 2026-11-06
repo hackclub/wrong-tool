@@ -119,29 +119,31 @@ class ProjectTest < ApplicationSystemTestCase
   end
 
   test "shipping: the form says what it still needs, then it's in review" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_and_open_project
-    find(".project__ship").click
+    travel_to Time.utc(2026, 10, 20, 12) do # mid-program: shipping's closed for good after last call
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_and_open_project
+      find(".project__ship").click
 
-    assert_selector ".ship__heading", text: "Ship your project"
-    assert_button "Ship it", disabled: true
-    assert_selector ".ship__missing", text: "Still needs a description (40+ characters), a repo URL, a demo URL, a screenshot, a screenshot check."
+      assert_selector ".ship__heading", text: "Ship your project"
+      assert_button "Ship it", disabled: true
+      assert_selector ".ship__missing", text: "Still needs a description (40+ characters), a repo URL, a demo URL, a screenshot, a screenshot check."
 
-    fill_in "Title", with: "Beat Sheet"
-    fill_in "Description", with: "A rhythm game where every beat is a cell lighting up in time."
-    assert_selector ".ship__count[data-enough]"
-    fill_in "Repo URL", with: "github.com/orpheus/beat-sheet"
-    fill_in "Demo URL", with: "https://example.com/beat"
-    find(".ship__shot input[type=file]", visible: :all).attach_file(file_fixture("screenshot.png"), make_visible: true)
-    check "It shows the game running inside Spreadsheet, not a mockup."
+      fill_in "Title", with: "Beat Sheet"
+      fill_in "Description", with: "A rhythm game where every beat is a cell lighting up in time."
+      assert_selector ".ship__count[data-enough]"
+      fill_in "Repo URL", with: "github.com/orpheus/beat-sheet"
+      fill_in "Demo URL", with: "https://example.com/beat"
+      find(".ship__shot input[type=file]", visible: :all).attach_file(file_fixture("screenshot.png"), make_visible: true)
+      check "It shows the game running inside Spreadsheet, not a mockup."
 
-    assert_selector ".ship__missing", text: "Ready to ship."
-    click_on "Ship it"
-    assert_selector ".ship__done-title", text: "Shipped."
-    click_on "Back to project"
-    assert_selector ".project__title", text: "Beat Sheet"
-    assert_selector ".project__ship", text: "In review"
+      assert_selector ".ship__missing", text: "Ready to ship."
+      click_on "Ship it"
+      assert_selector ".ship__done-title", text: "Shipped."
+      click_on "Back to project"
+      assert_selector ".project__title", text: "Beat Sheet"
+      assert_selector ".project__ship", text: "In review"
+    end
   end
 
   test "a pomodoro: lock in for as long as you pick, pause, end it, then back to the project" do
@@ -239,7 +241,7 @@ class ProjectTest < ApplicationSystemTestCase
   test "once you're done with onboarding, its tab goes" do
     sign_in_and_open_project
     assert_no_selector ".sheet-tab", text: "Onboarding"
-    assert_equal [ "My project", "Buddy", "Leaderboard" ], all(".sheet-tab").map(&:text)
+    assert_equal [ "My project", "Buddy", "Leaderboard", "Shop", "Gallery" ], all(".sheet-tab").map(&:text)
 
     visit onboarding_path
     assert_selector ".sheet-tab[aria-current=page]", text: "Onboarding"

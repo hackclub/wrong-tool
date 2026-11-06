@@ -1,0 +1,130 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Redirect",
+      "warning_code": 18,
+      "fingerprint": "18254b75ca2695e71abc4ca14cf4df18452b5441d69a968a9326d845c8501a51",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/nudge_links_controller.rb",
+      "line": 10,
+      "link": "https://brakemanscanner.org/docs/warning_types/redirect/",
+      "code": "redirect_to(Nudge.includes(:user).find_by(:token => params[:token]).destination_url, :allow_other_host => true)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "NudgeLinksController",
+        "method": "show"
+      },
+      "user_input": "Nudge.includes(:user).find_by(:token => params[:token]).destination_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        601
+      ],
+      "note": "Nudge#destination_url is picked from a fixed list of our own and Hack Club links by the nudge arm, never from the request."
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "654578402bcd5583656d98933481a2d8d82873d427aaea7b5d8301f558d949cf",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/admin/projects/show.html.erb",
+      "line": 60,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Project.includes(:user, :ships => :decided_by).find(params[:id]).repo_url, Project.includes(:user, :ships => :decided_by).find(params[:id]).repo_url, :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "Admin::ProjectsController",
+          "method": "show",
+          "line": 21,
+          "file": "app/controllers/admin/projects_controller.rb",
+          "rendered": {
+            "name": "admin/projects/show",
+            "file": "app/views/admin/projects/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "admin/projects/show"
+      },
+      "user_input": "Project.includes(:user, :ships => :decided_by).find(params[:id]).repo_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "repo_url/demo_url only save as http(s) URLs (Ship::URL, Project repo_url format), so no javascript: link reaches link_to."
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "6a215899496812fea2470706ef1d8868e18de65af177e3e39fe57e3a0d6155ac",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/review/ships/show.html.erb",
+      "line": 47,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).repo_url, Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).repo_url, :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "Review::DecisionsController",
+          "method": "create",
+          "line": 11,
+          "file": "app/controllers/review/decisions_controller.rb",
+          "rendered": {
+            "name": "review/ships/show",
+            "file": "app/views/review/ships/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "review/ships/show"
+      },
+      "user_input": "Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).repo_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "repo_url/demo_url only save as http(s) URLs (Ship::URL, Project repo_url format), so no javascript: link reaches link_to."
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "c732454e500b326ea8b4dedfd8a7af83e7024539ffb211921e2c406b5a77f824",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/review/ships/show.html.erb",
+      "line": 48,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).demo_url, Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).demo_url, :target => \"_blank\", :rel => \"noopener\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "Review::DecisionsController",
+          "method": "create",
+          "line": 11,
+          "file": "app/controllers/review/decisions_controller.rb",
+          "rendered": {
+            "name": "review/ships/show",
+            "file": "app/views/review/ships/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "review/ships/show"
+      },
+      "user_input": "Ship.includes(:decided_by, :evidence, :review_decisions => :reviewer, :flags => :dismissed_by, :project => :user).find((params[:ship_id] or params[:id])).demo_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "repo_url/demo_url only save as http(s) URLs (Ship::URL, Project repo_url format), so no javascript: link reaches link_to."
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}

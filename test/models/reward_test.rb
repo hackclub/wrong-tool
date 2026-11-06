@@ -94,10 +94,10 @@ class RewardTest < ActiveSupport::TestCase
   end
 
   test "a pair week is a program week you both log 4h in, and earns stickers" do
-    pair = projects(:orpheus).pair_with(projects(:ana))
     built(@orpheus, [ 6, 7 ], minutes: 120)
     built(@ana, [ 8 ], minutes: 180)
     travel_to(Time.utc(2026, 10, 9, 12)) do
+      pair = projects(:orpheus).pair_with(projects(:ana)) # paired that week, so it counts
       @orpheus.recalculate_streak!
       assert_equal 0, pair.pair_weeks
 

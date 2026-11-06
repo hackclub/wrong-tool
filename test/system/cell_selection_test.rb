@@ -25,10 +25,10 @@ class CellSelectionTest < ApplicationSystemTestCase
 
   test "arrow keys step off the edge of merged cells" do
     find(".sheet__cells").send_keys(:right) # from B11, which spans B:C
-    assert_selection "D11", formula: %(=DATE(2026,10,6) & " → " & DATE(2026,10,20))
+    assert_selection "D11", formula: %(=DATE(2026,10,6) & " → " & DATE(2026,10,27))
 
     find(".sheet__cells").send_keys(:up) # D10 is inside the subtitle at B9:G10
-    assert_selection "B9", formula: "build it in google sheets, figma, email, or whatever else you like. log 10 hours and we'll send you a handheld."
+    assert_selection "B9", formula: "build it in google sheets, figma, email, or whatever else you like. build it for a couple of weeks and we'll mail you a handheld."
   end
 
   test "the art under the program name is a cell of its own" do

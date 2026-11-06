@@ -57,7 +57,8 @@ class OnboardingTest < ApplicationSystemTestCase
 
     find(".onboarding-chip", text: "45 min").click
     assert_selector ".onboarding-pledge__text", text: "I'll build 45 min every day"
-    assert_selector ".onboarding-commit__finish", text: /\AYou'd finish by [A-Z][a-z]{2} \d+\.\z/
+    # The browser's own today: after wrong tool ends, it says so.
+    assert_selector ".onboarding-commit__finish", text: /\AYou'd finish by [A-Z][a-z]{2} \d+\.( That's after wrong tool ends on Oct 27\.)?\z/
     assert_selector ".onboarding-commit__sign-hint", text: "Pick a time first."
     assert_selector ".formula-bar__content", text: /\A=SHIP\("#{Regexp.escape(pledged)}","SSH",DATE\(\d+,\d+\)\)\z/
     assert_button "Hold to sign with Hack Club", disabled: true
@@ -92,7 +93,7 @@ class OnboardingTest < ApplicationSystemTestCase
     assert_current_path project_path, wait: 5
     project = User.find_by!(hca_id: "ident!heidi").project
     assert_equal [ "ssh", "SSH", "Miyoo Mini Plus", 45, "evening" ],
-                 [ project.tool, project.tool_name, ProjectsHelper::PRIZE_NAMES[project.prize], project.pace_minutes, project.build_time ]
+                 [ project.tool, project.tool_name, project.console.full, project.pace_minutes, project.build_time ]
     assert_equal pledged, project.idea.delete_prefix("a ").delete_prefix("an ")
     assert_selector "h1", text: /\AAn? #{Regexp.escape(pledged)} over SSH\z/
     assert_selector ".project__day", text: "Day 1"

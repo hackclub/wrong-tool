@@ -2,68 +2,76 @@ require "test_helper"
 
 class ShipsControllerTest < ActionDispatch::IntegrationTest
   test "shipping opens once you're set up" do
-    get project_ship_path
-    assert_redirected_to onboarding_path
+    while_shipping_is_open do
+      get project_ship_path
+      assert_redirected_to onboarding_path
 
-    sign_in_as_orpheus
-    get project_ship_path
-    assert_redirected_to project_path
+      sign_in_as_orpheus
+      get project_ship_path
+      assert_redirected_to project_path
 
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    get project_ship_path
-    assert_response :success
-    assert_select "input#ship_title[value='A rhythm game in Spreadsheet']"
-    assert_select ".ship__hackatime-name", "rhythm-game"
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      get project_ship_path
+      assert_response :success
+      assert_select "input#ship_title[value='A rhythm game in Spreadsheet']"
+      assert_select ".ship__hackatime-name", "rhythm-game"
+    end
   end
 
   test "shipping, then it's in review" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_as_orpheus
+    while_shipping_is_open do
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_as_orpheus
 
-    post project_ship_path, params: { ship: ship_params }
-    assert_redirected_to project_ship_path
-    assert_equal "congratulate", flash[:clippy]
-    follow_redirect!
-    assert_select ".ship__done-title", "Shipped."
-    assert_select ".ship__done-text", /Beat Sheet is in review/
-
-    assert_no_difference -> { Ship.count } do
       post project_ship_path, params: { ship: ship_params }
+      assert_redirected_to project_ship_path
+      assert_equal "congratulate", flash[:clippy]
+      follow_redirect!
+      assert_select ".ship__done-title", "Shipped."
+      assert_select ".ship__done-text", /Beat Sheet is in review/
+
+      assert_no_difference -> { Ship.count } do
+        post project_ship_path, params: { ship: ship_params }
+      end
+      get project_path
+      assert_select ".project__ship", /In review/
     end
-    get project_path
-    assert_select ".project__ship", /In review/
   end
 
   test "without your address, shipping waits for it: shared through Hack Club" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_as_orpheus
-    users(:orpheus).update!(address: nil) # signed in before we asked
+    while_shipping_is_open do
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_as_orpheus
+      users(:orpheus).update!(address: nil) # signed in before we asked
 
-    get project_ship_path
-    assert_select ".ship__done[data-state=address] .ship__done-title", "First, your address."
-    assert_select "form[action='/auth/hackclub'] input[name=origin][value=?]", project_ship_path
-    assert_select "form.ship__form", 0
-    assert_no_difference -> { Ship.count } do
-      post project_ship_path, params: { ship: ship_params }
+      get project_ship_path
+      assert_select ".ship__done[data-state=address] .ship__done-title", "First, your address."
+      assert_select "form[action='/auth/hackclub'] input[name=origin][value=?]", project_ship_path
+      assert_select "form.ship__form", 0
+      assert_no_difference -> { Ship.count } do
+        post project_ship_path, params: { ship: ship_params }
+      end
+
+      users(:orpheus).update!(address: HQ_ADDRESS)
+      get project_ship_path
+      assert_select "form.ship__form"
     end
-
-    users(:orpheus).update!(address: HQ_ADDRESS)
-    get project_ship_path
-    assert_select "form.ship__form"
   end
 
   test "what a ship's missing says so" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_as_orpheus
-    post project_ship_path, params: { ship: ship_params.merge(description: "short", screenshot_shows_game: "0") }
+    while_shipping_is_open do
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_as_orpheus
+      post project_ship_path, params: { ship: ship_params.merge(description: "short", screenshot_shows_game: "0") }
 
-    assert_response :unprocessable_entity
-    assert_select ".ship__error", /Description needs at least 40 characters/
-    assert_select ".ship__error", /has to show the game running/
+      assert_response :unprocessable_entity
+      assert_select ".ship__error", /Description needs at least 40 characters/
+      assert_select ".ship__error", /has to show the game running/
+    end
   end
 
   test "never shipped, shipping stays open past the quiet days through last call, then closes" do
@@ -104,7 +112,7 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
     link_hackatime(users(:orpheus))
     projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
     sign_in_as_orpheus
-    post project_ship_path, params: { ship: ship_params }
+    while_shipping_is_open { post project_ship_path, params: { ship: ship_params } }
     ship = projects(:orpheus).ship_in_review
 
     travel_to Time.utc(2026, 11, 20, 12) do
@@ -127,24 +135,32 @@ class ShipsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "rejected, it says why and never opens again" do
-    link_hackatime(users(:orpheus))
-    projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
-    sign_in_as_orpheus
-    post project_ship_path, params: { ship: ship_params }
-    ship = projects(:orpheus).ship_in_review
-    ship.update!(status: "rejected", decided_at: Time.current)
-    ship.review_decisions.create!(decision: "rejected", note_to_maker: "This is someone else's game.")
-
-    get project_ship_path
-    assert_select ".ship__done[data-state=rejected] .ship__done-title", "Not approved."
-    assert_select ".ship__note", "This is someone else's game."
-    assert_select "form.ship__form", 0
-    assert_no_difference -> { Ship.count } do
+    while_shipping_is_open do
+      link_hackatime(users(:orpheus))
+      projects(:orpheus).update!(hackatime_projects: [ "rhythm-game" ], repo_later: true, buddy_skipped: true)
+      sign_in_as_orpheus
       post project_ship_path, params: { ship: ship_params }
+      ship = projects(:orpheus).ship_in_review
+      ship.update!(status: "rejected", decided_at: Time.current)
+      ship.review_decisions.create!(decision: "rejected", note_to_maker: "This is someone else's game.")
+
+      get project_ship_path
+      assert_select ".ship__done[data-state=rejected] .ship__done-title", "Not approved."
+      assert_select ".ship__note", "This is someone else's game."
+      assert_select "form.ship__form", 0
+      assert_no_difference -> { Ship.count } do
+        post project_ship_path, params: { ship: ship_params }
+      end
     end
   end
 
   private
+    # Mid-program, when shipping's open (it closed for good after last call, Program::LAST_CALL_THROUGH), whatever
+    # today is.
+    def while_shipping_is_open(&)
+      travel_to(Time.utc(2026, 10, 20, 12), &)
+    end
+
     def sign_in_as_orpheus
       mock_hack_club_auth(uid: users(:orpheus).hca_id, slack_id: "U0ORPHEUS")
       post "/auth/hackclub"
