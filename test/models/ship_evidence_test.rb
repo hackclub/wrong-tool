@@ -187,9 +187,36 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     ShipEvidence.build!(ship)
 
     lapse = ship.evidence.data["lapse"]
-    assert_equal %w[tl2 tl1], lapse.map { |timelapse| timelapse["id"] }, "theirs, for this ship's project, newest first"
-    assert_equal "https://lapse.hackclub.com/timelapse/tl2", lapse.first["page_url"]
+    assert_equal %w[tl2 tl1], lapse["timelapses"].map { |timelapse| timelapse["id"] }, "theirs, for this ship's project, newest first"
+    assert_equal "https://lapse.hackclub.com/timelapse/tl2", lapse["timelapses"].first["page_url"]
+    assert_nil lapse["since"], "the project's first ship: every recording counts"
+    assert_equal 0, lapse["earlier"]
     assert_equal "ok", ship.evidence.sources["lapse"]
+  end
+
+  test "Lapse on a later ship: only what was made since the last approved one, and how much of Hackatime's time it covers" do
+    Hackatime.stubbed_spans = { "1001" => [ hackatime_span(Time.utc(2026, 10, 7, 14), 60), hackatime_span(Time.utc(2026, 10, 12, 14), 90),
+                                            hackatime_span(Time.utc(2026, 10, 13, 14), 30) ] }
+    Lapse.stubbed = { "1001" => [
+      lapse_timelapse(id: "first", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 7, 15), seconds: 3600),
+      lapse_timelapse(id: "second", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 12, 16), seconds: 80 * 60),
+      lapse_timelapse(id: "late", hackatime_project: "rhythm-game", recorded_at: Time.utc(2026, 10, 16, 9), seconds: 25 * 60)
+    ] }
+    travel_to(Time.utc(2026, 10, 8)) { ship_now }.update_columns(status: "approved")
+    asked_again = travel_to(Time.utc(2026, 10, 9)) { ship_now }
+    asked_again.update_columns(status: "changes_requested")
+
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    ShipEvidence.build!(ship)
+
+    lapse = ship.evidence.data["lapse"]
+    assert_equal %w[late second], lapse["timelapses"].map { |timelapse| timelapse["id"] },
+                 "since the approved ship, changes asked for or not; the one before it went with that ship"
+    assert_equal Time.utc(2026, 10, 8).iso8601, lapse["since"]
+    assert_equal 1, lapse["earlier"]
+    assert_equal [ true, false ], lapse["timelapses"].map { |timelapse| timelapse["after_ship"] }, "published once it was done"
+    assert_equal 80 * 60, lapse["seconds"], "only what was recorded by the ship"
+    assert_equal 120 * 60, lapse["hackatime_seconds"], "Hackatime's time over the same stretch"
   end
 
   test "Lapse not being set up here leaves it out, Lapse being down only says so, and no Hackatime ID is not linked" do

@@ -7,7 +7,8 @@
 #   repo        the GitHub repo (or that it isn't on GitHub, or isn't there), its README, and the commits in the
 #               same window
 #   demo        whether the demo link opens (DemoProbe)
-#   lapse       the maker's Lapse timelapses of the ship's Hackatime projects, to watch it being built (Lapse)
+#   lapse       the maker's Lapse timelapses of the ship's Hackatime projects since the project's last approved ship,
+#               to watch it being built (Lapse), and how much of the Hackatime time over the same stretch they cover
 #   duplicates  other projects' ships with the same repo or demo link
 #
 # Each source says how it went (sources: "ok", or why not), and the flags are worked out again from it (ShipFlag).
@@ -51,6 +52,7 @@ class ShipEvidence < ApplicationRecord
       "duplicates" => duplicates(ship)
     }
     add_time_after_commits(data)
+    add_lapse_coverage(data)
     evidence.update!(status: "built", data:, sources:, built_at: Time.current, error: nil)
     ShipFlag.raise_for(ship, data, sources)
     evidence
@@ -145,13 +147,39 @@ class ShipEvidence < ApplicationRecord
   end
 
   # The maker's Lapse timelapses of what this ship's hours were logged against (Lapse), found by their Hackatime ID.
-  # Stored as they came: the video link is signed and goes stale, so a reviewer gets the watch page too, and Resync
-  # fetches fresh ones.
+  # Only those since the project's last approved ship: what came before was that ship's, and a ship after changes were
+  # asked for is the same work, so its recordings count again. Lapse only says when one was made, not when the
+  # recording started, so that's what goes by. Ones made after this ship are kept, marked, since a recording is often
+  # published once it's done. Stored as they came: the video link is signed and goes stale, so a reviewer gets the
+  # watch page too, and Resync fetches fresh ones.
   def self.lapse(ship)
     uid = ship.project.user.hackatime_uid
     raise Hackatime::NotLinked if uid.blank?
 
-    Lapse.timelapses(uid, ship.hackatime_projects).map(&:to_h_for_evidence)
+    since = ship.project.ships.approved.where(id: ...ship.id).maximum(:created_at)
+    all = Lapse.timelapses(uid, ship.hackatime_projects)
+    kept = all.select { |timelapse| since.nil? || timelapse.recorded_at.nil? || timelapse.recorded_at > since }
+    { "since" => since&.iso8601, "earlier" => all.size - kept.size,
+      "seconds" => kept.sum { |timelapse| timelapse.recorded_at.nil? || timelapse.recorded_at <= ship.created_at ? timelapse.seconds : 0 },
+      "timelapses" => kept.map { |timelapse| timelapse.to_h_for_evidence.merge("after_ship" => timelapse.recorded_at.present? && timelapse.recorded_at > ship.created_at) } }
+  end
+
+  # Hackatime's time over the same stretch as the Lapse recordings (since the last approved ship, to this one), to
+  # set what was recorded against what was tracked. Lapse sends its time to Hackatime, so for a project built on
+  # Lapse the two should be close.
+  def self.add_lapse_coverage(data)
+    lapse = data["lapse"]
+    sessions = data.dig("hackatime", "sessions")
+    return unless lapse && sessions
+
+    since = lapse["since"] && Time.zone.parse(lapse["since"])
+    lapse["hackatime_seconds"] = sessions.sum do |session|
+      next session["seconds"] if since.nil?
+
+      starts = [ Time.zone.parse(session["start"]), since ].max
+      ends = Time.zone.parse(session["end"])
+      ends > starts ? [ (ends - starts).round, session["seconds"] ].min : 0
+    end
   end
 
   # Other projects' ships with this repo or demo link, however it's written (case, a trailing slash or .git, www).
@@ -182,5 +210,5 @@ class ShipEvidence < ApplicationRecord
   end
 
   private_class_method :gather, :window, :hackatime, :trust, :repo, :demo, :lapse, :duplicates, :same_link,
-                       :add_time_after_commits
+                       :add_time_after_commits, :add_lapse_coverage
 end

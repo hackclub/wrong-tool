@@ -119,31 +119,42 @@
       </p>
     <% end %>
 
-    <% if (timelapses = data["lapse"]).present? %>
-      <%# Lapse recordings of the ship's Hackatime projects: watch what they said they built being built. The video
-          link is signed and may have gone stale since it was gathered, so each one links to its page on Lapse too. %>
-      <h3 class="review__subheading">Timelapses on Lapse · <%= pluralize(timelapses.size, "recording") %> · <%= hrs.(timelapses.sum { |timelapse| timelapse["seconds"].to_i }) %> hrs recorded</h3>
-      <ul class="review__timelapses">
-        <% timelapses.each do |timelapse| %>
-          <li>
-            <p class="leaderboard__note">
-              <%= link_to timelapse["name"].presence || "Untitled", timelapse["page_url"], target: "_blank", rel: "noopener" %>
-              <% if timelapse["hackatime_project"].present? %>· <%= timelapse["hackatime_project"] %><% end %>
-              <% if timelapse["seconds"].to_i.positive? %>· <%= distance_of_time_in_words(timelapse["seconds"].to_i) %> recorded<% end %>
-              <% if timelapse["recorded_at"].present? %>· <%= Time.zone.parse(timelapse["recorded_at"]).in_time_zone(zone).strftime("%b %-d, %H:%M") %><% end %>
-              <% if timelapse["visibility"].present? %>· <%= timelapse["visibility"].humanize(capitalize: false).tr("_", " ") %><% end %>
-            </p>
-            <% if timelapse["blocker"].present? %>
-              <p class="leaderboard__note">Lapse withheld the video: <%= timelapse["blocker"] %></p>
-            <% elsif timelapse["playback_url"].present? %>
-              <video controls preload="none" poster="<%= timelapse["thumbnail_url"] %>" src="<%= timelapse["playback_url"] %>"></video>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    <% elsif evidence.sources["lapse"] == "ok" %>
-      <h3 class="review__subheading">Timelapses on Lapse</h3>
-      <p class="leaderboard__note">None of this ship's Hackatime projects: they didn't record one, or not on Lapse.</p>
+    <% if (lapse = data["lapse"]) %>
+      <%# Lapse recordings of the ship's Hackatime projects since the project's last approved ship: watch what they said
+          they built being built. The video link is signed and may have gone stale since it was gathered, so each one
+          links to its page on Lapse too. %>
+      <% timelapses = lapse["timelapses"].to_a %>
+      <% since = lapse["since"] && Time.zone.parse(lapse["since"]).in_time_zone(zone) %>
+      <h3 class="review__subheading">Timelapses on Lapse<% if timelapses.any? %> · <%= pluralize(timelapses.size, "recording") %><% end %></h3>
+      <p class="leaderboard__note" data-lapse="coverage">
+        <%= hrs.(lapse["seconds"]) %> hrs recorded
+        <% if lapse.key?("hackatime_seconds") %>of <%= hrs.(lapse["hackatime_seconds"]) %> hrs on Hackatime<% end %>
+        <%= since ? "since their last approved ship (#{since.strftime("%b %-d")})" : "to the ship" %>
+        <% if lapse["earlier"].to_i.positive? %>· <%= pluralize(lapse["earlier"], "earlier recording") %> went with that ship<% end %>
+      </p>
+      <% if timelapses.any? %>
+        <ul class="review__timelapses">
+          <% timelapses.each do |timelapse| %>
+            <li>
+              <p class="leaderboard__note">
+                <%= link_to timelapse["name"].presence || "Untitled", timelapse["page_url"], target: "_blank", rel: "noopener" %>
+                <% if timelapse["hackatime_project"].present? %>· <%= timelapse["hackatime_project"] %><% end %>
+                <% if timelapse["seconds"].to_i.positive? %>· <%= distance_of_time_in_words(timelapse["seconds"].to_i) %> recorded<% end %>
+                <% if timelapse["recorded_at"].present? %>· <%= Time.zone.parse(timelapse["recorded_at"]).in_time_zone(zone).strftime("%b %-d, %H:%M") %><% end %>
+                <% if timelapse["after_ship"] %>· after the ship<% end %>
+                <% if timelapse["visibility"].present? %>· <%= timelapse["visibility"].humanize(capitalize: false).tr("_", " ") %><% end %>
+              </p>
+              <% if timelapse["blocker"].present? %>
+                <p class="leaderboard__note">Lapse withheld the video: <%= timelapse["blocker"] %></p>
+              <% elsif timelapse["playback_url"].present? %>
+                <video controls preload="none" poster="<%= timelapse["thumbnail_url"] %>" src="<%= timelapse["playback_url"] %>"></video>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="leaderboard__note">None of this ship's Hackatime projects: they didn't record one, or not on Lapse.</p>
+      <% end %>
     <% end %>
 
     <% if data["duplicates"].present? %>

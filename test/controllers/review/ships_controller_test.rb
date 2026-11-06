@@ -132,7 +132,8 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     get review_ship_path(@ship)
     assert_select ".review__trust[data-trust=yellow]", /Hackatime has its doubts about them \(trust level yellow/
     assert_select ".review__flag[data-severity=warn]", /Hackatime has its doubts about them \(trust level yellow\)/
-    assert_select ".review__subheading", /Timelapses on Lapse · 2 recordings · 2.3 hrs recorded/
+    assert_select ".review__subheading", /Timelapses on Lapse · 2 recordings/
+    assert_select "[data-lapse=coverage]", /2.3 hrs recorded\s+of 0 hrs on Hackatime\s+to the ship/
     assert_select ".review__timelapses a[href='https://lapse.hackclub.com/timelapse/tl9']", "Pong, hour 2"
     assert_select ".review__timelapses", /pong · about 2 hours recorded · Oct 8, \d\d:00 · unlisted/
     assert_select ".review__timelapses video[src='https://lapse.hackclub.com/video/tl9.mp4']"
