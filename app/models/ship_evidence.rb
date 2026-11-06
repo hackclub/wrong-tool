@@ -20,6 +20,12 @@ class ShipEvidence < ApplicationRecord
   def built? = status == "built"
 
   # Asks for it to be gathered, unless it was asked for in the last few minutes and hasn't come yet.
+  # Every ship waiting in review or on the fraud check gathered again (Resync, for all of them), say once a new source
+  # comes in. Returns those ships.
+  def self.request_waiting
+    Ship.in_review.order(:id).to_a.each { |ship| request(ship) }
+  end
+
   def self.request(ship)
     evidence = find_or_initialize_by(ship:)
     return evidence if evidence.persisted? && evidence.pending? && evidence.updated_at > 5.minutes.ago

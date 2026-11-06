@@ -62,4 +62,20 @@ namespace :ships do
     puts
     puts "#{sent} of #{owed.size} #{dry_run ? "would be " : ""}DMed."
   end
+
+  # Resync for every ship waiting in review or on the fraud check (ShipEvidence.request_waiting): its evidence gathered
+  # again in the background, say once Hackatime's trust level comes in. DRY_RUN=1 lists them without asking.
+  #
+  #   bin/rails ships:resync DRY_RUN=1
+  #   bin/rails ships:resync
+  desc "Gather the evidence again for every ship waiting on a review or the fraud check"
+  task resync: :environment do
+    if ENV["DRY_RUN"].present?
+      ships = Ship.in_review.includes(project: :user).order(:id)
+      ships.each { |ship| puts format("#%-6d %-30s %s", ship.id, ship.title[0, 30], ship.project.user.public_name) }
+      puts "\n#{ships.size} would be gathered again."
+    else
+      puts "#{ShipEvidence.request_waiting.size} gathered again in the background."
+    end
+  end
 end

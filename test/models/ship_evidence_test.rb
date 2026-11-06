@@ -140,6 +140,18 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     assert_equal "danger", ship.flags.find_by(kind: "hackatime_trust").severity
   end
 
+  test "resyncing the waiting ships gathers each in review again, and leaves decided ones alone" do
+    waiting = ship_now
+    decided = ship_now(repo_url: "https://github.com/orpheus/old")
+    decided.update_columns(status: "approved")
+    ShipEvidence.build!(waiting)
+    clear_enqueued_jobs
+
+    assert_equal [ waiting ], ShipEvidence.request_waiting
+    assert_enqueued_jobs 1, only: ShipEvidenceJob
+    assert waiting.evidence.reload.pending?
+  end
+
   test "the demo check never asks a private network" do
     DemoProbe.stubbed = nil
     %w[http://127.0.0.1/ http://localhost:3000/ http://10.0.0.5/ http://169.254.169.254/latest/meta-data http://[::1]/].each do |url|
