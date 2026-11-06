@@ -45,6 +45,7 @@ class ShipFlag < ApplicationRecord
   def self.rules(ship, data, sources)
     flags = []
     time = data["hackatime"]
+    trust = data["trust"] || time # it used to be kept with the hours
     repo = data["repo"]
     demo = data["demo"]
     hours = ->(seconds) { "#{(seconds / 3600.0).round(1).to_s.delete_suffix(".0")}h" }
@@ -64,13 +65,14 @@ class ShipFlag < ApplicationRecord
         flags << { kind: "time_after_commits", severity: "warn",
                    title: "#{hours.(time["after_last_commit_seconds"])} tracked after the last commit" }
       end
-      # Hackatime's own call on their hours. Red is Hackatime saying it's caught them logging time they didn't build,
-      # so it holds up approving until someone's looked and said why it's fine.
-      if [ Hackatime::TRUST_UNTRUSTED, Hackatime::TRUST_SUSPECT ].include?(time["trust_level"])
-        flags << { kind: "hackatime_trust", severity: time["trust_level"] == Hackatime::TRUST_UNTRUSTED ? "danger" : "warn",
-                   title: "#{Hackatime.trust_label(time["trust_level"])} (trust level #{time["trust_level"]})",
-                   details: { "trust_level" => time["trust_level"], "checked_at" => time["trust_checked_at"] } }
-      end
+    end
+
+    # Hackatime's own call on their hours, whether or not the hours could be read. Red is Hackatime saying it's caught
+    # them logging time they didn't build, so it holds up approving until someone's looked and said why it's fine.
+    if trust && [ Hackatime::TRUST_UNTRUSTED, Hackatime::TRUST_SUSPECT ].include?(trust["trust_level"])
+      flags << { kind: "hackatime_trust", severity: trust["trust_level"] == Hackatime::TRUST_UNTRUSTED ? "danger" : "warn",
+                 title: "#{Hackatime.trust_label(trust["trust_level"])} (trust level #{trust["trust_level"]})",
+                 details: { "trust_level" => trust["trust_level"], "checked_at" => trust["trust_checked_at"] } }
     end
 
     if sources["github"] == "ok" && repo

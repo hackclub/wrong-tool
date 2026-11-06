@@ -61,10 +61,12 @@ module Hackatime
   # Hackatime's trust level for someone who's linked, right now, since the one kept when they linked is a snapshot and
   # Hackatime may have made its mind up since. With the admin key (config/initializers/hackatime.rb) it's the real one;
   # otherwise it's asked with the token they linked with, which Hackatime answers with yellow passed off as blue.
+  # The admin key needs only who they are on Hackatime, so it answers even once their own token's stopped working.
   def self.trust(user)
-    raise NotLinked unless user.hackatime_linked?
+    raise NotLinked if user.hackatime_uid.blank?
     return stubbed_trust&.[](user.hackatime_uid) if stubbed_users
     return admin_trust(user.hackatime_uid) if Rails.configuration.x.hackatime_admin_api_key
+    raise NotLinked unless user.hackatime_linked?
 
     response = get("/api/v1/authenticated/me", bearer: user.hackatime_access_token)
     raise Expired if response.is_a?(Net::HTTPUnauthorized)

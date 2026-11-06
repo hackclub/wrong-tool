@@ -43,6 +43,7 @@ class ShipEvidence < ApplicationRecord
     sources = {}
     data = {
       "hackatime" => gather(sources, "hackatime") { hackatime(ship) },
+      "trust" => trust(ship.project.user),
       "repo" => gather(sources, "github") { repo(ship) },
       "demo" => gather(sources, "demo") { demo(ship) },
       "duplicates" => duplicates(ship)
@@ -80,8 +81,7 @@ class ShipEvidence < ApplicationRecord
   def self.hackatime(ship)
     user = ship.project.user
     window = window(ship)
-    trust = trust(user)
-    return { "tracked_seconds" => 0, "days" => {}, "long_sessions" => [], "longest_seconds" => 0, "sessions" => [], **trust } if ship.hackatime_projects.empty?
+    return { "tracked_seconds" => 0, "days" => {}, "long_sessions" => [], "longest_seconds" => 0, "sessions" => [] } if ship.hackatime_projects.empty?
 
     spans = Hackatime.heartbeat_spans(user, ship.hackatime_projects, start_date: Program::HACKATIME_START - 1,
                                                                      end_date: ship.created_at.utc.to_date + 2)
@@ -98,12 +98,13 @@ class ShipEvidence < ApplicationRecord
 
     { "tracked_seconds" => sessions.sum { |session| session["seconds"] }, "days" => days.sort.to_h,
       "long_sessions" => long.first(20), "longest_seconds" => long.first&.dig("seconds").to_i,
-      "sessions" => sessions.sort_by { |session| session["start"] }, "timezone" => user.time_zone.tzinfo.identifier, **trust }
+      "sessions" => sessions.sort_by { |session| session["start"] }, "timezone" => user.time_zone.tzinfo.identifier }
   end
 
-  # What Hackatime makes of their hours now (Hackatime.trust), kept on them too so it's the latest anyone's seen.
-  # If Hackatime won't say this time, the hours still stand: a reviewer gets the last call we were told, marked as
-  # not asked just now.
+  # What Hackatime makes of their hours now (Hackatime.trust), kept on them too so it's the latest anyone's seen. A
+  # source of its own, so it's there even when their hours can't be read (their token's stopped working: the admin key
+  # doesn't need it). If Hackatime won't say this time, a reviewer gets the last call we were told, marked as not asked
+  # just now; never linked, there's none.
   def self.trust(user)
     level = Hackatime.trust(user)
     user.note_hackatime_trust!(level)
@@ -111,6 +112,8 @@ class ShipEvidence < ApplicationRecord
   rescue Hackatime::Expired, Hackatime::Unavailable
     { "trust_level" => user.hackatime_trust_level, "trust_checked_at" => user.hackatime_trust_checked_at&.iso8601,
       "trust_stale" => true }
+  rescue Hackatime::NotLinked
+    nil
   end
 
   def self.repo(ship)

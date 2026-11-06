@@ -1,0 +1,10 @@
+<%# locals: (trust:) %>
+<%# What Hackatime makes of the maker's hours (ShipEvidence.trust): its trust level, when it was asked, and whether it
+    answered this time. Reviewers only. %>
+<% if trust&.dig("trust_level").present? %>
+  <p class="review__trust" data-trust="<%= trust["trust_level"] %>">
+    <strong>Hackatime's own call:</strong> <%= Hackatime.trust_label(trust["trust_level"]) %>
+    (trust level <%= trust["trust_level"] %><% if trust["trust_checked_at"].present? %>, <%= trust["trust_stale"] ? "last asked" : "asked" %>
+    <%= time_ago_in_words(Time.zone.parse(trust["trust_checked_at"])) %> ago<% end %>)<% if trust["trust_stale"] %>. Hackatime wouldn't say this time<% end %>.
+  </p>
+<% end %>

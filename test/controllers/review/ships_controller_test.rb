@@ -140,6 +140,21 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     Hackatime.stubbed_trust = before
   end
 
+  test "with their hours unreadable, the page still shows Hackatime's call on them" do
+    before = Hackatime.stubbed_trust
+    link_hackatime(users(:ana), token: "token-heidi")
+    Hackatime.stubbed_trust = { "1002" => "red" }
+    ShipEvidence.find_or_create_by!(ship: @ship).update!(status: "built", built_at: Time.current, sources: { "hackatime" => "Hackatime stopped accepting their token" },
+                           data: { "hackatime" => nil, "trust" => { "trust_level" => "red", "trust_checked_at" => Time.current.iso8601 } })
+
+    sign_in_as(users(:orpheus))
+    get review_ship_path(@ship)
+    assert_select ".review__note, .leaderboard__note", /Hackatime stopped accepting their token/
+    assert_select ".review__trust[data-trust=red]", /Hackatime doesn't trust their hours \(trust level red, asked less than a minute ago\)/
+  ensure
+    Hackatime.stubbed_trust = before
+  end
+
   test "reviewers never open their own ship" do
     users(:ana).update!(review_roles: [ "reviewer" ])
     sign_in_as(users(:ana))

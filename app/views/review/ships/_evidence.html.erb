@@ -4,6 +4,7 @@
     shipped elsewhere. Reviewers only, all of it. Times are the maker's. Resync gathers it again. %>
 <% data = evidence&.data || {} %>
 <% time = data["hackatime"] %>
+<% trust = data["trust"] || time %><%# it used to be kept with the hours %>
 <% repo = data["repo"] %>
 <% zone = ActiveSupport::TimeZone[time&.dig("timezone") || ship.project.user.time_zone.tzinfo.identifier] || ship.project.user.time_zone %>
 <% hrs = ->(seconds) { number_with_precision(seconds.to_i / 3600.0, precision: 1, strip_insignificant_zeros: true) } %>
@@ -27,6 +28,12 @@
       <p class="leaderboard__note"><% problems.each do |source, health| %><%= source.humanize %>: <%= health %>. <% end %></p>
     <% end %>
 
+    <% if !time && trust&.dig("trust_level").present? %>
+      <%# Their hours couldn't be read (say, their token stopped working), but Hackatime still said what it makes of them. %>
+      <h3 class="review__subheading">Hackatime</h3>
+      <%= render "review/ships/trust", trust: %>
+    <% end %>
+
     <% if time %>
       <h3 class="review__subheading">Hackatime · <%= ship.hackatime_projects.join(", ").presence || "no project" %></h3>
       <p class="leaderboard__note">
@@ -35,13 +42,7 @@
         <% if time.key?("after_last_commit_seconds") %>· <%= hrs.(time["after_last_commit_seconds"]) %> hrs after the last commit<% end %>
         · their time (<%= zone.tzinfo.identifier %>)
       </p>
-      <% if time["trust_level"].present? %>
-        <p class="review__trust" data-trust="<%= time["trust_level"] %>">
-          <strong>Hackatime's own call:</strong> <%= Hackatime.trust_label(time["trust_level"]) %>
-          (trust level <%= time["trust_level"] %><% if time["trust_checked_at"].present? %>, <%= time["trust_stale"] ? "last asked" : "asked" %>
-          <%= time_ago_in_words(Time.zone.parse(time["trust_checked_at"])) %> ago<% end %>)<% if time["trust_stale"] %>. Hackatime wouldn't say this time<% end %>.
-        </p>
-      <% end %>
+      <%= render "review/ships/trust", trust: %>
       <% first_day = Program::HACKATIME_START %>
       <% last_day = [ ship.created_at.in_time_zone(zone).to_date, first_day ].max %>
       <ol class="review__days" aria-label="Time a day">

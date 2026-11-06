@@ -107,7 +107,7 @@ class ShipEvidenceTest < ActiveSupport::TestCase
     ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
     ShipEvidence.build!(ship)
 
-    assert_equal "red", ship.evidence.data["hackatime"]["trust_level"]
+    assert_equal "red", ship.evidence.data["trust"]["trust_level"]
     assert_equal "red", @user.reload.hackatime_trust_level
     assert @user.hackatime_trust_checked_at.present?
     assert @user.hackatime_untrusted?
@@ -134,10 +134,30 @@ class ShipEvidenceTest < ActiveSupport::TestCase
 
     with_hackatime_trust_down { ShipEvidence.build!(ship) }
     time = ship.evidence.reload.data["hackatime"]
+    trust = ship.evidence.data["trust"]
     assert_equal "ok", ship.evidence.sources["hackatime"]
     assert_equal 90 * 60, time["tracked_seconds"]
-    assert_equal [ "red", true ], [ time["trust_level"], time["trust_stale"] ]
+    assert_equal [ "red", true ], [ trust["trust_level"], trust["trust_stale"] ]
     assert_equal "danger", ship.flags.find_by(kind: "hackatime_trust").severity
+  end
+
+  test "their token having stopped working loses their hours, but not what Hackatime makes of them" do
+    Hackatime.stubbed_trust = { "1001" => "red" }
+    ship = travel_to(Time.utc(2026, 10, 15)) { ship_now }
+    Hackatime.singleton_class.alias_method(:heartbeat_spans_without_test, :heartbeat_spans)
+    Hackatime.define_singleton_method(:heartbeat_spans) { |*, **| raise Hackatime::Expired }
+    begin
+      ShipEvidence.build!(ship)
+    ensure
+      Hackatime.singleton_class.alias_method(:heartbeat_spans, :heartbeat_spans_without_test)
+      Hackatime.singleton_class.remove_method(:heartbeat_spans_without_test)
+    end
+
+    assert_equal "Hackatime stopped accepting their token", ship.evidence.sources["hackatime"]
+    assert_nil ship.evidence.data["hackatime"]
+    assert_equal "red", ship.evidence.data["trust"]["trust_level"]
+    assert_equal "danger", ship.flags.find_by(kind: "hackatime_trust").severity
+    assert ship.flags.find_by(kind: "hackatime_unread"), "and that the hours couldn't be read"
   end
 
   test "resyncing the waiting ships gathers each in review again, and leaves decided ones alone" do
