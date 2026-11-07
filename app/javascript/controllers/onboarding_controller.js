@@ -9,7 +9,7 @@ import { capture, previewing } from "analytics"
 const PICK_DELAY = 360
 const ANSWERS_KEY = "wrong-tool:onboarding"
 const ANSWERS = [ "step", "tool", "custom", "genre", "phrase", "twist", "idea", "ideaTool", "ideaOwn", "ideaSkipped", "prize",
-                  "pace", "buildTime", "pledged", "signedOn" ]
+                  "pace", "buildTime", "pledged", "signedOn", "kept" ]
 // Set while the pledge is out being signed at Hack Club Auth, so coming back plays the ceremony.
 const SIGNING_KEY = "wrong-tool:signing-pledge"
 const STEP_NAMES = [ "tool", "idea", "prize", "commit" ]
@@ -29,7 +29,7 @@ export default class extends Controller {
     "prize", "mascot", "mascotSprite", "mascotSay",
     "commit", "pace", "finishLine", "buildTime",
     "pledgePace", "pledgeEvery", "pledgeIdea", "pledgePreposition", "pledgeTool", "pledgeDate", "accountable", "pledgeTracker", "ink",
-    "signature", "saveError",
+    "signature", "saveError", "signedTitle", "kept",
     "signIn", "holdFill", "signInLabel", "signHint",
     "fileName", "progress", "nameBox", "formula", "projectTab"
   ]
@@ -44,13 +44,13 @@ export default class extends Controller {
       step: 1, tool: null, custom: "", otherOpen: false,
       genre: "", phrase: "", twist: "", idea: "", ideaTool: null, ideaOwn: false, ideaSkipped: false,
       rolling: false, stop1: true, stop2: true, stop3: true, spin: 0, ownOpen: false, own: "",
-      prize: null, pace: null, buildTime: null, pledged: false, signedOn: null, signing: false, signTick: -1,
+      prize: null, pace: null, buildTime: null, pledged: false, signedOn: null, kept: null, signing: false, signTick: -1,
       holdP: 0, holding: false, letGo: false, taps: 0, autofill: false,
       ...this.#restoreAnswers()
     }
     // A pledge is only signed for whoever's signed in, and only once it's saved as your project: without one (the
     // save failed, or the project's gone since), a pledge this tab remembers is there to sign again.
-    if (!this.signedInValue || !this.hasProjectValue) this.state.pledged = false
+    if (!this.signedInValue || !this.hasProjectValue) Object.assign(this.state, { pledged: false, kept: null })
     if (this.state.pledged) this.state.step = 4
     // Ideas rolled this visit (as the pledge would store them), so "Roll again" never shows one twice.
     this.rolled = new Set()
@@ -448,7 +448,7 @@ export default class extends Controller {
   }
 
   // The signed pledge becomes your project, and off you go to it. (Try again, if it didn't save.) If you'd already
-  // pledged, your project stays as it was.
+  // pledged, your project stays as it was, and you stay here to read that (`kept` is its title).
   async saveProject() {
     const s = this.state
     this.saveErrorTarget.hidden = true
@@ -462,7 +462,12 @@ export default class extends Controller {
         body: JSON.stringify({ project })
       })
       if (!response.ok) throw new Error(`Saving the pledge: ${response.status}`)
-      const { location } = await response.json()
+      const { location, already_pledged: alreadyPledged, title } = await response.json()
+      if (alreadyPledged) {
+        this.#set({ kept: title })
+        this.#showDayOne()
+        return this.#saveAnswers()
+      }
       // Anything Turbo kept of the project from before it existed was the redirect back here.
       window.Turbo?.cache.clear()
       window.Turbo ? window.Turbo.visit(location) : window.location.assign(location)
@@ -578,7 +583,7 @@ export default class extends Controller {
       1: toolName,
       2: s.idea ? capitalize(s.idea) : s.ideaSkipped ? "Not decided yet" : "",
       3: prize?.full ?? "",
-      4: s.pledged && finish ? `Signed · done by ${shortDate(finish)}` : ""
+      4: s.kept ? "Already pledged" : s.pledged && finish ? `Signed · done by ${shortDate(finish)}` : ""
     }
 
     this.rowTargets.forEach((row, index) => {
@@ -709,6 +714,9 @@ export default class extends Controller {
     this.inkTarget.style.inlineSize = `${ink * 100}%`
     this.commitTarget.toggleAttribute("data-inked", ink > 0)
     this.commitTarget.toggleAttribute("data-pledged", s.pledged)
+    this.signedTitleTarget.textContent = s.kept ? "You already have a project." : "Day 1 starts now."
+    this.keptTarget.textContent = s.kept ? `It's “${s.kept}”, and it stays as you pledged it. This new pledge isn't saved.` : ""
+    this.keptTarget.hidden = !s.kept
 
     // The button fills as you hold it.
     const ready = this.#commitReady()
