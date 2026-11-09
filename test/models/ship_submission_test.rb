@@ -109,9 +109,12 @@ class ShipSubmissionTest < ActiveSupport::TestCase
 
   test "no token: nothing's sent" do
     Airtable.stubbed = nil
+    key, Rails.configuration.x.airtable_api_key = Rails.configuration.x.airtable_api_key, nil
     ship = ship_now(hours: 3)
     ship.update_columns(status: "rejected")
     assert_nil ShipSubmission.sync!(ship)
+  ensure
+    Rails.configuration.x.airtable_api_key = key
   end
 
   private
