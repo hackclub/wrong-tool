@@ -94,7 +94,7 @@ module ShipSubmission
       "Optional - Override Hours Spent" => added,
       "Optional - Override Hours Spent Justification" => hours_note(ship, approval, granted, earlier, added),
       "Justification - Specific Technical Features" => approval&.justification,
-      "Justification - Deflation Justification" => approval&.deflation_reason,
+      "Justification - Deflation Justification" => deflation(ship, approval),
       "Justification - Additional Justification" => additional(ship, approval),
       "Optional - Override Duplicate Justification" =>
         (if earlier.positive?
@@ -110,14 +110,34 @@ module ShipSubmission
       "Justification - Additional Justification" => nil, "Optional - Override Duplicate Justification" => nil }
   end
 
+  # Everything a Unified YSWS reviewer needs, in the one field it reads: when the override hours are set (always, from
+  # us), the base's Unified Justification is this alone, not the separate Justification fields.
   def self.hours_note(ship, approval, granted, earlier, added)
     reviewer = approval&.reviewer&.name.presence || "a reviewer"
-    note = "Reviewed in wrong tool by #{reviewer} on #{approval&.created_at&.to_date&.iso8601 || ship.decided_at&.to_date&.iso8601}: " \
-           "approved #{fmt(granted)} hrs of the #{fmt(ship.hours)} it shipped with."
-    note += " #{fmt(earlier)} hrs were approved on earlier ships, so this adds #{fmt(added)}." if earlier.positive?
-    hours_changes = ship.review_decisions.select(&:hours_changed?)
-    note += " An admin changed the hours since: #{hours_changes.last.justification}" if hours_changes.any?
-    note
+    on = approval&.created_at&.to_date&.iso8601 || ship.decided_at&.to_date&.iso8601
+    hours_change = ship.review_decisions.select(&:hours_changed?).last
+    fraud = ship.review_decisions.select(&:fraud?).last
+    user = ship.project.user
+
+    [
+      "Reviewed in wrong tool by #{reviewer} on #{on}. Approved #{fmt(granted)} hrs; it shipped with #{fmt(ship.hours)} " \
+      "hrs tracked on Hackatime.",
+      ("#{fmt(earlier)} hrs were approved on this project's earlier ships, so this record adds #{fmt(added)}." if earlier.positive?),
+      ("Hackatime (ID #{user.hackatime_uid}): #{hackatime_range(ship)}." if hackatime_range(ship)),
+      ("Lapse timelapses: #{lapse_links(ship)}" if lapse_links(ship)),
+      ("What the reviewer checked: #{approval.justification}" if approval&.justification),
+      ("Hours taken off: #{deflation(ship, approval)}" if deflation(ship, approval)),
+      ("Hours changed afterwards by #{hours_change.reviewer&.name || "an admin"} to #{fmt(hours_change.approved_hours)}: " \
+       "#{hours_change.justification}" if hours_change),
+      ("Fraud check: passed#{" (marked sus)" if ship.fraud_status == "sus"}, trust #{fraud.trust_score}/10. #{fraud.justification}".strip if fraud),
+      ("Review video: #{approval.video_url}" if approval&.video_url)
+    ].compact.join("\n\n")
+  end
+
+  # Why the reviewer took hours off, while it still grants fewer than it shipped with: an admin putting them back
+  # makes it moot.
+  def self.deflation(ship, approval)
+    approval&.deflation_reason if (ship.approved_hours || ship.hours).to_f < ship.hours.to_f
   end
 
   # The fraud check, and anything else a reviewer left for staff.
@@ -176,6 +196,6 @@ module ShipSubmission
 
   def self.fmt(hours) = hours.to_f.round(2).to_s.delete_suffix(".0")
 
-  private_class_method :approval_fields, :blank_approval_fields, :hours_note, :additional, :rejection_reason, :earlier_hours,
+  private_class_method :approval_fields, :blank_approval_fields, :hours_note, :deflation, :additional, :rejection_reason, :earlier_hours,
                        :hackatime_range, :lapse_links, :screenshot, :names, :github_username, :fmt
 end

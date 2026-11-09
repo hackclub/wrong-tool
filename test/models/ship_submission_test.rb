@@ -29,6 +29,12 @@ class ShipSubmissionTest < ActiveSupport::TestCase
     assert_equal 5.0, fields["Optional - Override Hours Spent"]
     assert_equal checked, fields["Justification - Specific Technical Features"]
     assert_equal "1h was on the menu screen", fields["Justification - Deflation Justification"]
+    # Unified YSWS reads only the override justification, so it has all of it.
+    justification = fields["Optional - Override Hours Spent Justification"]
+    assert_match "Approved 5 hrs; it shipped with 6 hrs tracked on Hackatime.", justification
+    assert_match "What the reviewer checked: #{checked}", justification
+    assert_match "Hours taken off: 1h was on the menu screen", justification
+    assert_match "Fraud check: passed, trust 8/10. Commits line up with the sessions.", justification
     assert_equal "Fraud check: passed, trust 8/10. Commits line up with the sessions.", fields["Justification - Additional Justification"]
     assert_equal "orpheus", fields["GitHub Username"]
     assert_equal "https://github.com/orpheus/beat-sheet", fields["Code URL"]
@@ -94,7 +100,29 @@ class ShipSubmissionTest < ActiveSupport::TestCase
 
     assert_equal 2, Airtable.stubbed.upserts
     assert_equal 3.0, sent["Optional - Override Hours Spent"]
-    assert_match "An admin changed the hours since: Half was on another game.", sent["Optional - Override Hours Spent Justification"]
+    assert_match "Hours changed afterwards by #{admin.name} to 3: Half was on another game.", sent["Optional - Override Hours Spent Justification"]
+  end
+
+  test "hours put back after a deflation: the deflation reason goes, the change and why are there instead" do
+    ship = ship_now(hours: 6)
+    ship.update_columns(fraud_status: "good", fraud_score: 9)
+    perform_enqueued_jobs(only: ShipSubmissionJob) do
+      decide(ship, "approved", approved_hours: "4", justification: checked, deflation_reason: "2h look like idle time")
+    end
+    assert_equal "2h look like idle time", sent["Justification - Deflation Justification"]
+
+    admin = users(:orpheus)
+    Rails.configuration.x.admin_slack_ids, admins = [ admin.slack_id ], Rails.configuration.x.admin_slack_ids
+    perform_enqueued_jobs(only: ShipSubmissionJob) do
+      ShipReview.change_hours(ship, by: admin, approved_hours: "6", justification: "The idle time was them reading docs.")
+    end
+    Rails.configuration.x.admin_slack_ids = admins
+
+    assert_equal 6.0, sent["Optional - Override Hours Spent"]
+    assert_nil sent["Justification - Deflation Justification"]
+    justification = sent["Optional - Override Hours Spent Justification"]
+    assert_no_match "Hours taken off", justification
+    assert_match "Hours changed afterwards by #{admin.name} to 6: The idle time was them reading docs.", justification
   end
 
   test "the sweep sends decided ships Airtable hasn't got, and skips the ones in review" do
