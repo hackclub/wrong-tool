@@ -3,34 +3,55 @@
 # ship once it's decided and whenever its decision changes; the sweep (ShipSubmissionJob with no ship) catches what
 # couldn't be sent.
 #
-# Approved (the review approved it and it passed the fraud check) ticks "Automation - Submit to Unified YSWS", with the
-# hours it adds to the project and why: the reviewer's justification, the deflation reason, the fraud check's score and
-# note, the Hackatime projects and dates, and the Lapse recordings. Rejected, by a reviewer or the fraud check, ticks
-# Rejected with the reason, and never goes to the automation. In review or asked for changes, it isn't sent at all.
+# Approved (the review approved it and it passed the fraud check) goes with the hours it adds to the project and why:
+# the reviewer's justification, the deflation reason, the fraud check's score and note, the Hackatime projects and
+# dates, and the Lapse recordings. It's ticked "Automation - Submit to Unified YSWS" only once the record has their
+# address and birthday (NEEDED), whether from us or filled in on Airtable; until then it waits there, unticked, and
+# the sweep looks again. Rejected, by a reviewer or the fraud check, ticks Rejected with the reason, and never goes to
+# the automation. In review or asked for changes, it isn't sent at all.
 module ShipSubmission
   KEY_PREFIX = "wrong-tool-ship-"
 
+  SUBMIT = "Automation - Submit to Unified YSWS"
+  # What Unified YSWS needs about the maker before it's sent there: as the record has it on Airtable, which may be from
+  # us or filled in there by hand.
+  NEEDED = [ "Address (Line 1)", "City", "ZIP / Postal Code", "Country", "Birthday" ].freeze
+
   def self.sendable?(ship) = ship.approved? || ship.rejected?
 
-  # Sends it, and notes it was sent. Nothing if it's not decided, or there's no Airtable token here.
+  # Sends it, then ticks it for Unified YSWS if it's approved and past the fraud check and the record has everything
+  # NEEDED (or unticks it, if not), and notes it was sent. Nothing if it's not decided, or there's no Airtable token here.
   def self.sync!(ship)
     return unless Airtable.configured? && sendable?(ship)
 
     started = Time.current
-    record_id = Airtable.upsert(fields(ship), merge_on: "Submission Key")
-    ship.update_columns(airtable_record_id: record_id, airtable_synced_at: started)
-    record_id
+    record = Airtable.upsert(fields(ship), merge_on: "Submission Key")
+    submit = submittable?(ship) && complete?(record["fields"])
+    Airtable.update(record["id"], SUBMIT => submit) unless record["fields"][SUBMIT].present? == submit
+    ship.update_columns(airtable_record_id: record["id"], airtable_synced_at: started,
+                        airtable_submitted_at: submit ? ship.airtable_submitted_at || started : nil)
+    record["id"]
   end
 
-  # Decided ships that have never been sent, or changed since.
+  def self.submittable?(ship) = ship.approved? && ship.fraud_passed?
+
+  # Everything NEEDED is on the record.
+  def self.complete?(fields)
+    NEEDED.all? { |name| fields[name].to_s.strip.present? }
+  end
+
+  # Decided ships that have never been sent, or changed since, and approved ones not ticked for Unified YSWS yet (their
+  # address or birthday might be on the record now).
   def self.unsynced
-    Ship.where(status: %w[approved rejected]).where("airtable_synced_at IS NULL OR airtable_synced_at < ships.updated_at").order(:id)
+    decided = Ship.where(status: %w[approved rejected])
+    decided.where("airtable_synced_at IS NULL OR airtable_synced_at < ships.updated_at")
+           .or(decided.where(status: "approved", fraud_status: %w[good sus], airtable_submitted_at: nil)).order(:id)
   end
 
   def self.fields(ship)
     user = ship.project.user
     address = user.address || {}
-    approved = ship.approved? && ship.fraud_passed?
+    approved = submittable?(ship)
     first, last = names(user)
 
     {
@@ -58,7 +79,6 @@ module ShipSubmission
       "Justification - Lapse Links, comma-separated" => lapse_links(ship),
       "Rejected" => ship.rejected?,
       "Rejection Reason" => (rejection_reason(ship) if ship.rejected?),
-      "Automation - Submit to Unified YSWS" => approved,
       **(approved ? approval_fields(ship) : blank_approval_fields)
     }
   end

@@ -2,8 +2,8 @@
 # changes. With none, the sweep: every decided ship not sent since it last changed, which catches what Airtable
 # wouldn't take before, and every ship decided before this existed.
 class ShipSubmissionJob < ApplicationJob
-  # Airtable takes 5 requests a second per base.
-  PAUSE = 0.25
+  # Airtable takes 5 requests a second per base, and a ship can take two.
+  PAUSE = 0.5
 
   retry_on Airtable::Unavailable, wait: :polynomially_longer, attempts: 5
 
