@@ -107,6 +107,16 @@ class ShipSubmissionTest < ActiveSupport::TestCase
     assert_equal 1, Airtable.stubbed.size, "nothing's changed since"
   end
 
+  test "no address or birthday on us: those fields are left out, so what's on Airtable stays" do
+    @project.user.update!(address: nil, birthdate: nil)
+    ship = ship_now(hours: 3)
+    ship.update_columns(status: "rejected")
+    ShipSubmission.sync!(ship)
+
+    fields = Airtable.stubbed.last
+    %w[Address\ (Line\ 1) City State\ /\ Province ZIP\ /\ Postal\ Code Country Birthday].each { |field| assert_not fields.key?(field), field }
+  end
+
   test "no token: nothing's sent" do
     Airtable.stubbed = nil
     key, Rails.configuration.x.airtable_api_key = Rails.configuration.x.airtable_api_key, nil

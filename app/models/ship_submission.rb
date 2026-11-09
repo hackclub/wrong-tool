@@ -44,12 +44,15 @@ module ShipSubmission
       "Email" => user.email,
       "GitHub Username" => github_username(ship.repo_url),
       "Slack Username" => user.slack_display_name,
-      "Address (Line 1)" => address["street_address"],
-      "City" => address["locality"],
-      "State / Province" => address["region"],
-      "ZIP / Postal Code" => address["postal_code"],
-      "Country" => address["country"],
-      "Birthday" => user.birthdate.presence,
+      # Only what we have: a blank never wipes an address or birthday filled in on Airtable from somewhere else.
+      **{
+        "Address (Line 1)" => address["street_address"],
+        "City" => address["locality"],
+        "State / Province" => address["region"],
+        "ZIP / Postal Code" => address["postal_code"],
+        "Country" => address["country"],
+        "Birthday" => user.birthdate
+      }.compact_blank,
       "Justification - Submitter Hackatime ID" => user.hackatime_uid,
       "Justification - Hackatime Project Name(s) + Date Range(s)" => hackatime_range(ship),
       "Justification - Lapse Links, comma-separated" => lapse_links(ship),
