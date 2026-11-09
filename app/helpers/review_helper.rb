@@ -5,7 +5,7 @@ module ReviewHelper
                          "rejected" => "Rejected" }.freeze
   DECISION_LABELS = { "approved" => "Approved", "changes_requested" => "Asked for changes", "rejected" => "Rejected",
                       "send_fraud" => "Sent to fraud", "send_admin" => "Sent to an admin", "fraud_pass" => "Passed the fraud check",
-                      "fraud_fail" => "Failed the fraud check" }.freeze
+                      "fraud_fail" => "Failed the fraud check", "hours_changed" => "Hours changed" }.freeze
   FRAUD_LABELS = { "unchecked" => "Not yet", "good" => "Passed", "sus" => "Passed, sus", "fraud" => "Failed" }.freeze
 
   # "Approved", "Changes requested", "Rejected", or "In review".

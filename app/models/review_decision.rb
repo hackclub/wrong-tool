@@ -2,13 +2,16 @@
 # changes requested (they can ship again) or rejected (final), each with a note to the maker and a staff-only
 # justification; or sent on, to fraud or an admin, with a note for them (send_fraud, send_admin). In the fraud queue
 # (FraudCheck): a trust score and a note, passing or failing it. Nobody (wrong tool itself) made the ones keeping a
-# fraud check from the ship before. The ship's history is its decisions, newest last.
+# fraud check from the ship before. An admin can change an approved ship's hours afterwards, with why (hours_changed).
+# The ship's history is its decisions, newest last.
 class ReviewDecision < ApplicationRecord
   QUEUES = %w[review fraud].freeze
   VERDICTS = %w[approved changes_requested rejected].freeze
   HOLDS = %w[send_fraud send_admin].freeze
   FRAUD = %w[fraud_pass fraud_fail].freeze
-  DECISIONS = VERDICTS + HOLDS + FRAUD
+  # An admin changing an approved ship's hours afterwards (ShipReview.change_hours), with why.
+  EDITS = %w[hours_changed].freeze
+  DECISIONS = VERDICTS + HOLDS + FRAUD + EDITS
   # What decides a ship, for its note to the maker: a reviewer's verdict, or failing the fraud check.
   FINAL = VERDICTS + %w[fraud_fail]
   # What a reviewer writes, at the least: what they checked, for an approval (staff only); what to change or why
@@ -27,8 +30,6 @@ class ReviewDecision < ApplicationRecord
   validates :decision, inclusion: { in: DECISIONS }
   with_options if: :approved? do
     validates :justification, length: { minimum: JUSTIFICATION_MIN, too_short: "needs at least %{count} characters: what you checked, and what's in it" }
-    validates :approved_hours, numericality: { greater_than_or_equal_to: 0, message: "should be a number of hours" }
-    validate :approved_hours_within_ship
     validate :deflation_explained
   end
   validates :note_to_maker, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: they'll read it" },
@@ -36,6 +37,13 @@ class ReviewDecision < ApplicationRecord
   validates :video_url, format: { with: URL, message: "should be a link" }, allow_nil: true
   validates :justification, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: what they should look at" },
                             if: :hold?
+  with_options if: -> { approved? || hours_changed? } do
+    validates :approved_hours, numericality: { greater_than_or_equal_to: 0, message: "should be a number of hours" }
+    validate :approved_hours_within_ship
+  end
+  with_options if: :hours_changed? do
+    validates :justification, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: why the hours changed" }
+  end
   with_options if: -> { fraud? && reviewer } do
     validates :trust_score, numericality: { only_integer: true, in: 1..10, message: "should be 1 to 10" }
     validates :justification, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: what you saw" }
@@ -48,6 +56,7 @@ class ReviewDecision < ApplicationRecord
   def rejected? = decision == "rejected"
   def hold? = HOLDS.include?(decision)
   def fraud? = FRAUD.include?(decision)
+  def hours_changed? = decision == "hours_changed"
 
   # Fewer hours than the ship took.
   def deflated?

@@ -37,6 +37,41 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert ship.reload.approved?
   end
 
+  test "an admin can change an approved ship's hours, with why, but not past what it took or below what's spent" do
+    admin = users(:orpheus)
+    Rails.configuration.x.admin_slack_ids, admins = [ admin.slack_id ], Rails.configuration.x.admin_slack_ids
+    ship = ship_now(hours: 6)
+    ship.update!(fraud_status: "good", fraud_score: 9)
+    assert decide(ship, "approved", approved_hours: "6", justification: checked).persisted?
+    assert ship.reload.approved?
+
+    assert_not ShipReview.change_hours(ship, by: @reviewer, approved_hours: "4", justification: "Two hours were a tutorial.").persisted?
+    change = ShipReview.change_hours(ship, by: admin, approved_hours: "4", justification: "short")
+    assert_includes change.errors.full_messages, "Justification needs at least 10 characters: why the hours changed"
+    change = ShipReview.change_hours(ship, by: admin, approved_hours: "7", justification: "Two hours were a tutorial.")
+    assert_includes change.errors.full_messages, "Approved hours can't be more than the 6.0 it took"
+
+    change = ShipReview.change_hours(ship, by: admin, approved_hours: "4", justification: "Two hours were a tutorial.")
+    assert change.persisted?
+    assert_equal 4, ship.reload.approved_hours
+    assert_equal 4, @project.reload.hours_approved
+    assert ship.approved?
+    assert_equal "approved", ship.verdict.decision, "the call that decided it stands"
+    assert_includes ShipReview.change_hours(ship, by: admin, approved_hours: "4", justification: "Two hours were a tutorial.").errors.full_messages,
+                    "That's the hours it has already."
+
+    waiting = ship_now(hours: 3, fraud: "unchecked")
+    assert decide(waiting, "approved", approved_hours: "3", justification: checked).persisted?
+    assert waiting.reload.awaiting_fraud?
+    assert ShipReview.change_hours(waiting, by: admin, approved_hours: "2.5", justification: "Half an hour was idle.").persisted?
+    assert_nil waiting.reload.approved_hours, "nothing's granted until the fraud check passes"
+    FraudCheck.verdict(waiting, by: admin, score: "8", note: "Real heartbeats, real commits.")
+    assert waiting.reload.approved?
+    assert_equal 2.5, waiting.approved_hours
+  ensure
+    Rails.configuration.x.admin_slack_ids = admins
+  end
+
   test "a ship from before today's rules, with no screenshot and a short description, can still be decided" do
     ship = ship_now(hours: 3)
     ship.screenshot.purge

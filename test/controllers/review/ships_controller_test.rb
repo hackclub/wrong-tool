@@ -13,6 +13,46 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
 
   teardown { Rails.configuration.x.admin_slack_ids = @admins }
 
+  test "an admin changes an approved ship's hours, with why, and it shows in its history" do
+    @ship.update!(fraud_status: "good", fraud_score: 9)
+    sign_in_as(users(:orpheus))
+    post review_ship_decisions_path(@ship), params: { review: { decision: "approved", approved_hours: "7.5",
+                                                                justification: "Played it to 10 points; each frame really is a component." } }
+    assert @ship.reload.approved?
+
+    get review_ship_path(@ship)
+    assert_select "form[action=?]", review_ship_hours_path(@ship) do
+      assert_select "input[name='review[approved_hours]'][value='7.5'][max='7.5']"
+    end
+
+    patch review_ship_hours_path(@ship), params: { review: { approved_hours: "5", justification: "x" } }
+    assert_redirected_to review_ship_path(@ship)
+    assert_match(/Justification needs at least 10/, flash[:alert])
+    assert_equal 7.5, @ship.reload.approved_hours
+
+    patch review_ship_hours_path(@ship), params: { review: { approved_hours: "5", justification: "2.5h were a tutorial." } }
+    assert_redirected_to review_ship_path(@ship)
+    assert_equal "Pong in Figma: 5 hrs now.", flash[:notice]
+    assert_equal 5, @ship.reload.approved_hours
+
+    follow_redirect!
+    assert_select ".review__call[data-decision=hours_changed]", text: /Hours changed.*5 hrs.*2\.5h were a tutorial/m
+    assert_select ".leaderboard__note[data-decision=approved]", /with 5 hrs to spend/
+  end
+
+  test "only admins can change the hours" do
+    @ship.update!(status: "approved", approved_hours: 7.5, decided_by: users(:orpheus), decided_at: Time.current)
+    sign_in_as(User.create!(hca_id: "ident!heidi", first_name: "Heidi", review_roles: [ "reviewer" ]))
+
+    get review_ship_path(@ship)
+    assert_response :success
+    assert_select "form[action=?]", review_ship_hours_path(@ship), 0
+
+    patch review_ship_hours_path(@ship), params: { review: { approved_hours: "1", justification: "Just because I can." } }
+    assert_equal "Only an admin can change the hours.", flash[:alert]
+    assert_equal 7.5, @ship.reload.approved_hours
+  end
+
   test "admins see the queue, open a ship in full, and approve it with fewer hours and why" do
     sign_in_as(users(:orpheus))
     get review_root_path

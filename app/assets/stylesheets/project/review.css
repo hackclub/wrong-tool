@@ -60,6 +60,20 @@
     }
   }
 
+  /* An admin changing an approved ship's hours: folded away until it's wanted. */
+  .review__change-hours {
+    font: 13px var(--font-cell);
+
+    summary {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .review__form {
+      margin-top: 8px;
+    }
+  }
+
   .review__form {
     display: flex;
     flex-direction: column;

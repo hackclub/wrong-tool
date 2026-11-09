@@ -11,6 +11,6 @@ class Review::QueueController < Review::BaseController
     @decided = Ship.includes(:decided_by, project: :user).decided.order(decided_at: :desc).limit(DECIDED_LIMIT)
     @awaiting_fraud = Ship.in_review.where.not(review_approved_at: nil).count
     @decided_today = ReviewDecision.where(reviewer: current_user, queue:, created_at: Time.current.all_day)
-                                   .where.not(decision: ReviewDecision::HOLDS).count
+                                   .where.not(decision: ReviewDecision::HOLDS + ReviewDecision::EDITS).count
   end
 end

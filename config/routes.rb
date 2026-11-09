@@ -66,6 +66,8 @@ Rails.application.routes.draw do
     post "next" => "next#create", as: :next
     resources :ships, only: :show do
       resources :decisions, only: :create
+      # An admin changing an approved ship's hours, with why.
+      resource :hours, only: :update
       # The fraud check's trust score.
       resource :fraud_verdict, only: :create
       resource :claim, only: %i[create update]

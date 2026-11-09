@@ -140,11 +140,14 @@
             <p class="leaderboard__note">Checked: <%= fraud_status_label(@ship).downcase %><% if @ship.fraud_score %>, <%= @ship.fraud_score %>/10<% end %>.
               <%= @ship.awaiting_fraud? ? "It's approved, so it's done." : "Waiting on a reviewer." %></p>
           <% elsif @ship.awaiting_fraud? %>
-            <p class="leaderboard__note" data-decision="approved">Approved. It completes once the fraud check passes.</p>
+            <p class="leaderboard__note" data-decision="approved">Approved, with <%= project_hours(ShipReview.granted_hours(@ship) || @ship.hours) %> hrs. It completes once the fraud check passes.</p>
           <% elsif @ship.review_hold %>
             <p class="leaderboard__note"><%= @ship.review_hold == "fraud" ? "It's back here once the fraud check passes." : "It's an admin's to decide." %></p>
           <% else %>
             <p class="leaderboard__note">Waiting on a reviewer.</p>
+          <% end %>
+          <% if current_user.admin? && (@ship.approved? || @ship.awaiting_fraud?) %>
+            <%= render "review/ships/hours_form", ship: @ship %>
           <% end %>
           <% if current_user.fraud_reviewer? && queue == "review" && @ship.fraud_status %>
             <p class="admin__muted">Fraud check: <%= fraud_status_label(@ship).downcase %><% if @ship.fraud_score %>, <%= @ship.fraud_score %>/10<% end %>.
