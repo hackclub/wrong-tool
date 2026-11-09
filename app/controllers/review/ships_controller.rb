@@ -14,6 +14,12 @@ class Review::ShipsController < Review::BaseController
   end
 
   private
+    # Why it wasn't made, at the top of the page, when the form (with its own list of what's wrong) isn't on it: the ship's
+    # been decided or checked since, someone else is on it, or it's theirs.
+    def show_refusal(made)
+      flash.now[:alert] = made.errors.full_messages.to_sentence unless @claim&.user == current_user
+    end
+
     def claim
       @claim = ReviewClaim.take(@ship, current_user, queue:) if claimable?
     end

@@ -236,6 +236,16 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".review__call[data-decision=fraud_pass]", /Passed the fraud check.*Orpheus.*9\/10, marked sus.*Real heartbeats/m
   end
 
+  test "a fraud verdict that can't be made says why, even with the form gone: checked by someone else in the meantime" do
+    sign_in_as users(:orpheus)
+    users(:orpheus).update!(review_roles: [ "fraud" ])
+    @ship.update!(fraud_status: "good", fraud_score: 9)
+
+    post review_ship_fraud_verdict_path(@ship), params: { verdict: { trust_score: "8", justification: "Real heartbeats, real commits." } }
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", "It's been checked already."
+  end
+
   test "reviewers never see the fraud check's score or note" do
     @ship.review_decisions.create!(queue: "fraud", decision: "fraud_pass", reviewer: users(:orpheus), trust_score: 6,
                                    justification: "Some hours look scripted.")

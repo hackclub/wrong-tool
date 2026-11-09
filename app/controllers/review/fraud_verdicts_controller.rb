@@ -9,6 +9,7 @@ class Review::FraudVerdictsController < Review::ShipsController
     else
       @decision = ReviewDecision.new(ship: @ship, decision: "approved", approved_hours: @ship.hours_now)
       claim
+      show_refusal(@verdict)
       render "review/ships/show", status: :unprocessable_entity
     end
   end
