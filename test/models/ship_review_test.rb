@@ -37,6 +37,19 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert ship.reload.approved?
   end
 
+  test "the fraud check completes an approval made against fewer hours than the project has now" do
+    ship = ship_now(hours: 6, fraud: "unchecked")
+    assert decide(ship, "approved", approved_hours: "6", justification: checked).persisted?
+    # They kept logging while it waited: against the hours now, that approval looks deflated with no reason given.
+    ship.update_columns(hours: 8)
+    @reviewer.update!(review_roles: %w[reviewer fraud])
+
+    verdict = FraudCheck.verdict(Ship.find(ship.id), by: @reviewer, score: 9, note: "Commits line up with the sessions.")
+    assert verdict.persisted?
+    assert ship.reload.approved?
+    assert_equal 6, ship.approved_hours
+  end
+
   test "approving offers the project's hours now, not just what it had when shipped" do
     ship = ship_now(hours: 35)
     @project.user.update!(hackatime_uid: "orpheus", hackatime_access_token: "token")
