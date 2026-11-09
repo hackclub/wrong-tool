@@ -49,6 +49,9 @@ class Ship < ApplicationRecord
   before_create :start_fraud_check
   after_create :note_fraud_check_kept, if: -> { @fraud_check_from }
   after_create_commit { ShipEvidence.request(self) }
+  # Decided, or its decision or hours changed since: to Airtable for Unified YSWS (ShipSubmission).
+  after_update_commit -> { ShipSubmissionJob.perform_later(self) },
+                      if: -> { ShipSubmission.sendable?(self) && (saved_change_to_status? || saved_change_to_approved_hours?) }
 
   scope :in_review, -> { where(status: "in_review") }
   scope :approved, -> { where(status: "approved") }
