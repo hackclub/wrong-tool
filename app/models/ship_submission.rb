@@ -92,10 +92,10 @@ module ShipSubmission
 
     {
       "Optional - Override Hours Spent" => added,
-      "Optional - Override Hours Spent Justification" => hours_note(ship, approval, granted, earlier, added),
+      "Optional - Override Hours Spent Justification" => justification(ship, approval, granted, earlier, added),
       "Justification - Specific Technical Features" => approval&.justification,
       "Justification - Deflation Justification" => deflation(ship, approval),
-      "Justification - Additional Justification" => additional(ship, approval),
+      "Justification - Additional Justification" => (approval.video_url if approval&.video_url),
       "Optional - Override Duplicate Justification" =>
         (if earlier.positive?
            "An update to a project approved before in wrong tool with #{fmt(earlier)} hrs; this record counts only the " \
@@ -110,28 +110,84 @@ module ShipSubmission
       "Justification - Additional Justification" => nil, "Optional - Override Duplicate Justification" => nil }
   end
 
-  # Everything a Unified YSWS reviewer needs, in the one field it reads: when the override hours are set (always, from
-  # us), the base's Unified Justification is this alone, not the separate Justification fields.
-  def self.hours_note(ship, approval, granted, earlier, added)
-    reviewer = approval&.reviewer&.name.presence || "a reviewer"
-    on = approval&.created_at&.to_date&.iso8601 || ship.decided_at&.to_date&.iso8601
-    hours_change = ship.review_decisions.select(&:hours_changed?).last
-    fraud = ship.review_decisions.select(&:fraud?).last
-    user = ship.project.user
-
+  # The case for the hours, as a reviewer would write it, from what wrong tool gathered (ShipEvidence) and what its
+  # reviewer said. It's the one field Unified YSWS reads: with the override hours set (always, from us), the base's
+  # Unified Justification is this alone, not the separate Justification fields.
+  def self.justification(ship, approval, granted, earlier, added)
+    evidence = ship.evidence&.data || {}
     [
-      "Reviewed in wrong tool by #{reviewer} on #{on}. Approved #{fmt(granted)} hrs; it shipped with #{fmt(ship.hours)} " \
-      "hrs tracked on Hackatime.",
-      ("#{fmt(earlier)} hrs were approved on this project's earlier ships, so this record adds #{fmt(added)}." if earlier.positive?),
-      ("Hackatime (ID #{user.hackatime_uid}): #{hackatime_range(ship)}." if hackatime_range(ship)),
-      ("Lapse timelapses: #{lapse_links(ship)}" if lapse_links(ship)),
-      ("What the reviewer checked: #{approval.justification}" if approval&.justification),
-      ("Hours taken off: #{deflation(ship, approval)}" if deflation(ship, approval)),
-      ("Hours changed afterwards by #{hours_change.reviewer&.name || "an admin"} to #{fmt(hours_change.approved_hours)}: " \
-       "#{hours_change.justification}" if hours_change),
-      ("Fraud check: passed#{" (marked sus)" if ship.fraud_status == "sus"}, trust #{fraud.trust_score}/10. #{fraud.justification}".strip if fraud),
-      ("Review video: #{approval.video_url}" if approval&.video_url)
+      built(ship),
+      time(ship, evidence, earlier),
+      code(ship, evidence),
+      recorded(ship, evidence),
+      ("From the review: #{sentence(approval.justification)}" if approval&.justification),
+      hours_granted(ship, approval, granted, earlier, added),
+      ("There's a video of the review: #{approval.video_url}" if approval&.video_url)
     ].compact.join("\n\n")
+  end
+
+  def self.built(ship)
+    maker = names(ship.project.user).first || "The maker"
+    "#{maker} built #{ship.title} in #{ship.project.tool_name}, for wrong tool, where you make a game in a tool that was " \
+      "never meant for games."
+  end
+
+  def self.time(ship, evidence, earlier)
+    return if ship.hackatime_projects.blank?
+
+    projects = ship.hackatime_projects.map { |name| "\"#{name}\"" }.to_sentence
+    days = evidence.dig("hackatime", "days").to_h.size
+    longest = evidence.dig("hackatime", "longest_seconds").to_i
+    uid = ship.project.user.hackatime_uid
+    text = "Hackatime#{" (user ID #{uid})" if uid.present?} tracked #{fmt(ship.hours)} hours on " \
+           "#{"project".pluralize(ship.hackatime_projects.size)} #{projects} #{stretch(ship)}"
+    text += earlier.zero? && days.positive? ? ", across #{days} #{"day".pluralize(days)} of work." : "."
+    text += " The longest single session was #{fmt(longest / 3600.0)} hours." if longest >= ShipEvidence::LONG_SESSION
+    text
+  end
+
+  def self.code(ship, evidence)
+    repo = evidence["repo"]
+    demo = evidence["demo"]
+    parts = []
+    if repo && repo["on_github"] && !repo["missing"]
+      commits = repo["commits"].to_a.size
+      parts << "The repo (#{ship.repo_url}) has #{commits} #{"commit".pluralize(commits)} over the same stretch" \
+               "#{repo["readme"] ? " and a README" : ""}."
+    else
+      parts << "The code is at #{ship.repo_url}."
+    end
+    parts << (demo&.dig("reachable") ? "The playable link (#{ship.demo_url}) opened when it was checked." : "It's playable at #{ship.demo_url}.")
+    parts.join(" ")
+  end
+
+  def self.recorded(ship, evidence)
+    lapse = evidence["lapse"]
+    links = lapse_links(ship)
+    return unless lapse && links
+
+    count = lapse["timelapses"].to_a.count { |timelapse| !timelapse["after_ship"] }
+    "They recorded #{count} #{"timelapse".pluralize(count)} of it on Lapse, #{fmt(lapse["seconds"].to_i / 3600.0)} hours " \
+      "in all: #{links}"
+  end
+
+  # How many hours it's approved for, and why, if that's not simply what it shipped with.
+  def self.hours_granted(ship, approval, granted, earlier, added)
+    shipped = ship.hours.to_f
+    change = ship.review_decisions.select(&:hours_changed?).last
+    text = if granted < shipped
+      "Approved for #{fmt(granted)} of the #{fmt(shipped)} hours. #{sentence(change&.justification || approval&.deflation_reason)}".strip
+    elsif granted > shipped
+      "Approved for #{fmt(granted)} hours: it shipped with #{fmt(shipped)}, and they kept working on it while it waited for review."
+    else
+      "Approved for all #{fmt(granted)} hours."
+    end
+    if change && granted >= shipped && approval&.deflation_reason
+      text += " The reviewer first took some off (#{approval.deflation_reason.strip.delete_suffix(".")}); on a second look they were " \
+              "put back: #{sentence(change.justification)}"
+    end
+    text += " #{fmt(earlier)} of them were approved on this project's earlier ships, so this counts the #{fmt(added)} since." if earlier.positive?
+    text
   end
 
   # Why the reviewer took hours off, while it still grants fewer than it shipped with: an admin putting them back
@@ -140,13 +196,19 @@ module ShipSubmission
     approval&.deflation_reason if (ship.approved_hours || ship.hours).to_f < ship.hours.to_f
   end
 
-  # The fraud check, and anything else a reviewer left for staff.
-  def self.additional(ship, approval)
-    fraud = ship.review_decisions.select(&:fraud?).last
-    [
-      ("Fraud check: passed#{" (marked sus)" if ship.fraud_status == "sus"}, trust #{fraud.trust_score}/10. #{fraud.justification}".strip if fraud),
-      ("Review video: #{approval.video_url}" if approval&.video_url)
-    ].compact.join("\n\n").presence
+  def self.stretch(ship)
+    since = ship.project.ships.approved.where(id: ...ship.id).maximum(:created_at)&.to_date || Program::HACKATIME_START
+    till = ship.created_at.to_date
+    "between #{since.strftime("%b %-d")} and #{till.strftime("%b %-d, %Y")}"
+  end
+
+  # A note as a sentence: capitalised, ending in a full stop.
+  def self.sentence(text)
+    text = text.to_s.strip
+    return text if text.empty?
+
+    text = text.upcase_first
+    text.match?(/[.!?)]\z/) ? text : "#{text}."
   end
 
   def self.rejection_reason(ship)
@@ -196,6 +258,7 @@ module ShipSubmission
 
   def self.fmt(hours) = hours.to_f.round(2).to_s.delete_suffix(".0")
 
-  private_class_method :approval_fields, :blank_approval_fields, :hours_note, :deflation, :additional, :rejection_reason, :earlier_hours,
+  private_class_method :approval_fields, :blank_approval_fields, :justification, :built, :time, :code, :recorded, :hours_granted,
+                       :deflation, :stretch, :sentence, :rejection_reason, :earlier_hours,
                        :hackatime_range, :lapse_links, :screenshot, :names, :github_username, :fmt
 end

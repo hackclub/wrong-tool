@@ -31,11 +31,12 @@ class ShipSubmissionTest < ActiveSupport::TestCase
     assert_equal "1h was on the menu screen", fields["Justification - Deflation Justification"]
     # Unified YSWS reads only the override justification, so it has all of it.
     justification = fields["Optional - Override Hours Spent Justification"]
-    assert_match "Approved 5 hrs; it shipped with 6 hrs tracked on Hackatime.", justification
-    assert_match "What the reviewer checked: #{checked}", justification
-    assert_match "Hours taken off: 1h was on the menu screen", justification
-    assert_match "Fraud check: passed, trust 8/10. Commits line up with the sessions.", justification
-    assert_equal "Fraud check: passed, trust 8/10. Commits line up with the sessions.", fields["Justification - Additional Justification"]
+    assert_match "Orpheus built Beat Sheet in Spreadsheet", justification
+    assert_match "The code is at https://github.com/orpheus/beat-sheet. It's playable at https://example.com/beat.", justification
+    assert_match "From the review: #{checked}", justification
+    assert_match "Approved for 5 of the 6 hours. 1h was on the menu screen.", justification
+    assert_no_match(/fraud|trust/i, justification)
+    assert_nil fields["Justification - Additional Justification"]
     assert_equal "orpheus", fields["GitHub Username"]
     assert_equal "https://github.com/orpheus/beat-sheet", fields["Code URL"]
     assert_match %r{\Ahttps://wrong\.hackclub\.com/rails/active_storage/}, fields["Screenshot"].first["url"]
@@ -53,7 +54,7 @@ class ShipSubmissionTest < ActiveSupport::TestCase
     perform_enqueued_jobs(only: ShipSubmissionJob) { FraudCheck.verdict(ship, by: @reviewer, score: 6, note: "Mostly fine, one odd night.") }
     fields = sent
     assert fields["Automation - Submit to Unified YSWS"]
-    assert_match "passed (marked sus), trust 6/10", fields["Justification - Additional Justification"]
+    assert_match "Approved for all 6 hours.", fields["Optional - Override Hours Spent Justification"]
   end
 
   test "rejected in review: ticked Rejected with the note to the maker, never sent to the automation" do
@@ -100,7 +101,7 @@ class ShipSubmissionTest < ActiveSupport::TestCase
 
     assert_equal 2, Airtable.stubbed.upserts
     assert_equal 3.0, sent["Optional - Override Hours Spent"]
-    assert_match "Hours changed afterwards by #{admin.name} to 3: Half was on another game.", sent["Optional - Override Hours Spent Justification"]
+    assert_match "Approved for 3 of the 6 hours. Half was on another game.", sent["Optional - Override Hours Spent Justification"]
   end
 
   test "hours put back after a deflation: the deflation reason goes, the change and why are there instead" do
@@ -121,8 +122,8 @@ class ShipSubmissionTest < ActiveSupport::TestCase
     assert_equal 6.0, sent["Optional - Override Hours Spent"]
     assert_nil sent["Justification - Deflation Justification"]
     justification = sent["Optional - Override Hours Spent Justification"]
-    assert_no_match "Hours taken off", justification
-    assert_match "Hours changed afterwards by #{admin.name} to 6: The idle time was them reading docs.", justification
+    assert_match "Approved for all 6 hours. The reviewer first took some off (2h look like idle time); on a second look they " \
+                 "were put back: The idle time was them reading docs.", justification
   end
 
   test "the sweep sends decided ships Airtable hasn't got, and skips the ones in review" do
