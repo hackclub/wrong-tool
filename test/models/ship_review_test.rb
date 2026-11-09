@@ -186,6 +186,21 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert_match(/is approved\. 6 hrs are yours/, dm_args.second)
   end
 
+  test "an approval still completes once the project's logged more hours since" do
+    ship = ship_now(hours: 6, fraud: "unchecked")
+    assert decide(ship, "approved", approved_hours: "6", justification: checked).persisted?
+
+    @project.user.update!(hackatime_uid: "orpheus", hackatime_access_token: "token")
+    @project.update!(hackatime_projects: [ "beat-sheet" ])
+    @project.user.streak_activities.create!(activity_date: Program::HACKATIME_START.to_date, coded_seconds: 10 * 3600)
+    assert_equal 10, ship.reload.hours_now
+
+    fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
+    assert FraudCheck.verdict(ship, by: fraud, score: "8", note: "Real heartbeats, real commits.").persisted?
+    assert ship.reload.approved?
+    assert_equal 6, ship.approved_hours
+  end
+
   test "the fraud check first, then the approval completes it at once" do
     fraud = User.create!(hca_id: "ident!frida", first_name: "Frida", review_roles: [ "fraud" ])
     ship = ship_now(hours: 6, fraud: "unchecked")

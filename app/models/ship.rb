@@ -17,7 +17,8 @@ class Ship < ApplicationRecord
 
   belongs_to :project
   belongs_to :decided_by, class_name: "User", optional: true
-  has_many :review_decisions, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :ship
+  # Each decision is checked when it's made, against the hours then; saving the ship doesn't check them again.
+  has_many :review_decisions, -> { order(:created_at, :id) }, dependent: :destroy, inverse_of: :ship, validate: false
   has_many :review_claims, dependent: :delete_all
   # What its reviewer sees about it besides what was submitted, gathered once it's shipped, and what's odd about it.
   has_one :evidence, class_name: "ShipEvidence", dependent: :destroy
