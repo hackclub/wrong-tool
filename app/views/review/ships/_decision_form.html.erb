@@ -1,7 +1,8 @@
 <%# locals: (ship:, decision:) %>
 <%# Deciding it: approve, ask for changes, reject or send it on, then only that one's fields (CSS:
     .review__form:has(...)). The note goes to them in Clippy's DM; the justification is for staff (and, sending it on,
-    for whoever gets it). Approving takes what you checked, and the hours: all it took, or fewer with why. %>
+    for whoever gets it). Approving takes what you checked, and the hours: all the project has now (not just what it had when shipped), or
+    fewer with why. %>
 <%= form_with model: decision, scope: :review, url: review_ship_decisions_path(ship), method: :post, class: "review__form",
       data: { turbo: false } do |form| %>
   <% if decision.errors.any? %>
@@ -35,9 +36,9 @@
 
   <div class="review__field" data-when="approved">
     <%= form.label :approved_hours, "Hours to approve" %>
-    <%= form.number_field :approved_hours, value: (decision.approved_hours || ship.hours).to_f.round(2), min: 0,
-          max: ship.hours.to_f.round(2), step: 0.01, class: "admin__hours" %>
-    <small class="admin__muted">of <%= project_hours(ship.hours) %> it took</small>
+    <%= form.number_field :approved_hours, value: (decision.approved_hours || ship.hours_now).to_f.round(2), min: 0,
+          max: ship.hours_now.round(2), step: 0.01, class: "admin__hours" %>
+    <small class="admin__muted">of <%= project_hours(ship.hours_now) %> it has now<% if ship.hours_now > ship.hours %> (<%= project_hours(ship.hours) %> when shipped)<% end %></small>
   </div>
   <div class="review__field" data-when="approved">
     <%= form.label :deflation_reason, "Why fewer, if fewer" %>

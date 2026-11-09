@@ -48,7 +48,7 @@ module ShipReview
   end
 
   # An admin changing the hours an approved ship grants (or will, once the fraud check passes), with why: kept as a
-  # decision of its own (hours_changed). Up to the hours it took, and not below what the maker's spent in the shop
+  # decision of its own (hours_changed). Up to the project's hours now, and not below what the maker's spent in the shop
   # already. The maker isn't told.
   def self.change_hours(ship, by:, approved_hours:, justification:)
     made = ReviewDecision.new(ship:, reviewer: by, queue: "review", decision: "hours_changed", approved_hours: approved_hours.presence,

@@ -33,7 +33,7 @@
             <div class="admin__tile"><span>Status</span><strong data-decision="<%= @ship.status %>"><%= ship_status_label(@ship) %></strong>
               <% unless @ship.in_review? %><small><%= reviewer_name(@ship.decided_by) %> · <%= @ship.decided_at.strftime("%b %-d") %></small><% end %>
             </div>
-            <div class="admin__tile"><span>Hours when shipped</span><strong><%= project_hours(@ship.hours) %></strong><small><%= project_hours(project.hours_logged) %> now</small></div>
+            <div class="admin__tile"><span>Hours now</span><strong><%= project_hours(@ship.hours_now) %></strong><small><%= project_hours(@ship.hours) %> when shipped</small></div>
             <div class="admin__tile"><span>Project</span>
               <strong><%= current_user.admin? ? link_to(project.title, admin_project_path(project)) : project.title %></strong>
               <small><%= project.tool_name %> · <%= project.idea %></small>

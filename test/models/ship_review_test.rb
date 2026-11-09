@@ -17,7 +17,7 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert_includes decision.errors.full_messages, "Justification needs at least 30 characters: what you checked, and what's in it"
 
     decision = decide(ship, "approved", approved_hours: "99", justification: checked)
-    assert_includes decision.errors.full_messages, "Approved hours can't be more than the 6.0 it took"
+    assert_includes decision.errors.full_messages, "Approved hours can't be more than the 6.0 it has now"
 
     decision = decide(ship, "approved", approved_hours: "4", justification: checked)
     assert_includes decision.errors.full_messages, "Deflation reason needs at least 10 characters: why some hours don't count"
@@ -37,6 +37,23 @@ class ShipReviewTest < ActiveSupport::TestCase
     assert ship.reload.approved?
   end
 
+  test "approving offers the project's hours now, not just what it had when shipped" do
+    ship = ship_now(hours: 35)
+    @project.user.update!(hackatime_uid: "orpheus", hackatime_access_token: "token")
+    @project.update!(hackatime_projects: [ "beat-sheet" ])
+    @project.user.streak_activities.create!(activity_date: Program::HACKATIME_START.to_date, coded_seconds: 46 * 3600)
+    assert_equal 46, ship.hours_now
+
+    decision = decide(ship, "approved", approved_hours: "47", justification: checked)
+    assert_includes decision.errors.full_messages, "Approved hours can't be more than the 46.0 it has now"
+    decision = decide(ship, "approved", approved_hours: "35", justification: checked)
+    assert_includes decision.errors.full_messages, "Deflation reason needs at least 10 characters: why some hours don't count"
+
+    assert decide(ship, "approved", approved_hours: "46", justification: checked).persisted?
+    assert_equal 46, ship.reload.approved_hours
+    assert_equal 46, @project.reload.hours_approved
+  end
+
   test "an admin can change an approved ship's hours, with why, but not past what it took or below what's spent" do
     admin = users(:orpheus)
     Rails.configuration.x.admin_slack_ids, admins = [ admin.slack_id ], Rails.configuration.x.admin_slack_ids
@@ -49,7 +66,7 @@ class ShipReviewTest < ActiveSupport::TestCase
     change = ShipReview.change_hours(ship, by: admin, approved_hours: "4", justification: "short")
     assert_includes change.errors.full_messages, "Justification needs at least 10 characters: why the hours changed"
     change = ShipReview.change_hours(ship, by: admin, approved_hours: "7", justification: "Two hours were a tutorial.")
-    assert_includes change.errors.full_messages, "Approved hours can't be more than the 6.0 it took"
+    assert_includes change.errors.full_messages, "Approved hours can't be more than the 6.0 it has now"
 
     change = ShipReview.change_hours(ship, by: admin, approved_hours: "4", justification: "Two hours were a tutorial.")
     assert change.persisted?

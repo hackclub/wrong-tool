@@ -58,14 +58,16 @@ class ReviewDecision < ApplicationRecord
   def fraud? = FRAUD.include?(decision)
   def hours_changed? = decision == "hours_changed"
 
-  # Fewer hours than the ship took.
+  # Fewer hours than the project has now.
   def deflated?
-    approved? && approved_hours.present? && approved_hours < ship.hours
+    approved? && approved_hours.present? && approved_hours < ship.hours_now
   end
 
   private
     def approved_hours_within_ship
-      errors.add(:approved_hours, "can't be more than the #{ship.hours.to_f.round(2)} it took") if approved_hours && approved_hours > ship.hours
+      return unless approved_hours && approved_hours > (most = ship.hours_now)
+
+      errors.add(:approved_hours, "can't be more than the #{most.round(2)} it has now")
     end
 
     def deflation_explained

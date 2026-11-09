@@ -6,9 +6,9 @@
   <%= form_with scope: :review, url: review_ship_hours_path(ship), method: :patch, class: "review__form", data: { turbo: false } do |form| %>
     <div class="review__field">
       <%= form.label :approved_hours, "Hours to approve" %>
-      <%= form.number_field :approved_hours, value: (ShipReview.granted_hours(ship) || ship.hours).to_f.round(2), min: 0,
-            max: ship.hours.to_f.round(2), step: 0.01, class: "admin__hours", required: true %>
-      <small class="admin__muted">of <%= project_hours(ship.hours) %> it took</small>
+      <%= form.number_field :approved_hours, value: (ShipReview.granted_hours(ship) || ship.hours_now).to_f.round(2), min: 0,
+            max: ship.hours_now.round(2), step: 0.01, class: "admin__hours", required: true %>
+      <small class="admin__muted">of <%= project_hours(ship.hours_now) %> it has now<% if ship.hours_now > ship.hours %> (<%= project_hours(ship.hours) %> when shipped)<% end %></small>
     </div>
     <div class="review__field">
       <%= form.label :justification, "Why (staff only)" %>

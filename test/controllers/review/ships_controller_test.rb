@@ -69,7 +69,7 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Pong in Figma"
     assert_select ".leaderboard__note", /by\s+Ana Lovelace \(ana@hackclub\.com, pixelana on Slack\)/m
-    assert_select ".admin__tile", text: /Hours when shipped\s*7\.5/m
+    assert_select ".admin__tile", text: /Hours now\s*7\.5\s*7\.5 when shipped/m
     assert_select ".admin__ship-details a[href='https://github.com/ana/pong']"
     assert_select ".admin__ship-shot img[alt='Screenshot of Pong in Figma']"
     assert_select "#review-history + p", /None yet/

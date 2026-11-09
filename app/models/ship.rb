@@ -87,6 +87,12 @@ class Ship < ApplicationRecord
     changes_requested? && changes_due_at.present? && now <= changes_due_at
   end
 
+  # What it can be approved for: the project's hours now, as of the last Hackatime sync, since they kept working while
+  # it waited; never less than it took when shipped.
+  def hours_now
+    [ hours.to_f, project.hours_logged.to_f ].max
+  end
+
   # Saves a reviewer's or the fraud check's call. Status and holds are still checked; what the maker submitted isn't.
   def record_call!(attributes)
     assign_attributes(attributes)

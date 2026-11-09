@@ -7,7 +7,7 @@ class Review::FraudVerdictsController < Review::ShipsController
     if @verdict.persisted?
       next_after(@ship, "#{@ship.title}: #{helpers.review_decision_done(@verdict)}.")
     else
-      @decision = ReviewDecision.new(ship: @ship, decision: "approved", approved_hours: @ship.hours)
+      @decision = ReviewDecision.new(ship: @ship, decision: "approved", approved_hours: @ship.hours_now)
       claim
       render "review/ships/show", status: :unprocessable_entity
     end
