@@ -25,6 +25,11 @@
     Which Hackatime project is this build? Only time from <%= project_date(Program::HACKATIME_START) %> on counts.
   </p>
   <% linked = choices[:projects].select { |choice| choice[:linked] } %>
+  <% if linked.none? && project_hackatime_only_other?(choices[:projects]) %>
+    <p class="project__step-text project__step-waiting" role="status">
+      "Other" is Hackatime's name for time with no project name. <%= project_first_time_how(project) %>
+    </p>
+  <% end %>
   <%= form_with model: project, url: project_path, method: :patch, class: "project__picker-form",
         data: { controller: "hackatime-picker", action: "change->hackatime-picker#update click@window->hackatime-picker#close" } do |form| %>
     <%= hidden_field_tag "project[hackatime_project_names][]", "", id: nil %>
