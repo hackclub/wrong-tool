@@ -80,9 +80,11 @@
     </div>
 
     <%# Signed: the pledge is saved as your project, and you're taken to it. This shows while that happens (or
-        if it doesn't). %>
+        if it doesn't). If you'd already pledged, it says this one isn't saved, and stays until you open your
+        project. %>
     <div class="onboarding-commit__signed" role="status">
-      <h3 class="onboarding-commit__title">Day 1 starts now.</h3>
+      <h3 class="onboarding-commit__title" data-onboarding-target="signedTitle">Day 1 starts now.</h3>
+      <p class="onboarding-commit__kept" data-onboarding-target="kept" hidden></p>
       <%= link_to project_path, class: "onboarding-button onboarding-button--primary", data: { turbo_prefetch: false } do %>
         Open my project<%= inline_svg_tag "icons/onboarding/arrow-forward.svg", class: "icon", aria_hidden: true %>
       <% end %>

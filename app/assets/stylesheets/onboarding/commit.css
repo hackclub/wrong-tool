@@ -375,6 +375,11 @@
     letter-spacing: -1.2px;
   }
 
+  .onboarding-commit__kept {
+    max-inline-size: 36ch;
+    font: 16px/1.45 var(--font-chrome);
+  }
+
   @keyframes onboarding-rise {
     from {
       opacity: 0;

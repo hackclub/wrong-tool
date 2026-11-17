@@ -55,7 +55,8 @@ class ProjectsControllerTest < ActionDispatch::IntegrationTest
                                                          pace_minutes: 60, build_time: "late night" } }
     end
     assert_response :ok
-    assert_equal project_path, response.parsed_body["location"]
+    assert_equal [ project_path, true, projects(:orpheus).title ],
+                 response.parsed_body.values_at("location", "already_pledged", "title")
   end
 
   test "a pledge needs someone signed in, and answers onboarding offers" do
