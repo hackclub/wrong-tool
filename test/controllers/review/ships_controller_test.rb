@@ -106,6 +106,32 @@ class Review::ShipsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#review-decided ~ div tr##{dom_id(@ship)} [data-decision=approved]", /Approved.*Orpheus/m
   end
 
+  test "the reviewer can fix the repo and demo links when deciding, and those go to Airtable" do
+    sign_in_as(users(:orpheus))
+    get review_ship_path(@ship)
+    assert_select "form[action=?]", review_ship_decisions_path(@ship) do
+      assert_select "input[type=url][name='review[repo_url]'][value='https://github.com/ana/pong'][required]"
+      assert_select "input[type=url][name='review[demo_url]'][value='https://example.com/pong'][required]"
+    end
+
+    post review_ship_decisions_path(@ship), params: { review: { decision: "changes_requested", note_to_maker: "The demo link asks me to sign in.",
+                                                                repo_url: "github.com/ana/pong", demo_url: "https://ana.itch.io/pong" } }
+    assert_response :unprocessable_entity
+    assert_select ".review__errors li", /Repo url should be a link/
+    assert_select "input[name='review[repo_url]'][value='github.com/ana/pong']", 1, "what they typed stays"
+    assert_equal [ "https://github.com/ana/pong", "https://example.com/pong" ], @ship.reload.slice(:repo_url, :demo_url).values
+    assert @ship.in_review?
+
+    @ship.update!(fraud_status: "good", fraud_score: 9)
+    post review_ship_decisions_path(@ship), params: { review: { decision: "approved", approved_hours: "7.5",
+                                                                justification: "Played it to 10 points; each frame really is a component.",
+                                                                repo_url: " https://github.com/ana/pong-figma ", demo_url: "https://ana.itch.io/pong" } }
+    assert @ship.reload.approved?
+    assert_equal [ "https://github.com/ana/pong-figma", "https://ana.itch.io/pong" ], @ship.slice(:repo_url, :demo_url).values
+    assert_equal({ "Code URL" => "https://github.com/ana/pong-figma", "Playable URL" => "https://ana.itch.io/pong" },
+                 ShipSubmission.fields(@ship).slice("Code URL", "Playable URL"))
+  end
+
   test "asked for changes, they can ship again, and the new ship shows the call on the earlier one" do
     users(:orpheus).update!(review_roles: [ "reviewer" ])
     Rails.configuration.x.admin_slack_ids = []

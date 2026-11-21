@@ -8,7 +8,8 @@ class Review::ShipsController < Review::BaseController
   before_action(only: :show) { ShipEvidence.request(@ship) unless @ship.evidence }
 
   def show
-    @decision = ReviewDecision.new(ship: @ship, decision: "approved", approved_hours: @ship.hours_now)
+    @decision = ReviewDecision.new(ship: @ship, decision: "approved", approved_hours: @ship.hours_now,
+                                   repo_url: @ship.repo_url, demo_url: @ship.demo_url)
     @verdict = ReviewDecision.new(ship: @ship, queue: "fraud")
     claim
   end

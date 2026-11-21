@@ -24,7 +24,10 @@ class ReviewDecision < ApplicationRecord
   belongs_to :ship
   belongs_to :reviewer, class_name: "User", optional: true
 
-  normalizes :note_to_maker, :justification, :deflation_reason, :video_url, with: ->(text) { text.strip.presence }
+  attribute :repo_url, :string
+  attribute :demo_url, :string
+
+  normalizes :note_to_maker, :justification, :deflation_reason, :video_url, :repo_url, :demo_url, with: ->(text) { text.strip.presence }
 
   validates :queue, inclusion: { in: QUEUES }
   validates :decision, inclusion: { in: DECISIONS }
@@ -34,7 +37,7 @@ class ReviewDecision < ApplicationRecord
   end
   validates :note_to_maker, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: they'll read it" },
                             if: -> { changes_requested? || rejected? }
-  validates :video_url, format: { with: URL, message: "should be a link" }, allow_nil: true
+  validates :video_url, :repo_url, :demo_url, format: { with: URL, message: "should be a link" }, allow_nil: true
   validates :justification, length: { minimum: NOTE_MIN, too_short: "needs at least %{count} characters: what they should look at" },
                             if: :hold?
   with_options if: -> { approved? || hours_changed? } do

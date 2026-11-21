@@ -68,5 +68,14 @@
     <%= form.url_field :video_url, placeholder: "https://", spellcheck: false %>
   </div>
 
+  <div class="review__field">
+    <%= form.label :repo_url, "Repo link" %>
+    <%= form.url_field :repo_url, required: true, spellcheck: false %>
+  </div>
+  <div class="review__field">
+    <%= form.label :demo_url, "Demo link" %>
+    <%= form.url_field :demo_url, required: true, spellcheck: false %>
+  </div>
+
   <%= form.submit "Submit", class: "admin__button review__submit" %>
 <% end %>

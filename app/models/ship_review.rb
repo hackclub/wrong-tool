@@ -14,10 +14,10 @@ module ShipReview
   # The decision, saved, or with what's wrong with it (in errors). A ship that's been decided already, or that this
   # person can't decide now, gets an error and stays as it was. `hold` is where "hold" sends it (fraud or admin).
   def self.decide(ship, by:, decision:, hold: nil, note_to_maker: nil, justification: nil, approved_hours: nil, deflation_reason: nil,
-                  video_url: nil)
+                  video_url: nil, repo_url: nil, demo_url: nil)
     decision = SENDS.fetch(hold.to_s, "hold") if decision == "hold"
     approving = decision == "approved"
-    made = ReviewDecision.new(ship:, reviewer: by, queue: "review", decision:, justification:, video_url:,
+    made = ReviewDecision.new(ship:, reviewer: by, queue: "review", decision:, justification:, video_url:, repo_url:, demo_url:,
                               note_to_maker: (note_to_maker unless ReviewDecision::HOLDS.include?(decision)),
                               approved_hours: (approved_hours.presence if approving), deflation_reason: (deflation_reason if approving))
     finalized = false
@@ -26,6 +26,7 @@ module ShipReview
       if (refusal = refusal(ship, by, made))
         made.errors.add(:base, refusal)
       elsif made.save
+        ship.record_call!({ repo_url: made.repo_url, demo_url: made.demo_url }.compact)
         apply(ship, made)
         finalized = finalize_if_ready(ship) if made.approved?
       end

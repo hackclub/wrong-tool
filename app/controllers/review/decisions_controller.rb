@@ -15,6 +15,6 @@ class Review::DecisionsController < Review::ShipsController
 
   private
     def decision_params
-      params.expect(review: %i[decision hold note_to_maker justification approved_hours deflation_reason video_url])
+      params.expect(review: %i[decision hold note_to_maker justification approved_hours deflation_reason video_url repo_url demo_url])
     end
 end
