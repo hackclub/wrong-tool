@@ -239,6 +239,7 @@
                 <% end %>
               </div>
               <% if flash[:streak_alert] %><p class="project__step-error" role="alert"><%= flash[:streak_alert] %></p><% end %>
+              <% if flash[:streak_notice] %><p class="project__streak-notice" role="status"><%= flash[:streak_notice] %></p><% end %>
               <ul class="project__rewards">
                 <% project_rewards(@project).each do |reward| %>
                   <li class="project__reward" data-state="<%= reward[:state] %>">

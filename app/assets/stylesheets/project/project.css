@@ -1517,10 +1517,32 @@
     color: var(--text-secondary);
   }
 
+  /* Fingers get a 44px target, and a tap that wobbles a little still counts as a tap. */
   .project__streak-refresh .onboarding-text-button {
     block-size: 32px;
     padding: 0 10px;
     font-size: 13px;
+    touch-action: manipulation;
+
+    &:active {
+      background: var(--hover-chrome);
+    }
+
+    @media (pointer: coarse) {
+      block-size: 44px;
+      padding: 0 14px;
+    }
+  }
+
+  /* Pressed from the tap until the refreshed page (streak_refresh_controller.js), with or without the spin. */
+  .project__streak-refresh[data-refreshing] .onboarding-text-button {
+    background: var(--hover-chrome);
+    color: var(--text-primary);
+  }
+
+  .project__streak-notice {
+    font: 13px var(--font-cell);
+    color: var(--text-secondary);
   }
 
   /* While Hackatime's being asked (streak_refresh_controller.js), whole turns only. */
