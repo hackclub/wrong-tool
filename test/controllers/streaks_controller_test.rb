@@ -23,6 +23,25 @@ class StreaksControllerTest < ActionDispatch::IntegrationTest
       assert_select ".project__streak-number", "1"
       assert_select ".project__streak-checked", /Checked just now/
       assert_select ".project__say", "1 day in a row. 20 min today keeps it going."
+      assert_select ".project__streak [role=status]", "Synced with Hackatime."
+    end
+  end
+
+  test "Refresh again within seconds says it's already up to date, rather than nothing" do
+    sign_in_as_orpheus
+    cache = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    begin
+      patch project_streak_path
+      follow_redirect!
+      assert_select ".project__streak [role=status]", "Synced with Hackatime."
+
+      patch project_streak_path
+      assert_redirected_to project_path
+      follow_redirect!
+      assert_select ".project__streak [role=status]", /Already up to date/
+    ensure
+      Rails.cache = cache
     end
   end
 

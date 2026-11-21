@@ -66,14 +66,15 @@ module User::Streakable
   end
 
   # Hitting Refresh wants numbers now, so this syncs inline rather than queueing, and holds off the background sync
-  # too.
+  # too. False when it didn't sync (nothing to track, or the last one was under MANUAL_STREAK_SYNC_THROTTLE ago).
   def sync_streak_now!
-    return unless project&.tracking?
-    return if Rails.cache.read(manual_streak_sync_key)
+    return false unless project&.tracking?
+    return false if Rails.cache.read(manual_streak_sync_key)
 
     Rails.cache.write(manual_streak_sync_key, true, expires_in: MANUAL_STREAK_SYNC_THROTTLE)
     Rails.cache.write(streak_sync_throttle_key, true, expires_in: STREAK_SYNC_THROTTLE)
     StreakActivity.sync_for_user!(self)
+    true
   end
 
   # This week, Sunday to Saturday, and which days you hit your 20 minutes.
